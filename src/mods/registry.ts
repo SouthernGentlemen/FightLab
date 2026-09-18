@@ -75,7 +75,7 @@ const LIST = [
   mod("cooling-array", "Cooling Array", "rare", ["solar", "block"], "duo", "A larger Heat dump that heals and cools Burn.",
     [sink("heat", [3, 4, 6], heal([1, 1, 1]), cleanse("burn", [1, 1, 2]))], [into(0, "w", "heat")]),
   mod("chain-circuit", "Chain Circuit", "rare", ["arc", "tech"], "i3", "Makes more Charge for every link it is part of.",
-    [generate("charge", [1, 1, 2], [1, 2, 3])], [into(0, "w", "charge"), out(2, "e", "charge")]),
+    [generate("charge", [1, 1, 2], [1, 2, 3])], [into(0, "n", "charge"), out(2, "s", "charge")]),
   mod("storm-cell", "Storm Cell", "rare", ["arc", "strike"], "duo", "Spends Charge to set up a heavy Shock.",
     [spend("charge", [2, 2, 2], shock([4, 6, 9]))], [into(0, "w", "charge")]),
   mod("null-reservoir", "Null Reservoir", "rare", ["void"], "l3", "Leeches, and deepens your Void every round.",
