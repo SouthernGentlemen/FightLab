@@ -21,6 +21,11 @@ export interface Arena {
   step(): ArenaStep;
   /** Which sides are knocked out, player first. */
   defeated(): readonly [boolean, boolean];
+  /**
+   * Whatever the arena resolves when a round's last exchange has settled, all at once and in no
+   * time at all: what each side lost to it, player first. It may knock a fighter out.
+   */
+  endRound(): ArenaStep;
 }
 
 /**
@@ -108,6 +113,8 @@ export interface RoundRecord {
   /** Exchanges fought: three, unless a knockout came first. */
   readonly exchanges: number;
   readonly damage: readonly [number, number];
+  /** Health each side lost when the round ended, outside any exchange. */
+  readonly afflictions: readonly [number, number];
   /** Exchanges each side won, player first. */
   readonly wins: readonly [number, number];
 }
@@ -220,17 +227,19 @@ export function stepBattle(state: BattleState, arena: Arena, rules: BattleRules 
   closeExchange(state, exchange);
 
   if (status === "ko") {
-    recordRound(state);
-    const [player, opponent] = arena.defeated();
-    if (player && opponent) end(state, "draw", "double-ko");
-    else end(state, opponent ? "victory" : "defeat", "ko");
+    recordRound(state, [0, 0]);
+    knockout(state, arena);
     return;
   }
   if (exchange.index < BAR_LENGTH - 1) {
     state.actionIndex = (exchange.index + 1) as SlotIndex;
     return;
   }
-  recordRound(state);
+  recordRound(state, arena.endRound().damage);
+  if (arena.status() === "ko") {
+    knockout(state, arena);
+    return;
+  }
   if (state.round >= rules.roundLimit) {
     end(state, "draw", "limit");
     return;
@@ -261,7 +270,8 @@ export function nextRound(state: BattleState): void {
   state.bars = bars;
   state.opponentSwitch = null;
   state.pausedOn = null;
-  if (repeats && last.damage[0] === 0 && last.damage[1] === 0) {
+  const hurt = last.damage[0] + last.damage[1] + last.afflictions[0] + last.afflictions[1] > 0;
+  if (repeats && !hurt) {
     end(state, "draw", "stalemate");
     return;
   }
@@ -321,7 +331,13 @@ function closeExchange(state: BattleState, exchange: Exchange): void {
   state.exchange = null;
 }
 
-function recordRound(state: BattleState): void {
+function knockout(state: BattleState, arena: Arena): void {
+  const [player, opponent] = arena.defeated();
+  if (player && opponent) end(state, "draw", "double-ko");
+  else end(state, opponent ? "victory" : "defeat", "ko");
+}
+
+function recordRound(state: BattleState, afflictions: readonly [number, number]): void {
   const fought = state.history.filter((record) => record.round === state.round);
   const total = (side: 0 | 1) => fought.reduce((sum, record) => sum + record.damage[side], 0);
   const won = (winner: Winner) => fought.filter((record) => record.winner === winner).length;
@@ -331,6 +347,7 @@ function recordRound(state: BattleState): void {
     mixedUp: [state.mixedUp[0], state.mixedUp[1]],
     exchanges: fought.length,
     damage: [total(0), total(1)],
+    afflictions: [afflictions[0], afflictions[1]],
     wins: [won("player"), won("opponent")],
   });
 }

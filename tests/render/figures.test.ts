@@ -16,7 +16,7 @@ import { clipNamed, clipOrigin } from "../../src/render/clips.ts";
 import { figureModel } from "../../src/render/figure.ts";
 
 const IDLE: FighterState = {
-  id: "player", x: 0, vx: 0, facing: 1, mode: "idle", stateFrame: 3, move: null, moveFrame: 0, bonus: 0,
+  id: "player", x: 0, vx: 0, facing: 1, mode: "idle", stateFrame: 3, move: null, moveFrame: 0, bonus: 0, heal: 0, exposure: 0,
   health: 100, hitstop: 0, stun: 0, hitTargets: [],
 };
 const FIGHTING: AnimationContext = { idleFrame: null, finish: null };

@@ -87,6 +87,10 @@ export interface FighterState {
   moveFrame: number;
   /** Damage every hit of the running move adds, carried into the counter its parry starts. */
   bonus: number;
+  /** Health the running move's parry restores on top of its own heal. */
+  heal: number;
+  /** Damage the next hit that lands on this fighter adds; that hit clears it. */
+  exposure: number;
   health: number;
   hitstop: number;
   stun: number;
@@ -100,10 +104,11 @@ export interface SimulationState {
 
 /**
  * What a fighter is told to do this tick. A move starts only if the fighter can act, and may be
- * committed with an integer damage bonus that every one of its hits adds.
+ * committed with an integer damage bonus that every one of its hits adds and an integer heal its
+ * parry adds.
  */
 export type Command =
-  | { readonly kind: "move"; readonly move: string; readonly bonus?: number }
+  | { readonly kind: "move"; readonly move: string; readonly bonus?: number; readonly heal?: number }
   | { readonly kind: "walk"; readonly direction: Facing }
   | null;
 
@@ -115,6 +120,7 @@ export type CombatEventKind =
   | "damage-received"
   | "parried"
   | "healed"
+  | "afflicted"
   | "defeated"
   | "state-changed"
   | "recovered";
@@ -137,6 +143,8 @@ export interface ContactEvent {
   parried: boolean;
   /** Health the target regained through this contact: a parry's heal, as actually applied. */
   heal: number;
+  /** The exposure this hit added and cleared on its target. */
+  exposed: number;
 }
 
 export interface FrameReport {

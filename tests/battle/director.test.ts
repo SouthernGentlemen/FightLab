@@ -65,6 +65,10 @@ class ScriptedArena implements Arena {
   defeated(): readonly [boolean, boolean] {
     return [this.health[0] <= 0, this.health[1] <= 0];
   }
+
+  endRound(): ArenaStep {
+    return { damage: [0, 0], healing: [0, 0] };
+  }
 }
 
 const RULES_FOR_TESTS: BattleRules = { roundIntro: 3, beat: 2, roundLimit: 4 };
@@ -346,7 +350,7 @@ describe("the exchange record", () => {
       ["tie", null, [0, 0]],
       ["tie", null, [4, 4]],
     ]);
-    expect(state.rounds[0]).toEqual({ round: 1, bars: ["primary", "primary"], mixedUp: [false, false], exchanges: 3, damage: [4, 8], wins: [1, 0] });
+    expect(state.rounds[0]).toEqual({ round: 1, bars: ["primary", "primary"], mixedUp: [false, false], exchanges: 3, afflictions: [0, 0], damage: [4, 8], wins: [1, 0] });
   });
 
   it("validates both loadouts on the way in", () => {

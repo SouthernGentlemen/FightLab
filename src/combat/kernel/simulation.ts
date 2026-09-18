@@ -1,7 +1,7 @@
 import { resolvePushboxes } from "./collision.ts";
 import { resolveContacts } from "./contact.ts";
-import { advanceMove, currentMove, enterMode, isActionable, movePhase, startMove } from "./state.ts";
-import type { Command, Facing, FighterDefinition, FighterState, FrameReport, SimulationConfig, SimulationState } from "./types.ts";
+import { advanceMove, currentMove, enterMode, isActionable, leaveMove, movePhase, startMove } from "./state.ts";
+import type { CombatEvent, Command, Facing, FighterDefinition, FighterState, FrameReport, SimulationConfig, SimulationState } from "./types.ts";
 
 /** Frame data a move cannot honour is refused before a fight can start on it. */
 export function validateContent(definition: FighterDefinition): void {
@@ -30,7 +30,11 @@ export function validateContent(definition: FighterDefinition): void {
 }
 
 function fighter(id: FighterState["id"], x: number, health: number, facing: Facing): FighterState {
-  return { id, x, vx: 0, facing, mode: "idle", stateFrame: 0, move: null, moveFrame: 0, bonus: 0, health, hitstop: 0, stun: 0, hitTargets: [] };
+  return { id, x, vx: 0, facing, mode: "idle", stateFrame: 0, move: null, moveFrame: 0, bonus: 0, heal: 0, exposure: 0, health, hitstop: 0, stun: 0, hitTargets: [] };
+}
+
+function whole(value: number, what: string, owner: string): void {
+  if (!Number.isInteger(value) || value < 0) throw new Error(`${owner}: ${what} must be a whole number, not ${value}`);
 }
 
 function applyCommand(fighter: FighterState, definition: FighterDefinition, command: Command, report: FrameReport): void {
@@ -39,7 +43,9 @@ function applyCommand(fighter: FighterState, definition: FighterDefinition, comm
     if (!definition.moves[command.move]) throw new Error(`${definition.id} has no move '${command.move}'`);
     const bonus = command.bonus ?? 0;
     if (!Number.isInteger(bonus) || bonus < 0) throw new Error(`${definition.id}: a move's bonus must be a whole number of damage, not ${bonus}`);
-    startMove(fighter, command.move, bonus);
+    const heal = command.heal ?? 0;
+    whole(heal, "a move's heal", definition.id);
+    startMove(fighter, command.move, bonus, heal);
     report.events.push({ frame: report.frame, kind: "move-started", fighter: fighter.id, detail: command.move });
     return;
   }
@@ -81,6 +87,32 @@ export class CombatSimulation {
 
   getState(): SimulationState {
     return this.state;
+  }
+
+  /** How much the next hit that lands on fighter `index` adds. The kernel never learns why. */
+  expose(index: 0 | 1, amount: number): void {
+    whole(amount, "exposure", this.config.definitions[index].id);
+    this.state.fighters[index].exposure = amount;
+  }
+
+  /**
+   * Health lost outside contact, between ticks: an affliction the arena applies when a round ends.
+   * Never below zero, and at zero the fighter is defeated exactly as a hit would leave it.
+   */
+  afflict(index: 0 | 1, amount: number): CombatEvent[] {
+    const fighter = this.state.fighters[index];
+    whole(amount, "an affliction", this.config.definitions[index].id);
+    if (amount === 0 || fighter.mode === "defeated") return [];
+    const lost = Math.min(fighter.health, amount);
+    const frame = Math.max(0, this.state.tick - 1);
+    fighter.health -= lost;
+    const events: CombatEvent[] = [{ frame, kind: "afflicted", fighter: fighter.id, detail: `-${lost} health` }];
+    if (fighter.health === 0) {
+      fighter.vx = 0;
+      leaveMove(fighter, "defeated");
+      events.push({ frame, kind: "defeated", fighter: fighter.id, detail: `${fighter.id} knocked out` });
+    }
+    return events;
   }
 
   reset(): SimulationState {

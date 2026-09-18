@@ -22,6 +22,19 @@ function wholeDamage(value: number): boolean {
 }
 
 /**
+ * What one exchange's commit carries beyond the build, from whatever runs around the arena: extra
+ * damage on each side's move, extra healing on its parry, and what the next hit on it adds. All of
+ * it is damage and healing; none of it can say when anything happens.
+ */
+export interface CommitExtras {
+  readonly bonus: readonly [number, number];
+  readonly heal: readonly [number, number];
+  readonly exposure: readonly [number, number];
+}
+
+export const NO_EXTRAS: CommitExtras = Object.freeze({ bonus: [0, 0] as const, heal: [0, 0] as const, exposure: [0, 0] as const });
+
+/**
  * Where each fighter stands when an exchange commits. Eighty pixels apart puts every move in
  * reach and nobody's pushbox in contact, and returning to the same marks every time means the
  * fortieth exchange is fought at the same distance as the first.
@@ -58,13 +71,34 @@ export class CombatArena implements Arena {
     return this.simulation.getState();
   }
 
-  commit(player: ActionType, opponent: ActionType, context: CommitContext): void {
-    this.pending = [this.command(0, player, context.mixedUp[0]), this.command(1, opponent, context.mixedUp[1])];
+  commit(player: ActionType, opponent: ActionType, context: CommitContext, extras: CommitExtras = NO_EXTRAS): void {
+    this.simulation.expose(0, extras.exposure[0]);
+    this.simulation.expose(1, extras.exposure[1]);
+    this.pending = [this.command(0, player, context.mixedUp[0], extras), this.command(1, opponent, context.mixedUp[1], extras)];
   }
 
-  private command(index: 0 | 1, action: ActionType, mixedUp: boolean): Command {
+  private command(index: 0 | 1, action: ActionType, mixedUp: boolean, extras: CommitExtras): Command {
     const side = this.sides[index];
-    return { kind: "move", move: side.actions[action].move, bonus: side.bonus[action] + (mixedUp ? side.surge : 0) };
+    const bonus = side.bonus[action] + (mixedUp ? side.surge : 0) + extras.bonus[index];
+    return { kind: "move", move: side.actions[action].move, bonus, heal: extras.heal[index] };
+  }
+
+  /** A bare arena has nothing to resolve between rounds. */
+  endRound(): ArenaStep {
+    return { damage: [0, 0], healing: [0, 0] };
+  }
+
+  /**
+   * Health each side loses outside contact, applied at once and between ticks. Its events join the
+   * last tick's report, so everything the fight did is still in one ordered log.
+   */
+  afflict(amounts: readonly [number, number]): ArenaStep {
+    const { fighters } = this.state;
+    const before = [fighters[0].health, fighters[1].health];
+    const events = [...this.simulation.afflict(0, amounts[0]), ...this.simulation.afflict(1, amounts[1])];
+    if (this.lastReport === null) this.lastReport = { frame: Math.max(0, this.state.tick - 1), contacts: [], events: [] };
+    this.lastReport.events.push(...events);
+    return { damage: [before[0] - fighters[0].health, before[1] - fighters[1].health], healing: [0, 0] };
   }
 
   status(): ArenaStatus {

@@ -14,6 +14,8 @@ interface Contact {
    * before any contact is applied, because applying one can end the move another's bonus came from.
    */
   readonly bonus: number;
+  /** The parrier's own extra heal, read before anything is applied for the same reason. */
+  readonly heal: number;
 }
 
 function gate(defender: FighterState, hit: HitboxDefinition): string {
@@ -42,7 +44,10 @@ export function resolveContacts(state: SimulationState, definitions: readonly Fi
         const overlap = intersection(hitbox.aabb, hurtbox);
         if (overlap === null) continue;
         const absorbed = hitbox.definition.breaksGuard ? null : parry;
-        contacts.push({ attacker, defender, hit: hitbox.definition, overlap, parry: absorbed, bonus: absorbed ? defender.bonus : attacker.bonus });
+        contacts.push({
+          attacker, defender, hit: hitbox.definition, overlap, parry: absorbed,
+          bonus: absorbed ? defender.bonus : attacker.bonus, heal: absorbed ? defender.heal : 0,
+        });
         break;
       }
     }
@@ -57,8 +62,11 @@ export function resolveContacts(state: SimulationState, definitions: readonly Fi
   }
 }
 
+/** A landed hit adds the target's exposure, all of it, and clears it: only a hit that hurts can. */
 function hit({ attacker, defender, hit, overlap, bonus }: Contact, struck: ReadonlySet<FighterState>, tick: number, report: FrameReport): void {
-  const damage = hit.damage + bonus;
+  const exposed = defender.exposure;
+  const damage = hit.damage + bonus + exposed;
+  defender.exposure = 0;
   defender.health = Math.max(0, defender.health - damage);
   attacker.hitstop = Math.max(attacker.hitstop, hit.hitstopAttacker);
   defender.hitstop = Math.max(defender.hitstop, hit.hitstopDefender);
@@ -67,7 +75,7 @@ function hit({ attacker, defender, hit, overlap, bonus }: Contact, struck: Reado
   defender.stun = hit.hitstun;
   leaveMove(defender, defender.health === 0 ? "defeated" : "hitstun");
 
-  report.contacts.push({ source: attacker.id, target: defender.id, hitboxId: hit.id, overlap, damage, parried: false, heal: 0 });
+  report.contacts.push({ source: attacker.id, target: defender.id, hitboxId: hit.id, overlap, damage, parried: false, heal: 0, exposed });
   report.events.push(
     { frame: tick, kind: "hit", source: attacker.id, target: defender.id, detail: `${hit.id} connected` },
     { frame: tick, kind: "damage-received", fighter: defender.id, detail: `-${damage} health` },
@@ -81,7 +89,7 @@ function hit({ attacker, defender, hit, overlap, bonus }: Contact, struck: Reado
  * hitbox. A heal lands here, as part of the same contact, and never past maximum health.
  */
 function parried(
-  { attacker, defender, hit, overlap, bonus }: Contact,
+  { attacker, defender, hit, overlap, bonus, heal: extra }: Contact,
   parry: ParryDefinition,
   definition: FighterDefinition,
   tick: number,
@@ -93,10 +101,10 @@ function parried(
   attacker.stun = parry.stun;
   leaveMove(attacker, "hitstun");
   startMove(defender, parry.counter, bonus);
-  const heal = Math.max(0, Math.min(parry.heal, definition.maxHealth - defender.health));
+  const heal = Math.max(0, Math.min(parry.heal + extra, definition.maxHealth - defender.health));
   defender.health += heal;
 
-  report.contacts.push({ source: attacker.id, target: defender.id, hitboxId: hit.id, overlap, damage: 0, parried: true, heal });
+  report.contacts.push({ source: attacker.id, target: defender.id, hitboxId: hit.id, overlap, damage: 0, parried: true, heal, exposed: 0 });
   report.events.push(
     { frame: tick, kind: "parried", source: attacker.id, target: defender.id, detail: `${hit.id} parried` },
     { frame: tick, kind: "move-started", fighter: defender.id, detail: parry.counter },
