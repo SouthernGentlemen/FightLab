@@ -1,4 +1,3 @@
-import { DEFAULT_ACTIONS } from "../battle/actions.ts";
 import { defaultLoadout } from "../battle/bars.ts";
 import type { ActionLoadout } from "../battle/bars.ts";
 import { RULES, createBattle, mixup, nextRound, stepBattle } from "../battle/director.ts";
@@ -10,7 +9,7 @@ import type { StyleMeter } from "../battle/style.ts";
 import { CombatArena } from "../combat/adapter.ts";
 import type { CombatSide } from "../combat/adapter.ts";
 import type { CombatEvent } from "../combat/kernel/index.ts";
-import { FIGHTLAB_FIGHTER } from "../combat/moves.ts";
+import { BARE_SIDE } from "./sides.ts";
 
 export interface MatchConfig {
   readonly sides: readonly [CombatSide, CombatSide];
@@ -20,10 +19,7 @@ export interface MatchConfig {
 }
 
 export const DEFAULT_MATCH: MatchConfig = {
-  sides: [
-    { fighter: FIGHTLAB_FIGHTER, actions: DEFAULT_ACTIONS },
-    { fighter: FIGHTLAB_FIGHTER, actions: DEFAULT_ACTIONS },
-  ],
+  sides: [BARE_SIDE, BARE_SIDE],
   player: defaultLoadout(),
   opponent: REFERENCE_OPPONENT,
   rules: RULES,

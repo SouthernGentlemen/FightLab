@@ -8,20 +8,26 @@ import { assembleFigureBones, loadFigure } from "boneyard/render/sheet";
 import { fighterArt } from "../../pipelines/figures.ts";
 import type { FighterState } from "../../src/combat/kernel/index.ts";
 import { FIGHTLAB_FIGHTER } from "../../src/combat/moves.ts";
-import { ROSTER } from "../../src/game/roster.ts";
+import { FIGURES, PLAYER_FIGURE } from "../../src/game/roster.ts";
+import { OPPONENT_FIGURES } from "../../src/run/opponents.ts";
 import { STATE_CLIPS, animationFor } from "../../src/render/animation.ts";
 import type { AnimationContext } from "../../src/render/animation.ts";
 import { clipNamed, clipOrigin } from "../../src/render/clips.ts";
 import { figureModel } from "../../src/render/figure.ts";
 
 const IDLE: FighterState = {
-  id: "player", x: 0, vx: 0, facing: 1, mode: "idle", stateFrame: 3, move: null, moveFrame: 0,
+  id: "player", x: 0, vx: 0, facing: 1, mode: "idle", stateFrame: 3, move: null, moveFrame: 0, bonus: 0,
   health: 100, hitstop: 0, stun: 0, hitTargets: [],
 };
 const FIGHTING: AnimationContext = { idleFrame: null, finish: null };
 
 describe("figures from Boneyard", () => {
-  it.each(Object.values(ROSTER))("serves %s exactly as Boneyard's own loader assembled it", (id) => {
+  it("draws the authored fighter for the player and every opponent figure the run can meet", () => {
+    expect(FIGURES).toEqual(["fighter", "barst", "kiran", "yuliya"]);
+    expect(FIGURES).toEqual([PLAYER_FIGURE, ...OPPONENT_FIGURES]);
+  });
+
+  it.each([...FIGURES])("serves %s exactly as Boneyard's own loader assembled it", (id) => {
     const art = fighterArt(id);
     const figure = loadFigure(BONEYARD_ROOT, id);
     expect(art.rig).toEqual(figure.rig.contract);
@@ -39,7 +45,7 @@ describe("figures from Boneyard", () => {
   });
 
   it("refuses art missing a bone's layers", () => {
-    const art = fighterArt(ROSTER.opponent);
+    const art = fighterArt(OPPONENT_FIGURES[0]);
     const { head: _head, ...headless } = art.bones;
     expect(() => figureModel({ ...art, bones: headless })).toThrow(/'head'/);
   });
@@ -47,7 +53,7 @@ describe("figures from Boneyard", () => {
 
 describe("choosing what presents a fighter", () => {
   it("covers every combat state with a clip Boneyard has and can paint from either side", () => {
-    const rig = figureModel(fighterArt(ROSTER.player)).rig;
+    const rig = figureModel(fighterArt(PLAYER_FIGURE)).rig;
     const states: FighterState[] = [
       IDLE,
       { ...IDLE, mode: "walk" },

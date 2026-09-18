@@ -18,10 +18,11 @@ export function validateContent(definition: FighterDefinition): void {
       if (hitbox.startFrame > hitbox.endFrame) throw new Error(`${where}/${hitbox.id}: inverted frame window`);
     }
     if (move.parry !== null) {
-      const { startFrame, endFrame, counter } = move.parry;
+      const { startFrame, endFrame, counter, heal } = move.parry;
       if (startFrame < move.startup || endFrame >= activeEnd || startFrame > endFrame) {
         throw new Error(`${where}: parry window must sit inside the active frames`);
       }
+      if (!Number.isInteger(heal) || heal < 0) throw new Error(`${where}: parry heal must be a whole number of health`);
       if (!definition.moves[counter]) throw new Error(`${where}: parry counters with unknown move '${counter}'`);
       if (definition.moves[counter].parry !== null) throw new Error(`${where}: counter '${counter}' parries too, which could chain forever`);
     }
@@ -29,14 +30,16 @@ export function validateContent(definition: FighterDefinition): void {
 }
 
 function fighter(id: FighterState["id"], x: number, health: number, facing: Facing): FighterState {
-  return { id, x, vx: 0, facing, mode: "idle", stateFrame: 0, move: null, moveFrame: 0, health, hitstop: 0, stun: 0, hitTargets: [] };
+  return { id, x, vx: 0, facing, mode: "idle", stateFrame: 0, move: null, moveFrame: 0, bonus: 0, health, hitstop: 0, stun: 0, hitTargets: [] };
 }
 
 function applyCommand(fighter: FighterState, definition: FighterDefinition, command: Command, report: FrameReport): void {
   if (!isActionable(fighter)) return;
   if (command?.kind === "move") {
     if (!definition.moves[command.move]) throw new Error(`${definition.id} has no move '${command.move}'`);
-    startMove(fighter, command.move);
+    const bonus = command.bonus ?? 0;
+    if (!Number.isInteger(bonus) || bonus < 0) throw new Error(`${definition.id}: a move's bonus must be a whole number of damage, not ${bonus}`);
+    startMove(fighter, command.move, bonus);
     report.events.push({ frame: report.frame, kind: "move-started", fighter: fighter.id, detail: command.move });
     return;
   }

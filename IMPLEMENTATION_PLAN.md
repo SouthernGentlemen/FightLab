@@ -29,9 +29,9 @@ a mod grid, reads an opponent over a few rounds and chooses when to mix up.
 | Step | Content | State |
 | --- | --- | --- |
 | Design | `docs/RUN_DESIGN.md`, this plan, `AGENTS.md` | done |
-| 1. Rules, headless | bars, rounds, pause, Mixup, mixup plans, style; shapes, grid, bank, catalogue, compile; PRNG streams, shop, economy, opponents, run, save | in progress |
-| 2. Combat | kernel bonus and parry heal, adapter, compiled sides, C9 property test, determinism | pending |
-| 3. UI | 16:9 stage, prep, fight and pause, payday, run end, title, settings | pending |
+| 1. Rules, headless | bars, rounds, pause, Mixup, mixup plans, style; shapes, grid, bank, catalogue, compile; PRNG streams, shop, economy, opponents, run, save | done |
+| 2. Combat | kernel bonus and parry heal, adapter, compiled sides, C9 property test, determinism, the tuning bot and replays | done |
+| 3. UI | 16:9 stage, prep, fight and pause, payday, run end, title, settings | in progress |
 | 4. Tuning | bot runs, measured numbers below | pending |
 
 ## What the survey found
@@ -393,9 +393,23 @@ Run with `npm test`; all headless.
 
 ## Measured
 
-To be filled from the simulation as each step lands, and asserted by tests so a change to frame data,
-rules or prices shows up in a diff: outcomes of every loadout against the reference opponent, fight
-and round lengths, and — from the tuning bot — win rate by day, money by day and run length.
+From the simulation, not estimated. The first two are asserted by `tests/game/determinism.test.ts`,
+so a change to frame data, the rules or the reference opponent shows up in a diff.
+
+- Every one of the 729 loadouts against the reference opponent, bare builds, the player mixing up
+  after any round it lost on exchanges: **428 victories, 244 defeats, 57 draws** — every draw a double
+  knockout from a trade. No exchange in any of them disagreed with the matrix.
+- The default loadout wins in 3 rounds (exchanges 3–0, 2–1, 3–0), 793 ticks, with 88 health left.
+- Across those 729 fights: 3 to 6 rounds (median 4), 8 to 17 exchanges (median 10), 694 to 1604
+  ticks (median 877, about 15 s at 1× without the pauses). A clash lasts 24 to 52 ticks.
+- C9: a thousand random builds, nine pairs each, with and without a surge — 9,000 exchanges, none
+  disagreeing with the matrix, none healing without a parry.
+- Opponent generation takes about 0.25 ms; the 729 fights simulate in about 0.4 s.
+- The tuning bot (`npm run tune 1000`: fresh random bars every day, buys the dearest affordable mod
+  that fits, Mixups after a lost round, never sells) wins **9%** of runs; runs last a median 10 days
+  (5–19); it wins about half its fights on days 1–5 and about a third after day 8, when a grid it
+  never upgrades meets opponents still buying. Peak style: **C 58%, B 26%, A 8%, S 8%** — the same
+  shape the first design pass calibrated. Fights last 3.1–3.7 rounds on average.
 
 ## Out of scope
 

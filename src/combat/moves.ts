@@ -91,6 +91,7 @@ export const PARRY: MoveDefinition = {
     hitstopAttacker: 10,
     hitstopDefender: 10,
     pushbackAttacker: px(1.6),
+    heal: 0,
   },
 };
 

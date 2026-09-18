@@ -70,6 +70,9 @@ describe("an exchange resolved by the real combat simulation", () => {
       .reduce((sum, event) => sum + Number(event.detail.match(/-(\d+)/)![1]), 0);
     expect(100 - playerHealth).toBe(total("player"));
     expect(100 - opponentHealth).toBe(total("opponent"));
+    // Bare fighters' parries heal nothing, so health only ever goes down.
+    expect(of(events, "healed")).toHaveLength(0);
+    expect(match.battle.history[0].healing).toEqual([0, 0]);
   });
 
   it.each(PAIRS)("%s against %s resolves the same from either side of the stage", (player, opponent) => {

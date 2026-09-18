@@ -47,6 +47,8 @@ export interface ParryDefinition {
   hitstopAttacker: number;
   hitstopDefender: number;
   pushbackAttacker: number;
+  /** Health the parry restores to its owner, never past maximum health. */
+  heal: number;
 }
 
 export interface MoveDefinition {
@@ -83,6 +85,8 @@ export interface FighterState {
   /** The move running while `mode` is `move`, otherwise null. */
   move: string | null;
   moveFrame: number;
+  /** Damage every hit of the running move adds, carried into the counter its parry starts. */
+  bonus: number;
   health: number;
   hitstop: number;
   stun: number;
@@ -94,9 +98,12 @@ export interface SimulationState {
   fighters: [FighterState, FighterState];
 }
 
-/** What a fighter is told to do this tick. A move starts only if the fighter can act. */
+/**
+ * What a fighter is told to do this tick. A move starts only if the fighter can act, and may be
+ * committed with an integer damage bonus that every one of its hits adds.
+ */
 export type Command =
-  | { readonly kind: "move"; readonly move: string }
+  | { readonly kind: "move"; readonly move: string; readonly bonus?: number }
   | { readonly kind: "walk"; readonly direction: Facing }
   | null;
 
@@ -107,6 +114,7 @@ export type CombatEventKind =
   | "hit"
   | "damage-received"
   | "parried"
+  | "healed"
   | "defeated"
   | "state-changed"
   | "recovered";
@@ -127,6 +135,8 @@ export interface ContactEvent {
   overlap: Aabb;
   damage: number;
   parried: boolean;
+  /** Health the target regained through this contact: a parry's heal, as actually applied. */
+  heal: number;
 }
 
 export interface FrameReport {

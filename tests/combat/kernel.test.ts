@@ -2,13 +2,23 @@ import { describe, expect, it } from "vitest";
 
 import { MARKS } from "../../src/combat/adapter.ts";
 import { CombatSimulation, debugBoxes, movePhase, px, validateContent } from "../../src/combat/kernel/index.ts";
-import type { Command, FighterState, FrameReport, MoveDefinition } from "../../src/combat/kernel/index.ts";
+import type { Command, FighterDefinition, FighterState, FrameReport, MoveDefinition } from "../../src/combat/kernel/index.ts";
 import { FIGHTLAB_FIGHTER, JAB, OVERHEAD, PARRY } from "../../src/combat/moves.ts";
 
-const move = (id: string): Command => ({ kind: "move", move: id });
+const move = (id: string, bonus?: number): Command => ({ kind: "move", move: id, bonus });
 
-function simulation(startX: readonly [number, number] = MARKS): CombatSimulation {
-  return new CombatSimulation({ definitions: [FIGHTLAB_FIGHTER, FIGHTLAB_FIGHTER], startX });
+function simulation(startX: readonly [number, number] = MARKS, definitions: readonly [FighterDefinition, FighterDefinition] = [FIGHTLAB_FIGHTER, FIGHTLAB_FIGHTER]): CombatSimulation {
+  return new CombatSimulation({ definitions, startX });
+}
+
+/** The fighter with a parry that heals. */
+function healing(heal: number): FighterDefinition {
+  return { ...FIGHTLAB_FIGHTER, moves: { ...FIGHTLAB_FIGHTER.moves, parry: { ...PARRY, parry: { ...PARRY.parry!, heal } } } };
+}
+
+/** When everything happened, leaving out how much. */
+function timeline(reports: readonly FrameReport[]): string[] {
+  return reports.flatMap((report) => report.events.map((event) => `${event.frame} ${event.kind} ${event.fighter ?? event.source ?? ""}`));
 }
 
 /** One tick with the given commands, then `idle` ticks of nothing. Returns every report. */
@@ -196,13 +206,76 @@ describe("the combat kernel", () => {
       .toThrow(/no move 'headbutt'/);
   });
 
+  it("adds a committed move's bonus to every hit it lands", () => {
+    const sim = simulation();
+    const reports = run(sim, [move("jab", 5), null], 5);
+    expect(reports.at(-1)!.contacts).toMatchObject([{ source: "player", damage: 12 + 5 }]);
+    expect(sim.getState().fighters[1].health).toBe(100 - 17);
+    // The bonus belongs to the move: once it ends, nothing carries it.
+    run(sim, [null, null], 60);
+    expect(sim.getState().fighters[0].bonus).toBe(0);
+  });
+
+  it("carries a parry's bonus into the riposte it starts, so a parry hurts only through its counter", () => {
+    const sim = simulation();
+    const [player, opponent] = sim.getState().fighters;
+    const reports = run(sim, [move("jab"), move("parry", 4)], 60);
+    expect(opponent.health).toBe(100);
+    expect(player.health).toBe(100 - 14 - 4);
+    expect(events(reports, "damage-received")).toMatchObject([{ fighter: "player", detail: "-18 health" }]);
+    // The parried jab itself dealt nothing, bonus or not.
+    expect(reports.flatMap((report) => report.contacts).filter((contact) => contact.parried)).toMatchObject([{ damage: 0 }]);
+  });
+
+  it("gives each side of a trade its own bonus, whichever is applied first", () => {
+    for (const [first, second] of [[3, 7], [7, 3]]) {
+      const sim = simulation();
+      run(sim, [move("jab", first), move("jab", second)], 5);
+      const [player, opponent] = sim.getState().fighters;
+      expect([player.health, opponent.health]).toEqual([100 - 12 - second, 100 - 12 - first]);
+    }
+  });
+
+  it("never lets a bonus change when anything happens", () => {
+    for (const [first, second] of [["jab", "overhead"], ["jab", "parry"], ["overhead", "parry"], ["jab", "jab"], ["overhead", "overhead"]]) {
+      const plain = run(simulation(), [move(first), move(second)], 90);
+      const boosted = run(simulation(), [move(first, 9), move(second, 6)], 90);
+      expect(timeline(boosted), `${first} against ${second}`).toEqual(timeline(plain));
+    }
+  });
+
+  it("heals the parrier, never past maximum health, and reports what it actually healed", () => {
+    for (const [start, healed] of [[80, 5], [98, 2], [100, 0]]) {
+      const sim = simulation(MARKS, [FIGHTLAB_FIGHTER, healing(5)]);
+      sim.getState().fighters[1].health = start;
+      const reports = run(sim, [move("jab"), move("parry")], 5);
+      expect(reports.at(-1)!.contacts).toMatchObject([{ parried: true, damage: 0, heal: healed }]);
+      expect(sim.getState().fighters[1].health).toBe(start + healed);
+      expect(events(reports, "healed")).toHaveLength(healed > 0 ? 1 : 0);
+    }
+  });
+
+  it("heals only through a parry: an overhead through the guard heals nobody", () => {
+    const sim = simulation(MARKS, [FIGHTLAB_FIGHTER, healing(5)]);
+    const reports = run(sim, [move("overhead"), move("parry")], 40);
+    expect(events(reports, "healed")).toHaveLength(0);
+    expect(sim.getState().fighters[1].health).toBe(100 - 16);
+  });
+
+  it("refuses a bonus or a heal that is not a whole, non-negative number", () => {
+    expect(() => simulation().step([move("jab", 1.5), null])).toThrow(/whole number of damage/);
+    expect(() => simulation().step([move("jab", -1), null])).toThrow(/whole number of damage/);
+    expect(() => validateContent(healing(-1))).toThrow(/parry heal/);
+    expect(() => validateContent(healing(2.5))).toThrow(/parry heal/);
+  });
+
   it("keeps every position, velocity and timer an integer", () => {
     const sim = simulation();
     const programs: Array<[string, string]> = [["jab", "overhead"], ["parry", "jab"], ["overhead", "overhead"], ["parry", "parry"]];
     for (const [first, second] of programs) {
       run(sim, [move(first), move(second)], 70);
       for (const fighter of sim.getState().fighters) {
-        for (const value of [fighter.x, fighter.vx, fighter.health, fighter.hitstop, fighter.stun, fighter.moveFrame, fighter.stateFrame]) {
+        for (const value of [fighter.x, fighter.vx, fighter.health, fighter.bonus, fighter.hitstop, fighter.stun, fighter.moveFrame, fighter.stateFrame]) {
           expect(Number.isInteger(value)).toBe(true);
         }
       }

@@ -24,9 +24,10 @@ export function movePhase(fighter: FighterState, move: MoveDefinition | null): M
   return "recovery";
 }
 
-export function startMove(fighter: FighterState, move: string): void {
+export function startMove(fighter: FighterState, move: string, bonus = 0): void {
   fighter.move = move;
   fighter.moveFrame = 0;
+  fighter.bonus = bonus;
   fighter.hitTargets = [];
   fighter.vx = 0;
   enterMode(fighter, "move");
@@ -44,6 +45,7 @@ export function advanceMove(fighter: FighterState, move: MoveDefinition): boolea
 export function leaveMove(fighter: FighterState, mode: FighterMode): void {
   fighter.move = null;
   fighter.moveFrame = 0;
+  fighter.bonus = 0;
   fighter.hitTargets = [];
   enterMode(fighter, mode);
 }

@@ -2,7 +2,7 @@
   "name": "fightlab",
   "version": "0.1.0",
   "private": true,
-  "description": "A minimal deterministic autobattler: program a five-action loop and watch it resolve.",
+  "description": "A seeded run-based autobattler: build two three-action bars, pack a mod grid, and choose when to mix up.",
   "type": "module",
   "scripts": {
     "predev": "node pipelines/pin.ts",
@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "tune": "node pipelines/tune.ts",
     "verify": "npm run check:boneyard && npm run typecheck && npm test && vite build"
   },
   "dependencies": {

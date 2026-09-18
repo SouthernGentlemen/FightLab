@@ -8,7 +8,8 @@ import { currentMove, movePhase } from "../combat/kernel/index.ts";
 import { FixedClock } from "../game/clock.ts";
 import type { BattleSpeed } from "../game/clock.ts";
 import { DEFAULT_MATCH, Match } from "../game/match.ts";
-import { ROSTER } from "../game/roster.ts";
+import { PLAYER_FIGURE } from "../game/roster.ts";
+import { OPPONENT_FIGURES } from "../run/opponents.ts";
 import type { ClipFrame } from "../render/animation.ts";
 import { loadFigureModel } from "../render/figure.ts";
 import { Stage } from "../render/stage.ts";
@@ -264,7 +265,7 @@ export function mountPlay(root: HTMLElement, options: PlayOptions): () => void {
   };
   window.addEventListener("keydown", onKey);
 
-  Promise.all([loadFigureModel(ROSTER.player), loadFigureModel(ROSTER.opponent)])
+  Promise.all([loadFigureModel(PLAYER_FIGURE), loadFigureModel(OPPONENT_FIGURES[0])])
     .then((models) => {
       if (disposed) return;
       stage = new Stage(stageHost, models);

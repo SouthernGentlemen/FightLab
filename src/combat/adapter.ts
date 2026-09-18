@@ -1,12 +1,24 @@
+import { ACTION_TYPES } from "../battle/actions.ts";
 import type { ActionTable, ActionType } from "../battle/actions.ts";
 import type { Arena, ArenaStatus, ArenaStep, CommitContext } from "../battle/director.ts";
 import { CombatSimulation, isActionable, px } from "./kernel/index.ts";
 import type { Command, FighterDefinition, FighterState, FrameReport, SimulationState } from "./kernel/index.ts";
 
-/** One side of a fight: the frame data it runs on and what each action means to it. */
+/**
+ * One side of a fight: the frame data it runs on, what each action means to it, and the extra damage
+ * its build gives each action — Block's reaches the riposte, through the parry that starts it. None
+ * of it is timing: a side changes how hard a move lands, never when.
+ */
 export interface CombatSide {
   readonly fighter: FighterDefinition;
   readonly actions: ActionTable;
+  readonly bonus: Readonly<Record<ActionType, number>>;
+  /** Further damage every hit adds in a round the side entered by switching bars. */
+  readonly surge: number;
+}
+
+function wholeDamage(value: number): boolean {
+  return Number.isInteger(value) && value >= 0;
 }
 
 /**
@@ -30,9 +42,12 @@ export class CombatArena implements Arena {
   private pending: [Command, Command] = [null, null];
 
   constructor(sides: readonly [CombatSide, CombatSide]) {
-    for (const { fighter, actions } of sides) {
+    for (const { fighter, actions, bonus, surge } of sides) {
       for (const action of Object.values(actions)) {
         if (!fighter.moves[action.move]) throw new Error(`${fighter.id}: ${action.id} names missing move '${action.move}'`);
+      }
+      if (!ACTION_TYPES.every((action) => wholeDamage(bonus[action])) || !wholeDamage(surge)) {
+        throw new Error(`${fighter.id}: bonuses must be whole, non-negative damage`);
       }
     }
     this.sides = sides;
@@ -43,11 +58,13 @@ export class CombatArena implements Arena {
     return this.simulation.getState();
   }
 
-  commit(player: ActionType, opponent: ActionType, _context: CommitContext): void {
-    this.pending = [
-      { kind: "move", move: this.sides[0].actions[player].move },
-      { kind: "move", move: this.sides[1].actions[opponent].move },
-    ];
+  commit(player: ActionType, opponent: ActionType, context: CommitContext): void {
+    this.pending = [this.command(0, player, context.mixedUp[0]), this.command(1, opponent, context.mixedUp[1])];
+  }
+
+  private command(index: 0 | 1, action: ActionType, mixedUp: boolean): Command {
+    const side = this.sides[index];
+    return { kind: "move", move: side.actions[action].move, bonus: side.bonus[action] + (mixedUp ? side.surge : 0) };
   }
 
   status(): ArenaStatus {
@@ -71,8 +88,14 @@ export class CombatArena implements Arena {
     ];
     this.pending = [null, null];
     const before = [fighters[0].health, fighters[1].health];
-    this.lastReport = this.simulation.step(commands);
-    return { damage: [before[0] - fighters[0].health, before[1] - fighters[1].health], healing: [0, 0] };
+    const report = this.simulation.step(commands);
+    this.lastReport = report;
+    const healing: [number, number] = [0, 0];
+    for (const contact of report.contacts) healing[contact.target === "player" ? 0 : 1] += contact.heal;
+    return {
+      damage: [before[0] - fighters[0].health + healing[0], before[1] - fighters[1].health + healing[1]],
+      healing,
+    };
   }
 
   private onMark(fighter: FighterState, index: number): boolean {

@@ -5,13 +5,13 @@ import type { Plugin } from "vite";
 import { BONEYARD_ROOT } from "boneyard/paths";
 
 import { fighterArtJson } from "./pipelines/figures.ts";
-import { ROSTER } from "./src/game/roster.ts";
+import { FIGURES } from "./src/game/roster.ts";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const FIGHTER = /^\/fighters\/([a-z][a-z0-9-]*)\.json$/;
 
 /**
- * Serves each roster figure as Boneyard's loader assembled it, and emits the same bytes into a
+ * Serves each figure the game draws as Boneyard's loader assembled it, and emits the same bytes into a
  * build. Art is fetched at runtime, never bundled, and nothing here reshapes what Boneyard said.
  */
 function boneyardFighters(): Plugin {
@@ -34,7 +34,7 @@ function boneyardFighters(): Plugin {
       });
     },
     generateBundle() {
-      for (const figure of new Set(Object.values(ROSTER))) {
+      for (const figure of FIGURES) {
         this.emitFile({ type: "asset", fileName: `fighters/${figure}.json`, source: fighterArtJson(figure) });
       }
     },

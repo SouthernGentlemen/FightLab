@@ -7,7 +7,10 @@ import { REFERENCE_OPPONENT, opponentPlan } from "../../src/battle/mixup.ts";
 import type { OpponentPlan } from "../../src/battle/mixup.ts";
 import { FixedClock, SPEEDS } from "../../src/game/clock.ts";
 import type { BattleSpeed } from "../../src/game/clock.ts";
+import { fightFor } from "../../src/game/fight.ts";
 import { DEFAULT_MATCH, Match } from "../../src/game/match.ts";
+import type { MatchConfig } from "../../src/game/match.ts";
+import { buy, beginFight, newRun } from "../../src/run/run.ts";
 
 const FRAME_MS = 1000 / 60;
 
@@ -21,6 +24,22 @@ const whenBeaten: Policy = (match) => {
 
 function match(player: ActionLoadout, opponent: OpponentPlan = REFERENCE_OPPONENT): Match {
   return new Match({ ...DEFAULT_MATCH, player, opponent });
+}
+
+/** Runs a fight through the real clock at `speed`, deciding at each pause. */
+function clocked(config: MatchConfig, speed: BattleSpeed, policy: Policy) {
+  const running = new Match(config);
+  const clock = new FixedClock();
+  let frames = 0;
+  while (!running.over) {
+    for (let tick = clock.advance(FRAME_MS, speed); tick > 0 && !running.over; tick--) {
+      if (running.paused) decide(running, policy);
+      else running.step();
+    }
+    frames++;
+    if (frames > 100_000) throw new Error("the fight never finished");
+  }
+  return { frames, result: result(running) };
 }
 
 function decide(running: Match, policy: Policy): void {
@@ -54,25 +73,27 @@ describe("determinism", () => {
   });
 
   it("changes pacing with battle speed and never the outcome", () => {
-    const loadout = actionLoadout(["strike", "block", "tech"], ["block", "tech", "strike"]);
-    const runs = SPEEDS.map((speed: BattleSpeed) => {
-      const running = match(loadout);
-      const clock = new FixedClock();
-      let frames = 0;
-      while (!running.over) {
-        for (let tick = clock.advance(FRAME_MS, speed); tick > 0 && !running.over; tick--) {
-          if (running.paused) decide(running, whenBeaten);
-          else running.step();
-        }
-        frames++;
-        if (frames > 100_000) throw new Error("the fight never finished");
-      }
-      return { frames, result: result(running) };
-    });
+    const config = { ...DEFAULT_MATCH, player: actionLoadout(["strike", "block", "tech"], ["block", "tech", "strike"]) };
+    const runs = SPEEDS.map((speed: BattleSpeed) => clocked(config, speed, whenBeaten));
     for (const run of runs) expect(run.result).toEqual(runs[0].result);
     // Only wall-clock time differs: twice the speed, about half the frames.
     expect(Math.abs(runs[1].frames * 2 - runs[0].frames)).toBeLessThanOrEqual(8);
     expect(Math.abs(runs[2].frames * 4 - runs[0].frames)).toBeLessThanOrEqual(16);
+  });
+
+  it("ends identically at every speed with both grids built and a generated opponent switching bars", () => {
+    const run = newRun(606);
+    run.day = 7;
+    run.money = 40;
+    run.shop = { ...run.shop, offers: ["corona", "thunderclap", "eclipse", null, null] };
+    buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
+    buy(run, 1, { grid: { x: 0, y: 1, rotation: 2 } });
+    beginFight(run);
+    const { config, opponent } = fightFor(run);
+    expect(opponent.grid.length).toBeGreaterThan(0);
+    const alternate: Policy = (running) => running.battle.round % 2 === 1;
+    const runs = SPEEDS.map((speed: BattleSpeed) => clocked(config, speed, alternate));
+    for (const each of runs) expect(each.result).toEqual(runs[0].result);
   });
 
   it("carries health from one round into the next in the real arena", () => {
@@ -101,6 +122,17 @@ describe("determinism", () => {
     // A measurement, not a target: a change to frame data, the rules or the reference opponent moves
     // these numbers in a diff where someone has to look at them.
     expect(tally).toEqual({ victory: 428, defeat: 244, draw: 57 });
+  });
+
+  it("measures the reference fight", () => {
+    // Bar A answers the reference opponent's first bar slot for slot; its switch to the second bar
+    // takes one exchange back, and its switch home again loses the fight. A measurement, like the
+    // tally above.
+    const finished = play(defaultLoadout());
+    expect(finished.battle.outcome).toMatchObject({ result: "victory", reason: "ko", tick: 793 });
+    expect(finished.battle.rounds.map((round) => round.wins)).toEqual([[3, 0], [2, 1], [3, 0]]);
+    expect(finished.arena.state.fighters.map((fighter) => fighter.health)).toEqual([88, 0]);
+    expect(finished.decisions).toEqual([false, false]);
   });
 
   it("ends a round of guards against guards as a stalemate when nobody switches", () => {
