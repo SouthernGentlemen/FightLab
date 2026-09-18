@@ -6,10 +6,10 @@
   "type": "module",
   "scripts": {
     "predev": "node pipelines/pin.ts",
-    "dev": "vite",
+    "dev": "node pipelines/dev.ts",
     "prebuild": "node pipelines/pin.ts",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "node pipelines/dev.ts preview",
     "check:boneyard": "node pipelines/pin.ts",
     "pin:boneyard": "node pipelines/pin.ts --update",
     "typecheck": "tsc --noEmit",

@@ -178,7 +178,7 @@ docs/RUN_DESIGN.md  the design and the record of its decisions
 docs/MODS.md        the mod system: elements, resources, debuffs, stars, rarity, ports, the Armory
 boneyard.pin.json   the Boneyard commit and digest FightLab is verified against
 index.html          the one page
-pipelines/          Node only: the Boneyard pin, the figure server/emitter, the tuning bot
+pipelines/          Node only: the Boneyard pin, the dev teardown, the figure server/emitter, the tuning bot
 src/run/            seeded run: random streams, shop, economy, opponents, run state, save, collection
 src/mods/           tags, rarity, stars, ports, registry, balance, grid and bank, compile, the
                     resource engine, the Armory's catalogue — pure rules
@@ -195,9 +195,10 @@ tests/              arranged by the same layers
 ## Commands
 
 ```
-npm run dev              check the pin, then serve the game at http://127.0.0.1:5190
+npm run dev              check the pin, stop any FightLab server left on the port, then serve the game
+                         at http://127.0.0.1:5190 (`npm run dev -- --port <n>` serves elsewhere)
 npm run build            check the pin, then a production build in dist/
-npm run preview          serve dist/
+npm run preview          the same teardown, then serve dist/ at http://127.0.0.1:5191
 npm run check:boneyard   fail if the installed Boneyard differs from boneyard.pin.json
 npm run pin:boneyard     accept the installed Boneyard: rewrite the pin
 npm run typecheck        the strip-only TypeScript dialect

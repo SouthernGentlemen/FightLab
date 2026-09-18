@@ -36,9 +36,12 @@ and pinned by [`boneyard.pin.json`](boneyard.pin.json):
 
 ```bash
 npm install
-npm run dev      # checks the pin, then http://127.0.0.1:5190
+npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
 npm run verify   # pin, typecheck, tests, production build
 ```
+
+A FightLab server still running from another terminal, a preview pane or an ended session is stopped
+first, so `npm run dev` always starts; anything else holding the port is named and left alone.
 
 The game is one 16:9 composition that scales to fill the window; play it landscape. If the pin check
 fails, Boneyard has changed underneath the game. It says which commit it expects and how to accept the
