@@ -21,10 +21,11 @@ no third-party origin.
 
 A build writes each roster figure's assembled art into `dist/fighters/<figure>.json`.
 
-- `barst` (the opponent) is traced from Fire Emblem Heroes art, Copyright 2017 Nintendo /
-  INTELLIGENT SYSTEMS. No redistribution licence for it was established.
+- `barst`, `kiran` and `yuliya` (the opponents) are traced from Fire Emblem Heroes art,
+  Copyright 2017 Nintendo / INTELLIGENT SYSTEMS, and wear royal-guard cosmetics repacked from
+  the same source. No redistribution licence for any of them was established.
 - `fighter` (the player) is Boneyard's authored figure, but it wears the field-kit cosmetics,
-  whose source and licence are unresolved.
+  whose source and licence are unresolved. All three opponents wear field-kit pieces too.
 
 Do not publish or deploy a build, and do not infer permission to redistribute any of this from
 its presence in `dist/`.
