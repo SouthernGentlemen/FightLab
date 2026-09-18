@@ -39,8 +39,9 @@ src/run/  src/mods/    src/battle/         src/combat/             src/render/
 1. **Run** decides the day. The seeded run — days, hearts, trophies, money, the shop, opponents,
    payday, the autosave — as pure TypeScript over `src/mods/` and `src/battle/`. It never runs a
    fight; it is told how one ended.
-2. **Mods** decide the build. Shapes, the grid and the bank, the catalogue, and `compileBuild`, which
-   turns a grid into plain numbers. Pure TypeScript over `src/battle/`'s vocabulary.
+2. **Mods** decide the build. Tags, rarity, stars, ports, the one registry, shapes, the grid and
+   the bank, `compileBuild`, which turns a grid into lane power and a program, and the resource and
+   debuff engine that runs the program. Pure TypeScript over `src/battle/`'s vocabulary.
 3. **Battle** decides the fight. The two bars, the rounds, the cursor through them, the pause and
    Mixup, opponents' mixup plans, the matchup, the exchange cycle and style. Pure TypeScript that
    imports nothing outside `src/battle/`. It works against the `Arena` interface it declares, never
@@ -52,8 +53,9 @@ src/run/  src/mods/    src/battle/         src/combat/             src/render/
    sampler, forward kinematics and depth order on an original arena. It never writes simulation
    state.
 
-`src/game/` composes: a compiled build becomes a combat side, a run's day becomes a fight, and it owns
-the fixed-step clock, the roster and the settings. `src/ui/` is the screens and nothing else.
+`src/game/` composes: a compiled build becomes a combat side, the engine runs around the combat arena
+(`ModdedArena`), a run's day becomes a fight, and it owns the fixed-step clock, the roster and the
+settings. `src/ui/` is the screens and nothing else.
 
 ## Contracts
 
@@ -77,8 +79,10 @@ statement of the cycle Strike › Tech › Block › Strike. A round plays the a
 slot 1 against slot 1, 2 against 2, 3 against 3, and never wraps inside a round; the pause begins only
 after slot 3 has settled, and a knockout ends the fight wherever it lands. The director never touches
 health, position or timing: it commits one action per fighter to the arena and advances only when
-combat state says the exchange has settled — never on a browser timer. Damage exists only as hitbox
-contact inside the kernel, and healing only as a kernel event. The frame data is authored so the
+combat state says the exchange has settled — never on a browser timer. Damage exists only inside the
+kernel: as hitbox contact, or as an affliction (Burn, Poison) the arena applies once, after a
+round's slot 3 has settled, reported as a kernel event and able to knock a fighter out. Healing
+exists only as a kernel event. The frame data is authored so the
 physics reproduces the matrix — a jab lands while an overhead is still in startup, a parry absorbs a
 jab and answers it, an overhead goes through a parry — and `tests/combat/exchange.test.ts` proves all
 nine pairs. When physics and the matrix disagree the director records `agrees: false` rather than
@@ -88,16 +92,18 @@ correcting the result.
 DOM, a wall clock or `Math.random`, and keeps every position, velocity, timer, health value and
 damage bonus an integer (fixed point, `SCALE = 100`). `kernel/index.ts` is its public surface.
 Contacts are detected against the state before any is applied, so the order fighters are listed in
-never decides a trade. Its two generic extensions — a damage bonus a committed move carries into its
-hits and its parry's counter, and a parry that heals — know nothing of mods.
+never decides a trade. Its generic extensions — a damage bonus a committed move carries into its
+hits and its parry's counter, a parry that heals by its own amount plus a committed one, exposure
+that the next landed hit adds and clears, and an affliction between ticks — know nothing of mods.
 
 **C4 — Strategy stays strategic.** `strike`, `tech` and `block` exist in `src/battle/`,
 `src/mods/`, `src/run/`, `src/combat/adapter.ts`, `src/game/` and `src/ui/`, and nowhere else. The
 kernel and the frame data speak moves (`jab`, `overhead`, `parry`, `riposte`); rendering speaks clips.
 A move names the clip that presents it, and every placeholder is listed beside the motion it stands in
 for (`IMPLEMENTATION_PLAN.md`, *Animation mapping*), so replacing one is a content change no battle
-rule can notice. Affinities — `solar`, `void`, `arc`, `neutral` — are mod properties and never name an
-action.
+rule can notice. A mod has one or two tags from two families: elements — `solar`, `arc`, `void`,
+`neutral` — which are mod properties and never name an action, and actions, which say when a mod
+fires (in an exchange where its fighter plays that action).
 
 **C5 — Determinism, at every level and every speed.** A run is its seed plus the player's inputs.
 Every generated thing — shop offers and rerolls, opponents, their bars, builds and mixup plans — is
@@ -115,8 +121,9 @@ Boneyard's own loader assembled (`loadFigure` and `assembleFigureBones`, seriali
 bundled. Gameplay state never holds a bone transform, and the renderer never writes gameplay
 state.
 
-**C7 — The game screens are the game.** Title, Settings, Prep, Fight (with its round pause), Payday
-and Run end. Settings lists only settings that work. The prep screen never describes the next
+**C7 — The game screens are the game.** Title (Play, Armory, Settings), Settings, Armory, Prep,
+Fight (with its round pause), Payday and Run end. The Armory reads the same registry the fight runs
+on. Settings lists only settings that work. The prep screen never describes the next
 opponent. Hitboxes, skeletons and timing readouts exist only behind `?debug`, or the backtick key on a
 development server, and never in the normal game.
 
@@ -124,11 +131,13 @@ development server, and never in the normal game.
 serves figure art from `dist/fighters/`. [`LICENSE.md`](LICENSE.md) says what that carries and
 points at Boneyard's index for everything upstream of it. Nothing built here is published.
 
-**C9 — Mods never decide an exchange.** A mod may change damage, maximum health, parry healing and
-riposte damage. It never changes startup, active or recovery frames, hitbox or parry windows, which
-hitboxes break guard, the order of a bar or which bar is active; Mixup is only ever the player's
-decision or an opponent's seeded plan. `compileBuild` is the only bridge from mods to combat, and a
-property test runs all nine pairs under random builds.
+**C9 — Mods never decide an exchange.** A mod may add damage to a move and its riposte, healing to a
+parry, and Burn, Shock and Poison to the opponent. It never changes startup, active or recovery
+frames, hitbox or parry windows, which hitboxes break guard, the order of a bar or which bar is
+active, and nothing it does reduces a hit that lands; Mixup is only ever the player's decision or an
+opponent's seeded plan. `compileBuild` is the only bridge from a grid to combat and `ModdedArena` the
+only place its engine meets the arena; a property test runs all nine pairs under a thousand random
+registry builds at random stars and rotations, with their mods firing.
 
 **C10 — One 16:9 composition.** Every screen is authored on a 1600 × 900 design grid inside the
 largest 16:9 rectangle the display allows, scaled as a whole and rendered at the device's native
@@ -137,7 +146,8 @@ too-small display gets an unsupported-state card, never a rearranged UI.
 
 **C11 — Saves are versioned.** The autosave is `{ version, run, fight }`. A document with a version
 the game does not read, or one that fails validation, is discarded whole. Changing the saved shape
-means a new version and, if old saves are to survive, a migration with a test.
+means a new version and, if old saves are to survive, a migration with a test. Version 2 came with the
+mod registry: a version-1 save names mods that no longer exist, so it is discarded.
 
 ## Lineage
 
@@ -165,11 +175,13 @@ autobattler, not a fork kept in sync.
 ```
 AGENTS.md, IMPLEMENTATION_PLAN.md, README.md, LICENSE.md
 docs/RUN_DESIGN.md  the design and the record of its decisions
+docs/MODS.md        the mod system: elements, resources, debuffs, stars, rarity, ports, the Armory
 boneyard.pin.json   the Boneyard commit and digest FightLab is verified against
 index.html          the one page
 pipelines/          Node only: the Boneyard pin, the figure server/emitter, the tuning bot
-src/run/            seeded run: random streams, shop, economy, opponents, run state, save
-src/mods/           shapes, grid and bank, catalogue, compile — pure rules
+src/run/            seeded run: random streams, shop, economy, opponents, run state, save, collection
+src/mods/           tags, rarity, stars, ports, registry, balance, grid and bank, compile, the
+                    resource engine, the Armory's catalogue — pure rules
 src/battle/         actions, matchup, bars, mixup plans, director, style — pure rules
 src/combat/kernel/  the sealed simulation
 src/combat/         frame data and the adapter implementing the battle Arena

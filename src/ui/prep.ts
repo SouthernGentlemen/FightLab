@@ -251,7 +251,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
     const rank = shopRank(run.day);
     odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => chance === 0 ? []
-      : [h("span", { class: "odds__tier", title: RARITY[RARITIES[index]].label }, h("i", { class: "gem", "data-material": RARITY[RARITIES[index]].material }), `${chance}%`)]));
+      : [h("span", { class: "odds__rarity", title: RARITY[RARITIES[index]].label }, h("i", { class: "gem", "data-material": RARITY[RARITIES[index]].material }), `${chance}%`)]));
     setText(money, `$${run.money}`);
     lock.setAttribute("aria-pressed", String(run.shop.locked));
     setText(lock.firstElementChild!, run.shop.locked ? "Locked" : "Lock");
