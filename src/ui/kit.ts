@@ -3,12 +3,17 @@ import type { ActionType } from "../battle/actions.ts";
 import type { BarId } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import type { StyleMeter } from "../battle/style.ts";
+import { turnSide } from "../mods/ports.ts";
 import { RARITY } from "../mods/rarity.ts";
+import type { Material } from "../mods/rarity.ts";
 import { REGISTRY } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
+import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
+import { TAG_LABEL, tileFill } from "../mods/tags.ts";
+import type { ModTag, ModTags } from "../mods/tags.ts";
 import { button, h, icon, replay, setData, setText } from "./dom.ts";
 import type { IconName } from "./icons.ts";
 
@@ -25,23 +30,52 @@ export function modIcon(mod: ModId): IconName {
   return REGISTRY[mod].visual.glyph;
 }
 
+/** A tag's own glyph: the element's or the action's. Neutral has none, so it borrows the chip. */
+export function tagIcon(tag: ModTag): IconName {
+  return tag === "neutral" ? "chip" : tag;
+}
+
+/** `★★` in the rarity's material: the upgrade level, never the rarity itself. */
+export function starRow(stars: Stars, material: Material, className = "stars"): HTMLElement {
+  return h("span", { class: className, "data-material": material, role: "img", "aria-label": `${stars} star${stars === 1 ? "" : "s"}` }, starText(stars));
+}
+
+/** The type written out, each tag with its glyph and colour. */
+export function tagChips(tags: ModTags): HTMLElement {
+  return h("span", { class: "tagchips" }, ...tags.map((tag) =>
+    h("span", { class: "tagchip", "data-c1": tag }, icon(tagIcon(tag)), TAG_LABEL[tag].toUpperCase())));
+}
+
+/** Sets the one or two tag colours a mod's fill is split between. */
+export function paintTags<T extends HTMLElement>(node: T, tags: ModTags): T {
+  const { colors } = tileFill(tags);
+  node.dataset.c1 = colors[0];
+  node.dataset.c2 = colors[1] ?? colors[0];
+  return node;
+}
+
 /**
- * A mod drawn as bevelled blocks in its shape. The same markup draws full size on the grid and in
- * miniature in the bank and the shop; `--cell` on an ancestor decides which.
+ * A mod drawn as bevelled blocks in its shape, each block split between its tag colours, with its
+ * ports on the sides its rotation points them at and its stars in its rarity's material. The same
+ * markup draws full size on the grid and in miniature in the bank and the shop; `--cell` on an
+ * ancestor decides which. Only the blocks turn: nothing written on them is ever rotated.
  */
 export function modArt(mod: ModId, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
   const definition = REGISTRY[mod];
   const cells = shapeCells(definition.shape, rotation);
   const [width, height] = shapeSize(cells);
-  const node = h("div", {
+  const node = paintTags(h("div", {
     class: `mod ${className}`.trim(),
     "data-affinity": definition.tags[0],
     "data-stars": String(stars),
     style: `width: calc(var(--cell) * ${width}); height: calc(var(--cell) * ${height})`,
-  });
+  }), definition.tags);
   cells.forEach(([x, y], index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
-    if (index === 0) cell.append(icon(modIcon(mod), "icon mod__icon"), h("span", { class: "gem", "data-material": RARITY[definition.rarity].material }));
+    for (const port of definition.ports) {
+      if (port.cell === index) cell.append(h("i", { class: "port", "data-side": turnSide(port.side, rotation), "data-flow": port.flow, "data-resource": port.resource }));
+    }
+    if (index === 0) cell.append(icon(modIcon(mod), "icon mod__icon"), starRow(stars, RARITY[definition.rarity].material, "stars mod__stars"));
     node.append(cell);
   });
   return node;

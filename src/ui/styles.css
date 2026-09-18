@@ -29,9 +29,10 @@
 
   --solar: #ff8c42;
   --void: #9b6bff;
-  --arc: #3fd0f5;
+  --arc: #35d07f;
   --neutral: #aab4bf;
 
+  --iron: #8f9aa5;
   --bronze: #d08a4c;
   --silver: #c3ced8;
   --gold: #f6cd3d;
@@ -165,10 +166,11 @@ p, h1, h2 { margin: 0; }
 }
 .mod__icon { position: absolute; inset: 20%; width: 60%; height: 60%; }
 .gem { position: absolute; top: 7%; right: 7%; width: 17%; height: 17%; transform: rotate(45deg); border: .2rem solid var(--ink); background: var(--g); }
-.gem[data-tier="1"] { --g: var(--bronze); }
-.gem[data-tier="2"] { --g: var(--silver); }
-.gem[data-tier="3"] { --g: var(--gold); }
-.gem[data-tier="4"] { --g: var(--diamond); }
+[data-material="iron"] { --g: var(--iron); }
+[data-material="bronze"] { --g: var(--bronze); }
+[data-material="silver"] { --g: var(--silver); }
+[data-material="gold"] { --g: var(--gold); }
+[data-material="diamond"] { --g: var(--diamond); }
 .mod--mini .mod__cell { border-width: .22rem; border-radius: calc(var(--cell) * .2); }
 .mod--mini .gem { display: none; }
 
@@ -510,3 +512,44 @@ p, h1, h2 { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
 }
+
+/* Mod types: one colour per tag, split on the diagonal for two. Tags are always written out too. */
+
+[data-c1="solar"] { --c1: var(--solar); } [data-c2="solar"] { --c2: var(--solar); }
+[data-c1="arc"] { --c1: var(--arc); } [data-c2="arc"] { --c2: var(--arc); }
+[data-c1="void"] { --c1: var(--void); } [data-c2="void"] { --c2: var(--void); }
+[data-c1="neutral"] { --c1: var(--neutral); } [data-c2="neutral"] { --c2: var(--neutral); }
+[data-c1="strike"] { --c1: var(--strike); } [data-c2="strike"] { --c2: var(--strike); }
+[data-c1="tech"] { --c1: var(--tech); } [data-c2="tech"] { --c2: var(--tech); }
+[data-c1="block"] { --c1: var(--block); } [data-c2="block"] { --c2: var(--block); }
+.mod__cell { background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%); }
+.mod__icon { filter: drop-shadow(0 .15rem 0 rgba(0, 0, 0, .25)); }
+
+/* Stars are the upgrade level, cast in the rarity's material. */
+.stars {
+  display: inline-flex; color: var(--g); font-weight: 900; line-height: 1; letter-spacing: -.04em; white-space: nowrap;
+  text-shadow: .15rem 0 var(--ink), -.15rem 0 var(--ink), 0 .15rem var(--ink), 0 -.15rem var(--ink);
+}
+.mod__stars { position: absolute; left: 6%; top: 3%; font-size: calc(var(--cell) * .27); }
+.mod--mini .mod__stars { display: none; }
+.slot__stars { position: absolute; right: .8rem; bottom: .4rem; font-size: 2rem; }
+.slot { position: relative; }
+
+/* Ports: a solid pill feeds out, a hollow one takes in, on the side the piece's rotation points it. */
+.port { position: absolute; z-index: 1; width: 36%; height: 13%; border: .2rem solid var(--ink); border-radius: 99rem; background: var(--r); }
+.port[data-flow="in"] { background: var(--paper); box-shadow: inset 0 0 0 .3rem var(--r); }
+.port[data-resource="heat"] { --r: var(--solar); }
+.port[data-resource="charge"] { --r: var(--arc); }
+.port[data-resource="void"] { --r: var(--void); }
+.port[data-side="n"] { top: -7%; left: 32%; }
+.port[data-side="s"] { bottom: -7%; left: 32%; }
+.port[data-side="e"] { right: -7%; top: 32%; width: 13%; height: 36%; }
+.port[data-side="w"] { left: -7%; top: 32%; width: 13%; height: 36%; }
+.mod--mini .port { display: none; }
+
+/* Burn, Shock and Poison under each fighter's hearts; nothing shows while a count is zero. */
+.debuffs { display: flex; gap: .8rem; min-height: 3.6rem; }
+.hud__health--opponent .debuffs { justify-content: flex-end; }
+.debuff { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .8rem .1rem .3rem; border: .25rem solid var(--ink); border-radius: 99rem; background: var(--paper); font-size: 2rem; }
+.debuff .icon { width: 2.8rem; height: 2.8rem; }
+.debuff.is-in { animation: stamp .3s ease-out; }

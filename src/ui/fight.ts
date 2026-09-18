@@ -9,6 +9,8 @@ import type { BattleSpeed } from "../game/clock.ts";
 import { fightFor, reportOf, resumeFight } from "../game/fight.ts";
 import { PLAYER_FIGURE } from "../game/roster.ts";
 import type { ClipFrame } from "../render/animation.ts";
+import { DEBUFFS } from "../mods/effects.ts";
+import type { ModState } from "../mods/resolve.ts";
 import { loadFigureModel } from "../render/figure.ts";
 import { Stage } from "../render/stage.ts";
 import type { DebugLayers, StageView } from "../render/stage.ts";
@@ -38,6 +40,17 @@ function verdict(player: ActionType, opponent: ActionType, result: MatchupResult
   if (result === "tie") return player === "block" ? "Both guard" : "Trade";
   const winner = result === "player" ? player : opponent;
   return `${ACTION_LABEL[winner]} wins`;
+}
+
+const DEBUFF_HINT = {
+  burn: "Burn: deals its stacks when a round ends, then halves",
+  shock: "Shock: the next hit that lands adds every stack, then it is gone",
+  poison: "Poison: deals half its stacks when a round ends, and stays",
+} as const;
+
+/** The engine's state for the debug panel. */
+function resources(state: ModState): string {
+  return `heat ${state.heat}  charge ${state.charge}/${state.capacity}  void ${state.voidCharge}  ·  burn ${state.burn}  shock ${state.shock}  poison ${state.poison}`;
 }
 
 const REASONS: Readonly<Record<OutcomeReason, string>> = {
@@ -82,6 +95,14 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
   const styles = [styleMeter("player"), styleMeter("opponent")] as const;
   const health = [heartsMeter("Your"), heartsMeter("Their", true)] as const;
   const names = [h("span", { class: "hud__name stroke" }, "You"), h("span", { class: "hud__name stroke" }, opponentName)];
+  // Burn, Shock and Poison under each fighter's hearts, read from the engine every frame.
+  const debuffs = [0, 1].map(() => {
+    const badges = DEBUFFS.map((debuff) => {
+      const count = h("b", {});
+      return { debuff, count, node: h("span", { class: "debuff", "data-debuff": debuff, title: DEBUFF_HINT[debuff], hidden: "" }, icon(debuff), count) };
+    });
+    return { badges, node: h("div", { class: "debuffs" }, ...badges.map(({ node }) => node)) };
+  });
   const round = h("div", { class: "hud__round stroke" });
   const speedLabel = h("span", { class: "stroke" });
   const speed = button(speedLabel, "btn btn--sm hud__speed", () => {
@@ -157,9 +178,9 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
     h("div", { class: "fight__dim" }),
     h("header", { class: "hud__top" },
       styles[0].node,
-      h("div", { class: "hud__health" }, names[0], health[0].node),
+      h("div", { class: "hud__health" }, names[0], health[0].node, debuffs[0].node),
       h("div", { class: "hud__center" }, round, speed),
-      h("div", { class: "hud__health hud__health--opponent" }, names[1], health[1].node),
+      h("div", { class: "hud__health hud__health--opponent" }, names[1], health[1].node, debuffs[1].node),
       styles[1].node),
     yourBar, exchange, foe, banner, pause, result,
     ...(debug || import.meta.env.DEV ? [debugPanel] : []));
@@ -200,7 +221,8 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
     const last = battle.rounds.at(-1)!;
     setText(pauseTitle, `Round ${last.round} over`);
     const [won, lost] = last.wins;
-    setText(pauseNote, won > lost ? `You took ${won} of ${last.exchanges}` : lost > won ? `They took ${lost} of ${last.exchanges}` : "Even round");
+    const afflicted = last.afflictions[0] + last.afflictions[1] > 0 ? ` · Burn and Poison: −${last.afflictions[1]} them, −${last.afflictions[0]} you` : "";
+    setText(pauseNote, `${won > lost ? `You took ${won} of ${last.exchanges}` : lost > won ? `They took ${lost} of ${last.exchanges}` : "Even round"}${afflicted}`);
     for (const { bar, chips, marker, node } of pauseBars) {
       battle.playerLoadout[bar].forEach((action, index) => paintChip(chips[index], action));
       const active = battle.bars[0] === bar;
@@ -210,7 +232,7 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
     setText(mixupNote, `Switch to ${BAR_NAME[otherBar(battle.bars[0])]}`);
     setText(fightNote, `Round ${battle.round + 1}`);
     const repeats = sameBar(battle.playerLoadout[last.bars[0]], battle.playerLoadout[battle.bars[0]]);
-    warning.hidden = !(last.damage[0] === 0 && last.damage[1] === 0 && repeats);
+    warning.hidden = !(last.damage[0] + last.damage[1] + last.afflictions[0] + last.afflictions[1] === 0 && repeats);
   }
 
   function draw(): void {
@@ -232,6 +254,14 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
     if (stage !== null) frames = stage.render(stageView(), debug);
 
     arena.state.fighters.forEach((fighter, index) => health[index].update(fighter.health, arena.sides[index].fighter.maxHealth));
+    match.mods.states.forEach((state, index) => debuffs[index].badges.forEach(({ debuff, count, node }) => {
+      const value = String(state[debuff]);
+      if (count.textContent === value) return;
+      setText(count, value);
+      node.hidden = state[debuff] === 0;
+      node.setAttribute("aria-label", `${DEBUFF_HINT[debuff].split(":")[0]} ${value}`);
+      if (!node.hidden) replay(node, "is-in");
+    }));
     const [mine, theirsStyle] = match.style();
     styles[0].update(mine);
     styles[1].update(theirsStyle);
@@ -315,6 +345,8 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
       row("opponent", 1, current?.stage === "clash" ? current.opponent : null),
       `matchup  ${current ? `${current.player} vs ${current.opponent} → ${current.result}` : "—"}`,
       `last     ${lastRecord ? `r${lastRecord.round} s${lastRecord.index + 1} ${lastRecord.player}/${lastRecord.opponent} → ${lastRecord.result}, lost ${lastRecord.damage.join("/")}, healed ${lastRecord.healing.join("/")}, physics ${lastRecord.agrees ? "agrees" : "DISAGREES"}` : "—"}`,
+      `mods     you  ${resources(match.mods.states[0])}`,
+      `         them ${resources(match.mods.states[1])}`,
       `opponent ${opponent.archetype}, ${opponent.plan.mixup.kind}`,
     ].join("\n"));
     for (const { layer, input } of debugToggles) input.checked = debug?.[layer] ?? false;

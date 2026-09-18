@@ -28,6 +28,10 @@ export const ICONS = {
   void: glyph(`<circle cx="8" cy="8" r="6" fill="#fff" stroke="${INK}" stroke-width="1.4"/><path d="M8 3.5a4.5 4.5 0 1 0 4.2 6.1A3.4 3.4 0 1 1 8 3.5z" fill="${INK}"/>`),
   arc: glyph(`<path d="M9.5 1 3 9h4.5L6 15l7-8.5H8.5z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),
 
+  burn: glyph(`<path d="M8 1.5c.6 2.6 3.9 4 3.9 7.7A3.9 3.9 0 0 1 8 13.2a3.9 3.9 0 0 1-3.9-4c0-1.8 1.1-2.7 1.8-3.9.3 1.2.9 1.9 1.6 2.2C7.3 5.7 7.2 3.4 8 1.5z" fill="#ff8c42" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),
+  shock: glyph(`<path d="M9.5 1 3 9h4.5L6 15l7-8.5H8.5z" fill="#35d07f" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),
+  poison: glyph(`<path d="M8 1.5C6 5 3.5 7.3 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.3 10 5 8 1.5z" fill="#9b6bff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="6.4" cy="10.2" r="1.1" fill="#fff"/>`),
+
   coin: glyph(`<circle cx="8" cy="8" r="6" fill="#fff" stroke="${INK}" stroke-width="1.4"/><path d="M10 5.8C9.5 5 8.8 4.8 8 4.8c-1.2 0-2 .6-2 1.5 0 2 4 1.2 4 3.3 0 .9-.9 1.6-2 1.6-.9 0-1.7-.3-2.1-1.1M8 3.6v8.8" fill="none" stroke="${INK}" stroke-width="1.2"/>`),
   ticket: glyph(`<path d="M1.5 4.5h13v2a1.5 1.5 0 0 0 0 3v2h-13v-2a1.5 1.5 0 0 0 0-3z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 4.8v6.4" stroke="${INK}" stroke-width="1.1" stroke-dasharray="1.2 1"/>`),
   star: glyph(`<path d="m8 1.5 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.3l-3.9 2.2 1-4.4-3.4-3 4.5-.5z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),

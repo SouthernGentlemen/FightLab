@@ -9,6 +9,7 @@ import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
+import { effectLines, portLine } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import { ELEMENTAL, TAG_LABEL, elementsOf, isElemental, tagLine } from "../mods/tags.ts";
@@ -18,7 +19,7 @@ import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggl
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
 import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
-import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, modIcon as modIconFor, paintChip, panel, shake, toaster } from "./kit.ts";
+import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, modIcon as modIconFor, paintChip, panel, shake, starRow, toaster } from "./kit.ts";
 
 export interface PrepOptions {
   readonly run: RunState;
@@ -209,7 +210,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
     bankSlots.forEach((slot, index) => {
       const owned = run.bank[index];
-      slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars)] : []));
+      slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars),
+        starRow(owned.stars, RARITY[REGISTRY[owned.mod].rarity].material, "stars slot__stars")] : []));
       slot.dataset.filled = owned ? "true" : "false";
       slot.setAttribute("aria-label", owned ? `${REGISTRY[owned.mod].name} ${starText(owned.stars)}, banked` : `Empty bank slot ${index + 1}`);
       slot.classList.toggle("is-carried", carry?.held.kind === "bank" && carry.held.slot === index);
@@ -629,7 +631,9 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
         h("span", { class: "tip__meta", "data-affinity": definition.tags[0] }, icon(modIconFor(mod.mod)), `${tagLine(definition.tags)} · ${rarityLine(definition.rarity)}`),
         h("span", { class: "tip__perk" }, definition.description),
-        h("span", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
+        ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
+        ...(portLine(definition) ? [h("small", {}, portLine(definition)!)] : []),
+        h("small", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
         h("small", {}, found.held.kind === "offer" ? `$${priceOf(mod.mod)} · tap to bank it, drag to place it`
           : `Sells for $${sellValue(mod)} · drag to move, right-click or R to turn`),
       ];
