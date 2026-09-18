@@ -6,6 +6,8 @@ import { isSeed, MAX_SEED } from "./run/random.ts";
 import { beginFight, finishFight, newRun, nextDay } from "./run/run.ts";
 import type { RunState } from "./run/run.ts";
 import { clearSave, readSave, writeSave } from "./run/save.ts";
+import { seededCollection } from "./run/collection.ts";
+import { mountArmory } from "./ui/armory.ts";
 import { mountFight } from "./ui/fight.ts";
 import { mountPayday } from "./ui/payday.ts";
 import { mountPrep } from "./ui/prep.ts";
@@ -46,7 +48,12 @@ function mount(next: () => () => void): void {
 }
 
 function showTitle(): void {
-  mount(() => mountTitle(root!, { saved: run !== null, continueRun: resume, newRun: startRun, settings: () => showSettings(showTitle) }));
+  mount(() => mountTitle(root!, { saved: run !== null, continueRun: resume, newRun: startRun, armory: showArmory, settings: () => showSettings(showTitle) }));
+}
+
+/** Ownership is not persisted yet, so the Armory browses a seeded development collection. */
+function showArmory(): void {
+  mount(() => mountArmory(root!, { collection: seededCollection(), back: showTitle }));
 }
 
 function showSettings(back: () => void): void {

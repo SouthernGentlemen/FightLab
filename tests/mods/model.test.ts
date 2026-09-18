@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { boardPorts, links, turnSide } from "../../src/mods/ports.ts";
 import type { Port, PortedPiece } from "../../src/mods/ports.ts";
 import { RARITIES, RARITY, rarityLine } from "../../src/mods/rarity.ts";
-import { RECIPES, STARS, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
+import { RECIPES, STARS, bestStars, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
 import { ELEMENTS, MAX_TAGS, actionOf, elementsOf, tagLine, tagProblem, tileFill } from "../../src/mods/tags.ts";
 import { ROTATIONS } from "../../src/mods/shapes.ts";
 
@@ -72,6 +72,10 @@ describe("stars", () => {
       expect(after[1]).toBeLessThan(3);
       expect(after[2]).toBeLessThan(2);
     }
+  });
+
+  it("say the highest level a number of copies can make", () => {
+    expect([0, 1, 2, 3, 5, 6, 11].map(bestStars)).toEqual([1, 1, 1, 2, 2, 3, 3]);
   });
 
   it("read a scaled number at each level, independent of rarity", () => {

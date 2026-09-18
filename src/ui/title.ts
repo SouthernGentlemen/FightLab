@@ -6,6 +6,7 @@ export interface TitleActions {
   readonly saved: boolean;
   continueRun(): void;
   newRun(): void;
+  armory(): void;
   settings(): void;
 }
 
@@ -21,11 +22,14 @@ export function toggleFullscreen(): void {
 
 export function mountTitle(root: HTMLElement, actions: TitleActions): () => void {
   const buttons = h("nav", { class: "title__actions", "aria-label": "Main menu" });
+  // Play picks up a saved run or starts one; a saved run can still be abandoned, below the rest.
   const menu = (): void => {
-    const start = bevel("New run", actions.saved ? "paper" : "rose", () => (actions.saved ? confirm() : actions.newRun()));
-    const items = [...(actions.saved ? [bevel("Continue", "rose", actions.continueRun)] : []), start, bevel("Settings", "paper", actions.settings)];
+    const play = bevel("Play", "rose", actions.saved ? actions.continueRun : actions.newRun);
+    if (actions.saved) play.append(h("small", {}, "Continue your run"));
+    const items = [play, bevel("Armory", "sky", actions.armory), bevel("Settings", "paper", actions.settings),
+      ...(actions.saved ? [bevel("New run", "paper", confirm, "btn--sm title__fresh")] : [])];
     buttons.replaceChildren(...items);
-    (items[0] as HTMLElement).focus();
+    play.focus();
   };
   // Starting over throws the saved run away, so it asks first.
   const confirm = (): void => {

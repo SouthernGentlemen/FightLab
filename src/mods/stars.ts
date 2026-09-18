@@ -55,6 +55,11 @@ export function combineAll(counts: StarCounts): StarCounts {
   return next;
 }
 
+/** The highest level `copies` ★ copies can combine into; ★ when there are none, as a preview. */
+export function bestStars(copies: number): Stars {
+  return [...STARS].reverse().find((stars) => copiesIn(stars) <= copies) ?? 1;
+}
+
 export function starText(stars: Stars): string {
   return "★".repeat(stars);
 }
