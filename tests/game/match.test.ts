@@ -1,37 +1,60 @@
 import { describe, expect, it } from "vitest";
 
-import type { ActionProgram } from "../../src/battle/program.ts";
+import { defaultLoadout } from "../../src/battle/bars.ts";
 import { MARKS } from "../../src/combat/adapter.ts";
 import { FixedClock, MAX_FRAME_MS } from "../../src/game/clock.ts";
 import { Match } from "../../src/game/match.ts";
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from "../../src/game/settings.ts";
 
+function untilPaused(match: Match): void {
+  for (let guard = 0; !match.paused && !match.over && guard < 200_000; guard++) match.step();
+  expect(match.paused || match.over).toBe(true);
+}
+
 function finish(match: Match): void {
-  for (let guard = 0; !match.over && guard < 200_000; guard++) match.step();
+  for (let guard = 0; !match.over && guard < 200_000; guard++) {
+    if (match.paused) match.nextRound();
+    else match.step();
+  }
   expect(match.over).toBe(true);
 }
 
 describe("a match", () => {
-  it("defaults the player to five strikes and simulates nothing while planning", () => {
+  it("begins at tick 0 in round 1's intro, both fighters on their marks, with nothing to edit", () => {
     const match = new Match();
-    expect(match.battle.playerProgram).toEqual(["strike", "strike", "strike", "strike", "strike"]);
-    for (let tick = 0; tick < 300; tick++) match.step();
+    expect(match.battle).toMatchObject({ phase: "round-intro", round: 1, tick: 0, bars: ["primary", "primary"] });
+    expect(match.battle.playerLoadout).toEqual(defaultLoadout());
     expect(match.arena.state.tick).toBe(0);
-    expect(match.presentationTick).toBe(300);
     expect(match.arena.state.fighters.map((fighter) => fighter.x)).toEqual([...MARKS]);
+    expect("setSlot" in match).toBe(false);
   });
 
-  it("locks the program when the fight starts", () => {
+  it("simulates nothing while paused, and keeps the idle stance moving on the presentation clock", () => {
     const match = new Match();
-    match.setSlot(4, "block");
-    match.fight();
-    expect(() => match.setSlot(0, "tech")).toThrow(/locked/);
-    expect(match.battle.playerProgram[4]).toBe("block");
+    untilPaused(match);
+    expect(match.paused).toBe(true);
+    const combat = JSON.stringify(match.arena.state);
+    const tick = match.presentationTick;
+    for (let step = 0; step < 300; step++) match.step();
+    expect(JSON.stringify(match.arena.state)).toBe(combat);
+    expect(match.presentationTick).toBe(tick + 300);
+  });
+
+  it("records every decision the player makes at a pause", () => {
+    const match = new Match();
+    untilPaused(match);
+    match.mixup();
+    match.nextRound();
+    untilPaused(match);
+    match.mixup();
+    match.mixup();
+    match.nextRound();
+    expect(match.decisions).toEqual([true, false]);
+    expect(() => match.mixup()).toThrow(/while round-intro/);
   });
 
   it("stops the simulation at the knockout", () => {
     const match = new Match();
-    match.fight();
     finish(match);
     const combat = JSON.stringify(match.arena.state);
     const events = match.events.length;
@@ -41,26 +64,12 @@ describe("a match", () => {
     expect(match.endedAt).not.toBeNull();
   });
 
-  it("rematches from a clean simulation with the player's program intact", () => {
-    const program: ActionProgram = ["tech", "block", "strike", "block", "tech"];
-    const match = new Match(undefined, program);
-    const firstArena = match.arena;
-    match.fight();
+  it("reads both style meters from the fight so far", () => {
+    const match = new Match();
     finish(match);
-    match.rematch();
-    expect(match.arena).not.toBe(firstArena);
-    expect(match.battle).toMatchObject({ phase: "planning", actionIndex: 0, cycle: 0, history: [], outcome: null, tick: 0, exchange: null });
-    expect(match.battle.playerProgram).toEqual(program);
-    expect(match.events).toEqual([]);
-    expect(match.presentationTick).toBe(0);
-    expect(match.endedAt).toBeNull();
-    const [player, opponent] = match.arena.state.fighters;
-    expect([player.health, opponent.health, player.x, opponent.x]).toEqual([100, 100, ...MARKS]);
-    expect(match.arena.state.tick).toBe(0);
-
-    match.fight();
-    finish(match);
-    expect(match.battle.history.length).toBeGreaterThan(0);
+    const [player, opponent] = match.style();
+    expect(player.peak).toBeGreaterThanOrEqual(player.rank);
+    expect(opponent.peak).toBeGreaterThanOrEqual(opponent.rank);
   });
 });
 

@@ -2,17 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import type { ActionType } from "../../src/battle/actions.ts";
+import { actionBar, actionLoadout } from "../../src/battle/bars.ts";
 import { resolveMatchup } from "../../src/battle/matchup.ts";
-import type { ActionProgram } from "../../src/battle/program.ts";
+import { opponentPlan } from "../../src/battle/mixup.ts";
 import type { CombatEvent } from "../../src/combat/kernel/index.ts";
 import { DEFAULT_MATCH, Match } from "../../src/game/match.ts";
 
-const all = (action: ActionType): ActionProgram => [action, action, action, action, action];
+const all = (action: ActionType) => actionBar(action, action, action);
 
 /** The first exchange of a real match: real director, real arena, real kernel. */
 function firstExchange(player: ActionType, opponent: ActionType) {
-  const match = new Match({ ...DEFAULT_MATCH, opponentProgram: all(opponent) }, all(player));
-  match.fight();
+  const match = new Match({
+    ...DEFAULT_MATCH,
+    player: actionLoadout(all(player), all(player)),
+    opponent: opponentPlan({ primary: all(opponent), secondary: all(opponent) }, { kind: "steady" }),
+  });
   for (let guard = 0; match.battle.history.length === 0 && guard < 10_000; guard++) match.step();
   const record = match.battle.history[0];
   const during = match.events.filter((event) => event.frame >= record.committedAt && event.frame < record.settledAt);
@@ -34,19 +38,23 @@ describe("an exchange resolved by the real combat simulation", () => {
     if (result === "player") {
       expect(record.damage[0]).toBe(0);
       expect(record.damage[1]).toBeGreaterThan(0);
+      expect(record.winner).toBe("player");
       expect(hits.every((hit) => hit.source === "player")).toBe(true);
     } else if (result === "opponent") {
       expect(record.damage[1]).toBe(0);
       expect(record.damage[0]).toBeGreaterThan(0);
+      expect(record.winner).toBe("opponent");
       expect(hits.every((hit) => hit.source === "opponent")).toBe(true);
     } else if (player === "block") {
       expect(record.damage).toEqual([0, 0]);
+      expect(record.winner).toBeNull();
       expect(hits).toHaveLength(0);
     } else {
       // A trade: both hitboxes connect on the same tick.
       expect(hits.map((hit) => hit.source).sort()).toEqual(["opponent", "player"]);
       expect(new Set(hits.map((hit) => hit.frame)).size).toBe(1);
       expect(record.damage[0]).toBe(record.damage[1]);
+      expect(record.winner).toBeNull();
     }
   });
 

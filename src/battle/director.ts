@@ -1,8 +1,10 @@
 import type { ActionType } from "./actions.ts";
+import { BAR_LENGTH, actionLoadout, otherBar, sameBar } from "./bars.ts";
+import type { ActionBar, ActionLoadout, BarId, SlotIndex } from "./bars.ts";
 import { resolveMatchup } from "./matchup.ts";
 import type { MatchupResult } from "./matchup.ts";
-import { PROGRAM_LENGTH, advanceCursor, isActionProgram, setSlot } from "./program.ts";
-import type { ActionProgram } from "./program.ts";
+import { decideMixup, opponentPlan } from "./mixup.ts";
+import type { MixupPlan, OpponentPlan } from "./mixup.ts";
 
 /**
  * What the director needs from combat, and all it gets.
@@ -14,11 +16,21 @@ import type { ActionProgram } from "./program.ts";
 export interface Arena {
   status(): ArenaStatus;
   /** Queue both actions to begin together on the next step. */
-  commit(player: ActionType, opponent: ActionType): void;
-  /** Advance the simulation one tick and report the health each side lost on it. */
+  commit(player: ActionType, opponent: ActionType, context: CommitContext): void;
+  /** Advance the simulation one tick and report what each side lost and regained on it. */
   step(): ArenaStep;
   /** Which sides are knocked out, player first. */
   defeated(): readonly [boolean, boolean];
+}
+
+/**
+ * What combat may know about the round an exchange belongs to. A switch of bars is the player's
+ * decision or an opponent's plan; combat can react to one and never cause one.
+ */
+export interface CommitContext {
+  readonly round: number;
+  /** Whether each side entered this round by switching bars, player first. */
+  readonly mixedUp: readonly [boolean, boolean];
 }
 
 /**
@@ -32,29 +44,32 @@ export type ArenaStatus = "busy" | "moving" | "ready" | "ko";
 export interface ArenaStep {
   /** Health lost on this tick, through contact, player first. */
   readonly damage: readonly [number, number];
+  /** Health regained on this tick, through a parry, player first. */
+  readonly healing: readonly [number, number];
 }
 
 /** Pacing, counted in simulation ticks so it can never depend on how fast frames arrive. */
 export interface BattleRules {
-  /** Ticks both fighters stand ready before the first exchange commits. */
-  readonly openingBeat: number;
-  /** Ticks both fighters stand ready before each later exchange commits. */
+  /** Ticks both fighters stand ready at the start of a round before its first exchange opens. */
+  readonly roundIntro: number;
+  /** Ticks both fighters stand ready before each exchange commits. */
   readonly beat: number;
-  /** A match still running after this many cycles ends as a draw. A backstop, not a rule of play. */
-  readonly cycleLimit: number;
+  /** A fight still running after this many rounds ends as a draw. A backstop, not a rule of play. */
+  readonly roundLimit: number;
 }
 
-export const RULES: BattleRules = { openingBeat: 45, beat: 24, cycleLimit: 30 };
+export const RULES: BattleRules = { roundIntro: 40, beat: 24, roundLimit: 30 };
 
-export type BattlePhase = "planning" | "fighting" | "ko";
+export type FightPhase = "round-intro" | "fighting" | "round-pause" | "ko";
 export type MatchOutcome = "victory" | "defeat" | "draw";
-/** One knockout, both at once, a whole cycle nobody was hurt in, or the backstop. */
+/** One knockout, both at once, a round that would repeat forever, or the backstop. */
 export type OutcomeReason = "ko" | "double-ko" | "stalemate" | "limit";
+export type Winner = "player" | "opponent" | null;
 
-/** The exchange being resolved: one slot of each program. */
+/** The exchange being resolved: one slot of each active bar. */
 export interface Exchange {
-  readonly cycle: number;
-  readonly index: number;
+  readonly round: number;
+  readonly index: SlotIndex;
   readonly player: ActionType;
   readonly opponent: ActionType;
   /** What the matchup says should happen. The arena decides what does. */
@@ -64,118 +79,204 @@ export interface Exchange {
   ready: number;
   committedAt: number | null;
   readonly damage: [number, number];
+  readonly healing: [number, number];
 }
 
 export interface ExchangeRecord {
-  readonly cycle: number;
-  readonly index: number;
+  readonly round: number;
+  readonly index: SlotIndex;
+  readonly bars: readonly [BarId, BarId];
   readonly player: ActionType;
   readonly opponent: ActionType;
   readonly result: MatchupResult;
+  /** Who hurt the other and was not hurt: what physically resolved, whatever the matrix said. */
+  readonly winner: Winner;
   readonly committedAt: number;
   readonly settledAt: number;
   /** Health each side lost during the exchange, player first. */
   readonly damage: readonly [number, number];
+  /** Health each side regained during the exchange, player first. */
+  readonly healing: readonly [number, number];
   /** Whether the physics produced what the matchup decided. */
   readonly agrees: boolean;
 }
 
+export interface RoundRecord {
+  readonly round: number;
+  readonly bars: readonly [BarId, BarId];
+  readonly mixedUp: readonly [boolean, boolean];
+  /** Exchanges fought: three, unless a knockout came first. */
+  readonly exchanges: number;
+  readonly damage: readonly [number, number];
+  /** Exchanges each side won, player first. */
+  readonly wins: readonly [number, number];
+}
+
+export interface BattleOutcome {
+  readonly result: MatchOutcome;
+  readonly reason: OutcomeReason;
+  readonly tick: number;
+}
+
 export interface BattleState {
-  phase: BattlePhase;
-  /** The slot being resolved, 0–4. */
-  actionIndex: number;
-  /** How many times both programs have wrapped, from 0. */
-  cycle: number;
-  playerProgram: ActionProgram;
-  opponentProgram: ActionProgram;
+  phase: FightPhase;
+  /** From 1. */
+  round: number;
+  /** The active bar of each side, player first. */
+  bars: [BarId, BarId];
+  /** Whether each side entered the current round by switching bars. */
+  mixedUp: [boolean, boolean];
+  readonly playerLoadout: ActionLoadout;
+  readonly opponentLoadout: ActionLoadout;
+  readonly opponentMixup: MixupPlan;
+  /** The slot being resolved. */
+  actionIndex: SlotIndex;
+  /** Consecutive ticks both fighters have stood ready during the round intro. */
+  introReady: number;
   exchange: Exchange | null;
   history: ExchangeRecord[];
-  outcome: { readonly result: MatchOutcome; readonly reason: OutcomeReason; readonly tick: number } | null;
+  rounds: RoundRecord[];
+  /**
+   * The opponent's choice for the next round, fixed the moment the pause begins so it can never
+   * depend on what the player does during it. Never shown.
+   */
+  opponentSwitch: boolean | null;
+  /** The player's bar when the pause began, so leaving it knows whether they switched. */
+  pausedOn: BarId | null;
+  outcome: BattleOutcome | null;
   /** Simulation ticks since the fight began. */
   tick: number;
 }
 
-export function createBattle(playerProgram: ActionProgram, opponentProgram: ActionProgram): BattleState {
-  if (!isActionProgram(playerProgram)) throw new TypeError("the player program is not five actions");
-  if (!isActionProgram(opponentProgram)) throw new TypeError("the opponent program is not five actions");
+/**
+ * A fight exists only once combat has begun, so there is nothing to edit: both loadouts are frozen
+ * copies, and no function here changes a slot.
+ */
+export function createBattle(player: ActionLoadout, opponent: OpponentPlan): BattleState {
+  const plan = opponentPlan(opponent, opponent.mixup);
   return {
-    phase: "planning",
+    phase: "round-intro",
+    round: 1,
+    bars: ["primary", "primary"],
+    mixedUp: [false, false],
+    playerLoadout: actionLoadout(player.primary, player.secondary),
+    opponentLoadout: actionLoadout(plan.primary, plan.secondary),
+    opponentMixup: plan.mixup,
     actionIndex: 0,
-    cycle: 0,
-    playerProgram,
-    opponentProgram,
+    introReady: 0,
     exchange: null,
     history: [],
+    rounds: [],
+    opponentSwitch: null,
+    pausedOn: null,
     outcome: null,
     tick: 0,
   };
 }
 
-/** Programming happens before the fight or not at all. */
-export function programSlot(state: BattleState, slot: number, action: ActionType): void {
-  if (state.phase !== "planning") throw new Error(`the program is locked while ${state.phase}`);
-  state.playerProgram = setSlot(state.playerProgram, slot, action);
-}
-
-export function startFight(state: BattleState): void {
-  if (state.phase !== "planning") throw new Error(`cannot start a fight while ${state.phase}`);
-  state.phase = "fighting";
-}
-
-/** Back to planning with both programs and none of the fight. Replacing the arena is the caller's job. */
-export function resetBattle(state: BattleState): void {
-  Object.assign(state, createBattle(state.playerProgram, state.opponentProgram));
+export function activeBar(state: BattleState, side: 0 | 1): ActionBar {
+  const loadout = side === 0 ? state.playerLoadout : state.opponentLoadout;
+  return loadout[state.bars[side]];
 }
 
 /**
- * One simulation tick of the fight.
+ * One simulation tick of the fight. Nothing happens in the pause or after a knockout.
  *
- * The exchange for the current slot opens, waits for both fighters to stand ready for a beat,
- * commits both actions on the same tick, and closes only when the arena reports that everything
- * it set in motion has settled. The cursor moves when combat says so and at no other time.
+ * A round opens with both fighters walking back to their marks and standing ready. Then, slot by
+ * slot, the exchange opens, waits for both fighters to stand ready for a beat, commits both actions
+ * on the same tick, and closes only when the arena reports that everything it set in motion has
+ * settled. The cursor moves when combat says so and at no other time.
  */
 export function stepBattle(state: BattleState, arena: Arena, rules: BattleRules = RULES): void {
+  if (state.phase === "round-intro") {
+    arena.step();
+    state.tick++;
+    state.introReady = arena.status() === "ready" ? state.introReady + 1 : 0;
+    if (state.introReady >= rules.roundIntro) state.phase = "fighting";
+    return;
+  }
   if (state.phase !== "fighting") return;
   const exchange = state.exchange ??= openExchange(state);
 
   if (exchange.stage === "beat") {
     exchange.ready = arena.status() === "ready" ? exchange.ready + 1 : 0;
-    if (exchange.ready >= (state.history.length === 0 ? rules.openingBeat : rules.beat)) {
-      arena.commit(exchange.player, exchange.opponent);
+    if (exchange.ready >= rules.beat) {
+      arena.commit(exchange.player, exchange.opponent, { round: state.round, mixedUp: [...state.mixedUp] });
       exchange.stage = "clash";
       exchange.committedAt = state.tick;
     }
   }
 
-  const { damage } = arena.step();
+  const { damage, healing } = arena.step();
   state.tick++;
   if (exchange.stage !== "clash") return;
   exchange.damage[0] += damage[0];
   exchange.damage[1] += damage[1];
+  exchange.healing[0] += healing[0];
+  exchange.healing[1] += healing[1];
 
   const status = arena.status();
   if (status === "busy") return;
   closeExchange(state, exchange);
 
   if (status === "ko") {
+    recordRound(state);
     const [player, opponent] = arena.defeated();
     if (player && opponent) end(state, "draw", "double-ko");
     else end(state, opponent ? "victory" : "defeat", "ko");
     return;
   }
-  if (state.actionIndex !== 0) return;
-  // A cycle nobody was hurt in replays identically forever, so it ends the match rather than the
-  // tab. Nothing random is ever added to force a winner.
-  const finished = state.history.slice(-PROGRAM_LENGTH);
-  if (finished.every((record) => record.damage[0] === 0 && record.damage[1] === 0)) end(state, "draw", "stalemate");
-  else if (state.cycle >= rules.cycleLimit) end(state, "draw", "limit");
+  if (exchange.index < BAR_LENGTH - 1) {
+    state.actionIndex = (exchange.index + 1) as SlotIndex;
+    return;
+  }
+  recordRound(state);
+  if (state.round >= rules.roundLimit) {
+    end(state, "draw", "limit");
+    return;
+  }
+  state.phase = "round-pause";
+  state.pausedOn = state.bars[0];
+  state.opponentSwitch = decideMixup(state.opponentMixup, state.rounds);
+}
+
+/** Swap the player's active bar. Only between rounds; pressing it again swaps back. */
+export function mixup(state: BattleState): void {
+  if (state.phase !== "round-pause") throw new Error(`cannot mix up while ${state.phase}`);
+  state.bars[0] = otherBar(state.bars[0]);
+}
+
+/**
+ * Leave the pause: apply both sides' decisions and start the next round. A round nobody was hurt in
+ * is three guards against three guards; if the next round would run the same actions again it would
+ * repeat forever, so it ends the fight as a draw instead. Nothing random is added to force a winner.
+ */
+export function nextRound(state: BattleState): void {
+  if (state.phase !== "round-pause") throw new Error(`cannot start a round while ${state.phase}`);
+  const last = state.rounds.at(-1)!;
+  const bars: [BarId, BarId] = [state.bars[0], state.opponentSwitch ? otherBar(state.bars[1]) : state.bars[1]];
+  const mixedUp: [boolean, boolean] = [bars[0] !== state.pausedOn, bars[1] !== state.bars[1]];
+  const repeats = sameBar(state.playerLoadout[last.bars[0]], state.playerLoadout[bars[0]])
+    && sameBar(state.opponentLoadout[last.bars[1]], state.opponentLoadout[bars[1]]);
+  state.bars = bars;
+  state.opponentSwitch = null;
+  state.pausedOn = null;
+  if (repeats && last.damage[0] === 0 && last.damage[1] === 0) {
+    end(state, "draw", "stalemate");
+    return;
+  }
+  state.round++;
+  state.mixedUp = mixedUp;
+  state.actionIndex = 0;
+  state.introReady = 0;
+  state.phase = "round-intro";
 }
 
 function openExchange(state: BattleState): Exchange {
-  const player = state.playerProgram[state.actionIndex];
-  const opponent = state.opponentProgram[state.actionIndex];
+  const player = activeBar(state, 0)[state.actionIndex];
+  const opponent = activeBar(state, 1)[state.actionIndex];
   return {
-    cycle: state.cycle,
+    round: state.round,
     index: state.actionIndex,
     player,
     opponent,
@@ -184,6 +285,7 @@ function openExchange(state: BattleState): Exchange {
     ready: 0,
     committedAt: null,
     damage: [0, 0],
+    healing: [0, 0],
   };
 }
 
@@ -194,23 +296,43 @@ function agrees(result: MatchupResult, toPlayer: number, toOpponent: number): bo
   return (toPlayer > 0) === (toOpponent > 0);
 }
 
+function winnerOf(toPlayer: number, toOpponent: number): Winner {
+  if (toOpponent > 0 && toPlayer === 0) return "player";
+  if (toPlayer > 0 && toOpponent === 0) return "opponent";
+  return null;
+}
+
 function closeExchange(state: BattleState, exchange: Exchange): void {
   const [toPlayer, toOpponent] = exchange.damage;
   state.history.push({
-    cycle: exchange.cycle,
+    round: exchange.round,
     index: exchange.index,
+    bars: [state.bars[0], state.bars[1]],
     player: exchange.player,
     opponent: exchange.opponent,
     result: exchange.result,
+    winner: winnerOf(toPlayer, toOpponent),
     committedAt: exchange.committedAt!,
     settledAt: state.tick,
     damage: [toPlayer, toOpponent],
+    healing: [exchange.healing[0], exchange.healing[1]],
     agrees: agrees(exchange.result, toPlayer, toOpponent),
   });
-  const next = advanceCursor({ index: state.actionIndex, cycle: state.cycle });
-  state.actionIndex = next.index;
-  state.cycle = next.cycle;
   state.exchange = null;
+}
+
+function recordRound(state: BattleState): void {
+  const fought = state.history.filter((record) => record.round === state.round);
+  const total = (side: 0 | 1) => fought.reduce((sum, record) => sum + record.damage[side], 0);
+  const won = (winner: Winner) => fought.filter((record) => record.winner === winner).length;
+  state.rounds.push({
+    round: state.round,
+    bars: [state.bars[0], state.bars[1]],
+    mixedUp: [state.mixedUp[0], state.mixedUp[1]],
+    exchanges: fought.length,
+    damage: [total(0), total(1)],
+    wins: [won("player"), won("opponent")],
+  });
 }
 
 function end(state: BattleState, result: MatchOutcome, reason: OutcomeReason): void {

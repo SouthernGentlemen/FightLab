@@ -1,5 +1,5 @@
 import type { ActionTable, ActionType } from "../battle/actions.ts";
-import type { Arena, ArenaStatus, ArenaStep } from "../battle/director.ts";
+import type { Arena, ArenaStatus, ArenaStep, CommitContext } from "../battle/director.ts";
 import { CombatSimulation, isActionable, px } from "./kernel/index.ts";
 import type { Command, FighterDefinition, FighterState, FrameReport, SimulationState } from "./kernel/index.ts";
 
@@ -43,7 +43,7 @@ export class CombatArena implements Arena {
     return this.simulation.getState();
   }
 
-  commit(player: ActionType, opponent: ActionType): void {
+  commit(player: ActionType, opponent: ActionType, _context: CommitContext): void {
     this.pending = [
       { kind: "move", move: this.sides[0].actions[player].move },
       { kind: "move", move: this.sides[1].actions[opponent].move },
@@ -72,7 +72,7 @@ export class CombatArena implements Arena {
     this.pending = [null, null];
     const before = [fighters[0].health, fighters[1].health];
     this.lastReport = this.simulation.step(commands);
-    return { damage: [before[0] - fighters[0].health, before[1] - fighters[1].health] };
+    return { damage: [before[0] - fighters[0].health, before[1] - fighters[1].health], healing: [0, 0] };
   }
 
   private onMark(fighter: FighterState, index: number): boolean {

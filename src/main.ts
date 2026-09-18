@@ -1,7 +1,6 @@
 import "./ui/styles.css";
 
-import { defaultProgram } from "./battle/program.ts";
-import type { ActionProgram } from "./battle/program.ts";
+import { defaultLoadout } from "./battle/bars.ts";
 import { loadSettings, saveSettings } from "./game/settings.ts";
 import type { Settings } from "./game/settings.ts";
 import { mountPlay } from "./ui/play.ts";
@@ -16,7 +15,6 @@ if (!root) throw new Error("index.html has no #app");
 /** `?debug` is the one explicit way into the lab tooling; development servers also have a key for it. */
 const debug = new URLSearchParams(window.location.search).has("debug");
 let settings: Settings = loadSettings();
-let program: ActionProgram = defaultProgram();
 let unmount: () => void = () => {};
 
 function show(screen: Screen): void {
@@ -33,15 +31,7 @@ function show(screen: Screen): void {
       back: () => show("title"),
     });
   } else {
-    unmount = mountPlay(root!, {
-      program,
-      speed: () => settings.speed,
-      remember: (next) => {
-        program = next;
-      },
-      title: () => show("title"),
-      debug,
-    });
+    unmount = mountPlay(root!, { loadout: defaultLoadout(), speed: () => settings.speed, title: () => show("title"), debug });
   }
 }
 

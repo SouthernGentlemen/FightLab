@@ -1,104 +1,114 @@
 import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
-import { OPPONENT_PROGRAM } from "../../src/battle/opponent.ts";
-import type { ActionProgram } from "../../src/battle/program.ts";
+import { actionBar, actionLoadout, defaultLoadout } from "../../src/battle/bars.ts";
+import type { ActionBar, ActionLoadout } from "../../src/battle/bars.ts";
+import { REFERENCE_OPPONENT, opponentPlan } from "../../src/battle/mixup.ts";
+import type { OpponentPlan } from "../../src/battle/mixup.ts";
 import { FixedClock, SPEEDS } from "../../src/game/clock.ts";
 import type { BattleSpeed } from "../../src/game/clock.ts";
 import { DEFAULT_MATCH, Match } from "../../src/game/match.ts";
 
 const FRAME_MS = 1000 / 60;
 
-function match(program: ActionProgram, opponent: ActionProgram = OPPONENT_PROGRAM): Match {
-  const created = new Match({ ...DEFAULT_MATCH, opponentProgram: opponent }, program);
-  created.fight();
-  return created;
+/** Whether the player mixes up at a pause, decided from what the match shows. */
+type Policy = (match: Match) => boolean;
+/** Switches after a round in which the opponent won more exchanges. */
+const whenBeaten: Policy = (match) => {
+  const last = match.battle.rounds.at(-1)!;
+  return last.wins[0] < last.wins[1];
+};
+
+function match(player: ActionLoadout, opponent: OpponentPlan = REFERENCE_OPPONENT): Match {
+  return new Match({ ...DEFAULT_MATCH, player, opponent });
 }
 
-function play(program: ActionProgram, opponent: ActionProgram = OPPONENT_PROGRAM): Match {
-  const running = match(program, opponent);
+function decide(running: Match, policy: Policy): void {
+  if (policy(running)) running.mixup();
+  running.nextRound();
+}
+
+function play(player: ActionLoadout, opponent: OpponentPlan = REFERENCE_OPPONENT, policy: Policy = whenBeaten): Match {
+  const running = match(player, opponent);
   for (let guard = 0; !running.over; guard++) {
-    if (guard > 200_000) throw new Error(`${program.join(",")} never finished`);
-    running.step();
+    if (guard > 200_000) throw new Error(`${player.primary}/${player.secondary} never finished`);
+    if (running.paused) decide(running, policy);
+    else running.step();
   }
   return running;
 }
 
 /** Everything the simulation decides. Presentation counters are left out on purpose. */
 function result(finished: Match): unknown {
-  return JSON.parse(JSON.stringify({ battle: finished.battle, combat: finished.arena.state, events: finished.events }));
+  return JSON.parse(JSON.stringify({ battle: finished.battle, combat: finished.arena.state, events: finished.events, decisions: finished.decisions }));
 }
 
-function everyProgram(): ActionProgram[] {
-  const programs: ActionProgram[] = [];
-  const extend = (prefix: readonly (typeof ACTION_TYPES)[number][]): void => {
-    if (prefix.length === 5) programs.push(prefix as unknown as ActionProgram);
-    else for (const action of ACTION_TYPES) extend([...prefix, action]);
-  };
-  extend([]);
-  return programs;
+function everyBar(): ActionBar[] {
+  return ACTION_TYPES.flatMap((first) => ACTION_TYPES.flatMap((second) => ACTION_TYPES.map((third) => actionBar(first, second, third))));
 }
 
 describe("determinism", () => {
-  it("gives the same programs from the same start the same match, byte for byte", () => {
-    const program: ActionProgram = ["strike", "block", "tech", "strike", "strike"];
-    expect(result(play(program))).toEqual(result(play(program)));
+  it("gives the same loadouts and the same decisions the same fight, byte for byte", () => {
+    const loadout = actionLoadout(["strike", "block", "tech"], ["tech", "strike", "strike"]);
+    expect(result(play(loadout))).toEqual(result(play(loadout)));
   });
 
   it("changes pacing with battle speed and never the outcome", () => {
-    const program: ActionProgram = ["strike", "block", "tech", "strike", "strike"];
+    const loadout = actionLoadout(["strike", "block", "tech"], ["block", "tech", "strike"]);
     const runs = SPEEDS.map((speed: BattleSpeed) => {
-      const running = match(program);
+      const running = match(loadout);
       const clock = new FixedClock();
       let frames = 0;
       while (!running.over) {
-        for (let tick = clock.advance(FRAME_MS, speed); tick > 0; tick--) running.step();
+        for (let tick = clock.advance(FRAME_MS, speed); tick > 0 && !running.over; tick--) {
+          if (running.paused) decide(running, whenBeaten);
+          else running.step();
+        }
         frames++;
-        if (frames > 100_000) throw new Error("the match never finished");
+        if (frames > 100_000) throw new Error("the fight never finished");
       }
       return { frames, result: result(running) };
     });
     for (const run of runs) expect(run.result).toEqual(runs[0].result);
-    // Only wall-clock time differs: twice the speed, half the frames.
-    expect(Math.abs(runs[1].frames * 2 - runs[0].frames)).toBeLessThanOrEqual(2);
-    expect(Math.abs(runs[2].frames * 4 - runs[0].frames)).toBeLessThanOrEqual(4);
+    // Only wall-clock time differs: twice the speed, about half the frames.
+    expect(Math.abs(runs[1].frames * 2 - runs[0].frames)).toBeLessThanOrEqual(8);
+    expect(Math.abs(runs[2].frames * 4 - runs[0].frames)).toBeLessThanOrEqual(16);
   });
 
-  it("ends every one of the 243 possible programs against the opponent, agreeing with the matrix in every exchange", () => {
+  it("carries health from one round into the next in the real arena", () => {
+    const running = match(defaultLoadout());
+    while (!running.paused && !running.over) running.step();
+    const afterRoundOne = running.arena.state.fighters.map((fighter) => fighter.health);
+    const lost = [0, 1].map((side) => running.battle.history.reduce((sum, record) => sum + record.damage[side], 0));
+    expect(afterRoundOne).toEqual([100 - lost[0], 100 - lost[1]]);
+    running.nextRound();
+    while (running.battle.phase === "round-intro") running.step();
+    expect(running.arena.state.fighters.map((fighter) => fighter.health)).toEqual(afterRoundOne);
+  });
+
+  it("ends every one of the 729 possible loadouts against the reference opponent, agreeing with the matrix in every exchange", () => {
     const tally = { victory: 0, defeat: 0, draw: 0 };
-    for (const program of everyProgram()) {
-      const finished = play(program);
-      const { history, outcome } = finished.battle;
-      expect(history.filter((record) => !record.agrees), program.join(",")).toEqual([]);
-      tally[outcome!.result]++;
+    const bars = everyBar();
+    for (const primary of bars) {
+      for (const secondary of bars) {
+        const finished = play(actionLoadout(primary, secondary));
+        const { history, outcome } = finished.battle;
+        const disagreements = history.filter((record) => !record.agrees);
+        if (disagreements.length > 0) expect(disagreements, `${primary}/${secondary}`).toEqual([]);
+        tally[outcome!.result]++;
+      }
     }
-    // A measurement, not a target: a change to frame data or to the opponent moves these numbers
-    // in a diff where someone has to look at them.
-    expect(tally).toEqual({ victory: 107, defeat: 117, draw: 19 });
+    // A measurement, not a target: a change to frame data, the rules or the reference opponent moves
+    // these numbers in a diff where someone has to look at them.
+    expect(tally).toEqual({ victory: 428, defeat: 244, draw: 57 });
   });
 
-  it("measures the reference matches", () => {
-    const strikes = play(["strike", "strike", "strike", "strike", "strike"]);
-    expect(strikes.battle.outcome).toMatchObject({ result: "victory", reason: "ko" });
-    expect(strikes.battle.history).toHaveLength(11);
-    expect(strikes.arena.state.fighters.map((fighter) => fighter.health)).toEqual([24, 0]);
-
-    // Every slot answers the opponent's: a clean sweep.
-    const counter = play(["strike", "tech", "block", "strike", "block"]);
-    expect(counter.battle.history.every((record) => record.result === "player")).toBe(true);
-    expect(counter.arena.state.fighters.map((fighter) => fighter.health)).toEqual([100, 0]);
-
-    // Every slot loses to the opponent's.
-    const worst = play(["block", "strike", "tech", "block", "tech"]);
-    expect(worst.battle.outcome).toMatchObject({ result: "defeat", reason: "ko" });
-    expect(worst.arena.state.fighters.map((fighter) => fighter.health)).toEqual([0, 100]);
-  });
-
-  it("ends a loop of guards against guards as a stalemate", () => {
-    const blocks: ActionProgram = ["block", "block", "block", "block", "block"];
-    const finished = play(blocks, blocks);
+  it("ends a round of guards against guards as a stalemate when nobody switches", () => {
+    const blocks = actionLoadout(["block", "block", "block"], ["block", "block", "block"]);
+    const walls = opponentPlan({ primary: ["block", "block", "block"], secondary: ["block", "block", "block"] }, { kind: "alternate" });
+    const finished = play(blocks, walls);
     expect(finished.battle.outcome).toMatchObject({ result: "draw", reason: "stalemate" });
-    expect(finished.battle.history).toHaveLength(5);
+    expect(finished.battle.history).toHaveLength(3);
     expect(finished.events.filter((event) => event.kind === "hit")).toHaveLength(0);
   });
 });

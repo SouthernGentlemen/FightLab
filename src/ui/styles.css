@@ -166,3 +166,13 @@ button { font: inherit; color: inherit; }
   .matchup__slot, .matchup__verdict { margin: 0; min-width: 0; }
   .picker__option { min-width: 0; padding: 12px 10px; }
 }
+
+/* Round pause */
+
+.pause { gap: 12px; }
+.pause__title { margin: 0 0 6px; font-size: 20px; letter-spacing: .18em; text-transform: uppercase; }
+.pause__bar { display: flex; align-items: center; gap: 8px; margin: 0; }
+.pause__name { min-width: 64px; color: var(--muted); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+.pause__bar .chip { min-width: 78px; padding: 5px 10px; border: 1px solid currentColor; border-radius: 4px; text-align: center; }
+.pause__marker { min-width: 60px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+.pause small { font-size: 11px; letter-spacing: .08em; text-transform: none; }

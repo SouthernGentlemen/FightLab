@@ -47,6 +47,8 @@ describe("layer boundaries", () => {
   it("finds the imports it is checking", () => {
     // Guards the guards: a scanner that matched nothing would pass every rule below.
     expect(importsFrom("src/battle").length).toBeGreaterThanOrEqual(8);
+    expect(importsFrom("src/mods").map(({ to }) => to)).toContain("src/battle/actions.ts");
+    expect(importsFrom("src/run").map(({ to }) => to)).toContain("src/mods/compile.ts");
     expect(importsFrom("src/combat/kernel").length).toBeGreaterThanOrEqual(15);
     expect(importsFrom("src/render").map(({ to }) => to)).toContain("boneyard/render/depth");
     expect(importsFrom("src/combat").map(({ to }) => to)).toContain("src/battle/director.ts");
@@ -56,6 +58,18 @@ describe("layer boundaries", () => {
     for (const { file, to } of importsFrom("src/battle")) expect(to, file).toSatisfy(inside("src/battle/"));
   });
 
+  it("builds mods over the battle vocabulary and nothing else", () => {
+    for (const { file, to } of importsFrom("src/mods")) {
+      expect(["src/mods/", "src/battle/"].some((prefix) => to.startsWith(prefix)), `${file} imports ${to}`).toBe(true);
+    }
+  });
+
+  it("runs the run over mods and battle, never over combat, rendering or the UI", () => {
+    for (const { file, to } of importsFrom("src/run")) {
+      expect(["src/run/", "src/mods/", "src/battle/"].some((prefix) => to.startsWith(prefix)), `${file} imports ${to}`).toBe(true);
+    }
+  });
+
   it("seals the kernel: it imports only itself", () => {
     for (const { file, to } of importsFrom("src/combat/kernel")) expect(to, file).toSatisfy(inside("src/combat/kernel/"));
   });
@@ -63,6 +77,13 @@ describe("layer boundaries", () => {
   it("keeps DOM APIs, wall clocks and randomness out of the kernel", () => {
     const forbidden = /\b(?:document|window)\s*\.|\b(?:DOMParser|requestAnimationFrame|HTMLElement|SVGElement)\b|\b(?:Date|performance)\s*\.\s*now\s*\(|\b(?:setTimeout|setInterval|Math\s*\.\s*random)\s*\(/;
     for (const path of sources("src/combat/kernel")) expect(readFileSync(path, "utf8"), path).not.toMatch(forbidden);
+  });
+
+  it("keeps unseeded randomness and wall clocks out of every rule", () => {
+    const forbidden = /\bMath\s*\.\s*random\b|\bcrypto\s*\.|\b(?:Date|performance)\s*\.\s*now\s*\(|\bnew\s+Date\b|\b(?:document|window)\s*\./;
+    for (const path of [...sources("src/battle"), ...sources("src/mods"), ...sources("src/run")]) {
+      expect(readFileSync(path, "utf8"), relative(ROOT, path)).not.toMatch(forbidden);
+    }
   });
 
   it("lets only the adapter translate actions, and only the frame data name clips", () => {
@@ -82,9 +103,9 @@ describe("layer boundaries", () => {
     }
   });
 
-  it("composes matches from the layers below and nothing above", () => {
+  it("composes fights from the layers below and nothing above", () => {
     for (const { file, to } of importsFrom("src/game")) {
-      expect(["src/game/", "src/battle/", "src/combat/"].some((prefix) => to.startsWith(prefix)), `${file} imports ${to}`).toBe(true);
+      expect(["src/game/", "src/battle/", "src/combat/", "src/mods/", "src/run/"].some((prefix) => to.startsWith(prefix)), `${file} imports ${to}`).toBe(true);
     }
   });
 
