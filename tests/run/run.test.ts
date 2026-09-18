@@ -78,7 +78,8 @@ describe("buying", () => {
     const poor = stocked(["solar-flare", null, "heat-coil", "heat-coil", "heat-coil"], 6);
     expect(buy(poor, 0)).toBe("cannot-afford");
     expect(buy(poor, 1)).toBe("sold-out");
-    const full = stocked(["heat-coil", "heat-coil", "heat-coil", "heat-coil", "heat-coil"]);
+    // Five different mods, so no purchase completes a set and makes room.
+    const full = stocked(["heat-coil", "void-tap", "arc-dynamo", "battery-cell", "furnace"]);
     for (let offer = 0; offer < 4; offer++) expect(buy(full, offer)).toBeNull();
     const before = structuredClone(full);
     expect(buy(full, 4)).toBe("no-room");

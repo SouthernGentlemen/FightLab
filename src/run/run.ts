@@ -7,9 +7,11 @@ import { compileBuild } from "../mods/compile.ts";
 import type { Build } from "../mods/compile.ts";
 import { BANK_SIZE, canPlace, emptyBank, firstFreeBankSlot, place, removeFromGrid, rotateInPlace, setBankSlot } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
-import { priceOf } from "../mods/registry.ts";
+import { MOD_IDS, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { nextRotation } from "../mods/shapes.ts";
+import { RECIPES } from "../mods/stars.ts";
+import type { Stars } from "../mods/stars.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { STARTING_MONEY, payday, sellValue, total } from "./economy.ts";
 import type { PaydayLine } from "./economy.ts";
@@ -148,24 +150,76 @@ function take(run: RunState, source: Source): void {
   else run.grid = removeFromGrid(run.grid, source.piece);
 }
 
-/** Buys offer `offer` into `to`, or into the first free bank slot when no destination is given. */
+/** Every owned copy of `mod` at `stars`, oldest first, and where it is. */
+function copies(run: RunState, mod: ModId, stars: Stars): Array<{ owned: OwnedMod; source: Source }> {
+  const found = [
+    ...run.bank.flatMap((owned, slot) => (owned !== null && owned.mod === mod && owned.stars === stars ? [{ owned, source: { bank: slot } }] : [])),
+    ...run.grid.filter((piece) => piece.mod === mod && piece.stars === stars).map((piece) => ({ owned: piece as OwnedMod, source: { piece: piece.uid } })),
+  ];
+  return found.sort((a, b) => a.owned.uid - b.owned.uid);
+}
+
+/** The oldest copy becomes the combined mod, where it stands and turned the way it was. */
+function upgrade(run: RunState, source: Source, stars: Stars): void {
+  if ("bank" in source) run.bank = setBankSlot(run.bank, source.bank, { ...run.bank[source.bank]!, stars });
+  else run.grid = Object.freeze(run.grid.map((piece) => (piece.uid === source.piece ? Object.freeze({ ...piece, stars }) : piece)));
+}
+
+/**
+ * Combines every set the run owns until nothing combines: three ★ copies of a mod into one ★★, two
+ * ★★ into one ★★★. The oldest copy of a set survives, in its place; the others are gone. Returns
+ * the uids of the mods it made, in the order it made them.
+ */
+export function combineCopies(run: RunState): number[] {
+  const made: number[] = [];
+  for (let again = true; again;) {
+    again = false;
+    for (const { from, count, to } of RECIPES) {
+      for (const mod of MOD_IDS) {
+        const set = copies(run, mod, from);
+        if (set.length < count) continue;
+        const [keep, ...rest] = set.slice(0, count);
+        for (const { source } of rest) take(run, source);
+        upgrade(run, keep.source, to);
+        made.push(keep.owned.uid);
+        again = true;
+      }
+    }
+  }
+  return made;
+}
+
+/**
+ * Buys offer `offer` into `to`, or into the first free bank slot when no destination is given, then
+ * combines whatever set it completed. A copy that completes a set needs no slot of its own.
+ */
 export function buy(run: RunState, offer: number, to?: Destination): Refusal | null {
   if (run.phase !== "prep") return "wrong-phase";
   if (!Number.isInteger(offer) || offer < 0 || offer >= SHOP_SIZE) throw new RangeError(`offer ${offer} does not exist`);
   const mod = run.shop.offers[offer];
   if (mod === null) return "sold-out";
   if (priceOf(mod) > run.money) return "cannot-afford";
+  const copy: OwnedMod = { uid: run.nextUid, mod, stars: 1, rotation: 0 };
+  const completes = copies(run, mod, 1).length >= RECIPES[0].count - 1;
   let destination = to;
   if (destination === undefined) {
     const slot = firstFreeBankSlot(run.bank);
-    if (slot === null) return "no-room";
-    destination = { bank: slot };
+    if (slot === null && !completes) return "no-room";
+    if (slot !== null) destination = { bank: slot };
   }
-  const refused = put(run, { uid: run.nextUid, mod, stars: 1, rotation: 0 }, destination, null);
-  if (refused) return refused;
+  if (destination !== undefined) {
+    const refused = put(run, copy, destination, null);
+    if (refused) return refused;
+  } else {
+    // The bank is full, and this copy completes a set: it joins the set without ever being placed.
+    const [keep, second] = copies(run, mod, 1);
+    take(run, second.source);
+    upgrade(run, keep.source, RECIPES[0].to);
+  }
   run.nextUid++;
   run.money -= priceOf(mod);
   run.shop = { ...run.shop, offers: Object.freeze(run.shop.offers.map((candidate, index) => (index === offer ? null : candidate))) };
+  combineCopies(run);
   return null;
 }
 
