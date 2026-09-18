@@ -2,13 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#0f2a2e" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>FightLab</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='5' width='4' height='6' fill='%23e5484d'/%3E%3Crect x='6' y='5' width='4' height='6' fill='%23f2c94c'/%3E%3Crect x='11' y='5' width='4' height='6' fill='%234c8df6'/%3E%3C/svg%3E" />
   </head>
   <body>
     <div id="app"></div>
+    <div class="unsupported" role="alert">
+      <svg viewBox="0 0 64 64" width="96" height="96" aria-hidden="true">
+        <rect x="20" y="6" width="24" height="42" rx="4" fill="none" stroke="#fff" stroke-width="4" />
+        <path d="M10 52c4 6 12 8 22 8s18-3 22-9m0 0-7 1m7-1 1-7" fill="none" stroke="#f8c630" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <p class="unsupported__portrait">Turn your device sideways</p>
+      <p class="unsupported__small">Make the window larger</p>
+      <small>FightLab is played landscape, in 16:9.</small>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

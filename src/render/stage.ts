@@ -11,12 +11,12 @@ import type { FigureModel } from "./figure.ts";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 /**
- * Stage units. One world pixel is `scale` stage units, and the camera never moves: exchanges
- * are always fought from the same two marks, so a fixed frame keeps them the same size.
- * `minWidth` is as narrow as the frame gets on a tall screen — both marks, a full reach and a
- * knockback on either side still fit.
+ * Stage units: the same 1600 × 900 grid every screen is authored on, so the arena and the HUD over
+ * it scale as one picture. One world pixel is `scale` stage units and the camera never moves:
+ * exchanges are always fought from the same two marks, and knockback never carries a fighter more
+ * than about seventy pixels from the centre, well inside the frame.
  */
-export const STAGE = { width: 1000, minWidth: 520, height: 440, floor: 392, center: 500, scale: 3 } as const;
+export const STAGE = { width: 1600, height: 900, floor: 700, center: 800, scale: 4 } as const;
 
 export interface StageView {
   readonly combat: SimulationState;
@@ -30,9 +30,9 @@ export interface DebugLayers {
   readonly skeleton: boolean;
 }
 
-function element<K extends keyof SVGElementTagNameMap>(name: K, className?: string): SVGElementTagNameMap[K] {
+function element<K extends keyof SVGElementTagNameMap>(name: K, attributes: Readonly<Record<string, string | number>> = {}): SVGElementTagNameMap[K] {
   const node = document.createElementNS(SVG_NS, name);
-  if (className) node.setAttribute("class", className);
+  for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
   return node;
 }
 
@@ -45,12 +45,60 @@ function stageY(world: number): number {
 }
 
 function rect(box: Aabb, className: string): SVGRectElement {
-  const node = element("rect", className);
-  node.setAttribute("x", stageX(box.x0).toFixed(2));
-  node.setAttribute("y", stageY(box.y1).toFixed(2));
-  node.setAttribute("width", (toPixels(box.x1 - box.x0) * STAGE.scale).toFixed(2));
-  node.setAttribute("height", (toPixels(box.y1 - box.y0) * STAGE.scale).toFixed(2));
-  return node;
+  return element("rect", {
+    class: className,
+    x: stageX(box.x0).toFixed(2),
+    y: stageY(box.y1).toFixed(2),
+    width: (toPixels(box.x1 - box.x0) * STAGE.scale).toFixed(2),
+    height: (toPixels(box.y1 - box.y0) * STAGE.scale).toFixed(2),
+  });
+}
+
+/** A row of pines: one path of triangles, each a little different, repeating across the frame. */
+function pines(baseline: number, height: number, width: number, step: number, offset: number): string {
+  let path = "";
+  for (let x = -width + offset, index = 0; x < STAGE.width + width; x += step, index++) {
+    const tall = height * (0.82 + ((index * 37) % 7) / 30);
+    path += `M${x} ${baseline}l${width / 2} ${-tall}l${width / 2} ${tall}z`;
+    path += `M${x + width * 0.14} ${baseline - tall * 0.42}l${width * 0.36} ${-tall * 0.36}l${width * 0.36} ${tall * 0.36}z`;
+  }
+  return path;
+}
+
+/** Flat sky, a sun, two rows of pines and a striped grass field — original art, drawn here. */
+function scene(): SVGGElement {
+  const group = element("g", { class: "scene", "aria-hidden": "true" });
+  const defs = element("defs");
+  const sky = element("linearGradient", { id: "fightlab-sky", x1: 0, y1: 0, x2: 0, y2: 1 });
+  sky.append(element("stop", { offset: "0", "stop-color": "#6cc6ff" }), element("stop", { offset: "1", "stop-color": "#c9ecff" }));
+  defs.append(sky);
+  group.append(
+    defs,
+    element("rect", { x: 0, y: 0, width: STAGE.width, height: STAGE.floor, fill: "url(#fightlab-sky)" }),
+    element("circle", { cx: 1290, cy: 190, r: 70, fill: "#fff6c9" }),
+    element("circle", { cx: 1290, cy: 190, r: 52, fill: "#ffe98a" }),
+  );
+  for (const [x, y, size] of [[250, 170, 1], [640, 110, 0.7], [1010, 210, 0.85], [1480, 90, 0.6]] as const) {
+    const cloud = element("g", { fill: "#ffffff", opacity: "0.9", transform: `translate(${x} ${y}) scale(${size})` });
+    cloud.append(
+      element("ellipse", { cx: 0, cy: 0, rx: 90, ry: 30 }),
+      element("ellipse", { cx: -34, cy: -18, rx: 44, ry: 32 }),
+      element("ellipse", { cx: 28, cy: -26, rx: 52, ry: 40 }),
+    );
+    group.append(cloud);
+  }
+  group.append(
+    element("path", { d: `M0 ${STAGE.floor - 150}Q400 ${STAGE.floor - 230} 800 ${STAGE.floor - 160}T1600 ${STAGE.floor - 170}V${STAGE.floor}H0z`, fill: "#a7dcae" }),
+    element("path", { d: pines(STAGE.floor - 30, 150, 86, 70, 10), fill: "#3f9a5c" }),
+    element("path", { d: pines(STAGE.floor + 6, 190, 112, 96, 48), fill: "#2a7a47" }),
+    element("rect", { x: 0, y: STAGE.floor, width: STAGE.width, height: STAGE.height - STAGE.floor, fill: "#98d86c" }),
+  );
+  for (let band = 0; band < 5; band++) {
+    const top = STAGE.floor + 18 + band * band * 9 + band * 14;
+    group.append(element("rect", { x: 0, y: top, width: STAGE.width, height: 8 + band * 4, fill: "#86ca5c" }));
+  }
+  group.append(element("rect", { x: 0, y: STAGE.floor - 2, width: STAGE.width, height: 6, fill: "#6fb44c" }));
+  return group;
 }
 
 /** Draws what combat and battle state say. It reads that state and never writes it. */
@@ -59,44 +107,20 @@ export class Stage {
   private readonly figures: readonly [FigureView, FigureView];
   private readonly shadows: readonly [SVGEllipseElement, SVGEllipseElement];
   private readonly debugLayer: SVGGElement;
-  private readonly resize: ResizeObserver;
 
   constructor(host: HTMLElement, models: readonly [FigureModel, FigureModel]) {
-    this.svg = element("svg", "stage");
-    this.frame(host.clientWidth, host.clientHeight);
-    this.resize = new ResizeObserver(() => this.frame(host.clientWidth, host.clientHeight));
-    this.resize.observe(host);
-    this.svg.setAttribute("preserveAspectRatio", "xMidYMax meet");
-    this.svg.setAttribute("role", "img");
-    this.svg.setAttribute("aria-label", "Arena");
-
-    const floor = element("line", "stage__floor");
-    floor.setAttribute("x1", "0");
-    floor.setAttribute("x2", String(STAGE.width));
-    floor.setAttribute("y1", String(STAGE.floor));
-    floor.setAttribute("y2", String(STAGE.floor));
-
-    this.shadows = [element("ellipse", "stage__shadow"), element("ellipse", "stage__shadow")];
-    for (const shadow of this.shadows) {
-      shadow.setAttribute("cy", String(STAGE.floor));
-      shadow.setAttribute("rx", String(22 * STAGE.scale));
-      shadow.setAttribute("ry", String(3 * STAGE.scale));
-    }
+    this.svg = element("svg", { class: "stage", viewBox: `0 0 ${STAGE.width} ${STAGE.height}`, preserveAspectRatio: "xMidYMid slice", role: "img", "aria-label": "Arena" });
+    this.shadows = [0, 1].map(() => element("ellipse", {
+      class: "stage__shadow", cy: STAGE.floor + 4, rx: 22 * STAGE.scale, ry: 4 * STAGE.scale,
+    })) as unknown as readonly [SVGEllipseElement, SVGEllipseElement];
     this.figures = [new FigureView(models[0], "player"), new FigureView(models[1], "opponent")];
-    this.debugLayer = element("g", "debug-geometry");
-    this.svg.append(floor, ...this.shadows, this.figures[0].root, this.figures[1].root, this.debugLayer);
+    this.debugLayer = element("g", { class: "debug-geometry" });
+    this.svg.append(scene(), ...this.shadows, this.figures[0].root, this.figures[1].root, this.debugLayer);
     host.replaceChildren(this.svg);
   }
 
   dispose(): void {
-    this.resize.disconnect();
-  }
-
-  /** Crops the sides on a tall screen, around the centre, so the fighters stay large. */
-  private frame(width: number, height: number): void {
-    const aspect = width > 0 && height > 0 ? width / height : STAGE.width / STAGE.height;
-    const visible = Math.min(STAGE.width, Math.max(STAGE.minWidth, STAGE.height * aspect));
-    this.svg.setAttribute("viewBox", `${(STAGE.center - visible / 2).toFixed(1)} 0 ${visible.toFixed(1)} ${STAGE.height}`);
+    this.svg.remove();
   }
 
   render(view: StageView, debug: DebugLayers | null): readonly [ClipFrame, ClipFrame] {
@@ -129,9 +153,10 @@ export class Stage {
       nodes.push(rect(contact.overlap, contact.parried ? "debug-box debug-box--parried" : "debug-box debug-box--contact"));
     }
     for (const origin of boxes.origins) {
-      const marker = element("path", "debug-origin");
-      marker.setAttribute("d", `M${stageX(origin.x) - 8} ${stageY(origin.y)}h16M${stageX(origin.x)} ${stageY(origin.y) - 8}v16`);
-      nodes.push(marker);
+      nodes.push(element("path", {
+        class: "debug-origin",
+        d: `M${stageX(origin.x) - 8} ${stageY(origin.y)}h16M${stageX(origin.x)} ${stageY(origin.y) - 8}v16`,
+      }));
     }
     this.debugLayer.replaceChildren(...nodes);
   }

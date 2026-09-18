@@ -1,7 +1,7 @@
 import { ACTION_TYPES } from "../battle/actions.ts";
 import type { ActionType } from "../battle/actions.ts";
 import { CATALOG, ELEMENTS, isElement } from "./catalog.ts";
-import type { Element } from "./catalog.ts";
+import type { ElementAffinity } from "./catalog.ts";
 import { GRID_SIZE, LANES, cellsOf, occupancy } from "./grid.ts";
 import type { Grid, PlacedMod } from "./grid.ts";
 
@@ -22,9 +22,9 @@ export interface Build {
   /** Lane power: what the grid's row for each action adds to that action's damage. */
   readonly lanes: Readonly<Record<ActionType, number>>;
   /** The element a lane is attuned to, when all three of its cells share one. */
-  readonly attuned: Readonly<Record<ActionType, Element | null>>;
-  readonly cells: Readonly<Record<Element, number>>;
-  readonly levels: Readonly<Record<Element, number>>;
+  readonly attuned: Readonly<Record<ActionType, ElementAffinity | null>>;
+  readonly cells: Readonly<Record<ElementAffinity, number>>;
+  readonly levels: Readonly<Record<ElementAffinity, number>>;
   /** Bonus damage on every hit of each action: lane, Solar level and perks. Block's is the riposte. */
   readonly damage: Readonly<Record<ActionType, number>>;
   /** Further bonus damage on every hit in a round entered with a Mixup: Arc levels and perks. */
@@ -43,8 +43,8 @@ function perAction(value: (action: ActionType) => number): Record<ActionType, nu
   return Object.fromEntries(ACTION_TYPES.map((action) => [action, value(action)])) as Record<ActionType, number>;
 }
 
-function perElement(value: (element: Element) => number): Record<Element, number> {
-  return Object.fromEntries(ELEMENTS.map((element) => [element, value(element)])) as Record<Element, number>;
+function perElement(value: (element: ElementAffinity) => number): Record<ElementAffinity, number> {
+  return Object.fromEntries(ELEMENTS.map((element) => [element, value(element)])) as Record<ElementAffinity, number>;
 }
 
 /** How many Overclocks touch `placed` — share an edge with one of its cells. */
@@ -64,7 +64,7 @@ export function compileBuild(grid: Grid): Build {
   const boost = new Map(grid.map((placed) => [placed.uid, overclocksTouching(placed, owners)]));
 
   const lanes = perAction(() => 0);
-  const attuned: Record<ActionType, Element | null> = { strike: null, tech: null, block: null };
+  const attuned: Record<ActionType, ElementAffinity | null> = { strike: null, tech: null, block: null };
   for (let y = 0; y < GRID_SIZE; y++) {
     const lane = LANES[y];
     const row = Array.from({ length: GRID_SIZE }, (_, x) => owners.get(`${x},${y}`) ?? null);

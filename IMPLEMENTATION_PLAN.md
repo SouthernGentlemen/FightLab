@@ -31,8 +31,8 @@ a mod grid, reads an opponent over a few rounds and chooses when to mix up.
 | Design | `docs/RUN_DESIGN.md`, this plan, `AGENTS.md` | done |
 | 1. Rules, headless | bars, rounds, pause, Mixup, mixup plans, style; shapes, grid, bank, catalogue, compile; PRNG streams, shop, economy, opponents, run, save | done |
 | 2. Combat | kernel bonus and parry heal, adapter, compiled sides, C9 property test, determinism, the tuning bot and replays | done |
-| 3. UI | 16:9 stage, prep, fight and pause, payday, run end, title, settings | in progress |
-| 4. Tuning | bot runs, measured numbers below | pending |
+| 3. UI | 16:9 stage, prep, fight and pause, payday, run end, title, settings | done |
+| 4. Tuning | bot runs, measured numbers below | first measurements in; balancing to follow |
 
 ## What the survey found
 
@@ -356,10 +356,12 @@ All inside the 16:9 stage (C10). Layouts and proportions are in `RUN_DESIGN.md` 
   page works without it.
 - **Prep** — top bar (hearts, day, trophies, settings, leave); bank and grid in the centre; the two
   action bars in the right negative space; rank odds, money and Lock; Reroll, five offers and Fight.
-  No opponent information.
+  No opponent information. Drag to buy, move and sell; tap an offer to bank it; tap an owned mod to
+  pick it up and tap where it goes (or arrows, R, Enter, B to bank, S to sell); right-click or R turns
+  a placed mod in place; hover or focus explains anything.
 - **Fight** — hearts and health numbers, round, speed, style meters, the active bar, the opponent's
-  revealed actions, the current exchange; the **round pause** overlay with both bars, `Mixup` and
-  `Fight`; the knockout banner.
+  revealed actions, the current exchange; the **round pause** overlay with both bars, `Mixup` (M) and
+  `Fight` (Enter or Space); the knockout result. The clock holds while the display is unsupported.
 - **Payday** — outcome, trophy or heart change, the tally, `Next day`.
 - **Run end** — `Champion` or `Knocked out`, the record, best style, the final build, `New run`,
   `Title`.
@@ -387,7 +389,7 @@ Run with `npm test`; all headless.
 | Health persists between rounds; same inputs → same fight; 1×/2×/4× identical; every loadout terminates against the reference opponent and agrees with the matrix | `tests/game/determinism.test.ts`, `tests/game/match.test.ts` |
 | Resuming a fight from recorded decisions reaches the same pause | `tests/game/fight.test.ts` |
 | Figures assemble from Boneyard's loader; the renderer's clip choice is total | `tests/render/figures.test.ts` |
-| Heart fill | `tests/ui/hearts.test.ts` |
+| Heart fill; the 16:9 scale, no resolution cap, and one unsupported-display query shared by the stylesheet and the fight clock | `tests/ui/hearts.test.ts`, `tests/ui/display.test.ts` |
 | Layer import rules, kernel seal, no randomness in rules, vocabulary boundary, Boneyard never imports FightLab | `tests/architecture.test.ts` |
 | Installed Boneyard matches the pin | `tests/boneyard-pin.test.ts` |
 

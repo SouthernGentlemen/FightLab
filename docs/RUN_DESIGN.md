@@ -339,7 +339,7 @@ Selling returns half the price, rounded down, at least $1.
 | Thunderclap | Arc | 3 | $7 | L4 | Every hit +3 in a round you entered with a Mixup |
 | Piggy Bank | Neutral | 1 | $3 | MONO | +$1 every payday |
 | Coupon | Neutral | 2 | $4 | MONO | The first reroll each day is free |
-| Crowd Pleaser | Neutral | 2 | $5 | DUO | Style payout doubled |
+| Crowd Pleaser | Neutral | 2 | $5 | DUO | Style pays out once more — doubled with one, tripled with two |
 | Overclock | Neutral | 4 | $8 | MONO | Each cell of every mod touching it powers +1 more |
 
 There are no items in v1; the scouting report was the only one. Every perk that touches health
@@ -386,7 +386,7 @@ After every fight that does not end the run:
 | Base | $5 |
 | Result | victory +$2, draw +$1, defeat $0 |
 | Interest | +$1 per $5 held when the fight began, up to +$2 |
-| Style | peak C / B / A / S → $0 / $1 / $2 / $3, doubled by Crowd Pleaser |
+| Style | peak C / B / A / S → $0 / $1 / $2 / $3, paid once more per Crowd Pleaser |
 | Piggy Bank | +$1 each |
 
 A typical day pays $7–11. Interest is capped low on purpose: saving should be a choice, not the
@@ -506,9 +506,10 @@ return.
 
 ### Interaction and access
 
-- Everything a drag does has a click and keyboard path: select a piece (click or Enter), arrows to
-  move it, R to rotate, Enter to place, Escape to cancel. Hovering or focusing any mod shows its name,
-  affinity, lane effect, perk and sell price.
+- Everything a drag does has a tap and keyboard path: tap an offer to bank it; tap an owned mod (or
+  focus it and press Enter) to pick it up, then tap a cell to put its icon cell there — or arrows to
+  move it, R to rotate, Enter to place, B to bank, S to sell, Escape to cancel. Hovering or focusing
+  any mod shows its name, affinity, lane effect, perk and sell price.
 - Colour is never the only signal: lanes are labelled, actions carry icons (fist, hammer, shield),
   affinities carry icons (sun, crescent, bolt), tiers carry gems.
 - Dragging uses pointer events, so touch works.

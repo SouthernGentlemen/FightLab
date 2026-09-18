@@ -11,7 +11,7 @@ export type ModAffinity = "solar" | "void" | "arc" | "neutral";
 export const MOD_AFFINITIES: readonly ModAffinity[] = ["solar", "void", "arc", "neutral"];
 /** The affinities that power lanes, attune rows and count towards levels. */
 export const ELEMENTS = ["solar", "void", "arc"] as const;
-export type Element = (typeof ELEMENTS)[number];
+export type ElementAffinity = (typeof ELEMENTS)[number];
 
 export type Tier = 1 | 2 | 3 | 4;
 export const TIERS: readonly Tier[] = [1, 2, 3, 4];
@@ -63,7 +63,7 @@ const LIST = [
   mod("thunderclap", "Thunderclap", "arc", 3, 7, "l4", { kind: "surge", amount: 3 }, "Every hit +3 in a round you entered with a Mixup"),
   mod("piggy-bank", "Piggy Bank", "neutral", 1, 3, "mono", { kind: "income", amount: 1 }, "+$1 every payday"),
   mod("coupon", "Coupon", "neutral", 2, 4, "mono", { kind: "free-reroll", amount: 1 }, "The first reroll each day is free"),
-  mod("crowd-pleaser", "Crowd Pleaser", "neutral", 2, 5, "duo", { kind: "style-payout" }, "Style payout doubled"),
+  mod("crowd-pleaser", "Crowd Pleaser", "neutral", 2, 5, "duo", { kind: "style-payout" }, "Style pays out once more"),
   mod("overclock", "Overclock", "neutral", 4, 8, "mono", { kind: "overclock" }, "Each cell of every mod touching it powers +1 more"),
 ] as const;
 
@@ -80,6 +80,6 @@ export function isModId(value: unknown): value is ModId {
   return typeof value === "string" && Object.hasOwn(CATALOG, value);
 }
 
-export function isElement(affinity: ModAffinity): affinity is Element {
+export function isElement(affinity: ModAffinity): affinity is ElementAffinity {
   return affinity !== "neutral";
 }
