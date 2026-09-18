@@ -1,8 +1,10 @@
 import type { MatchOutcome } from "../battle/director.ts";
 import type { StyleRank } from "../battle/style.ts";
-import { CATALOG } from "../mods/catalog.ts";
-import type { ModId } from "../mods/catalog.ts";
 import type { Build } from "../mods/compile.ts";
+import { priceOf } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
+import { copiesIn } from "../mods/stars.ts";
+import type { Stars } from "../mods/stars.ts";
 
 export const STARTING_MONEY = 10;
 export const BASE_INCOME = 5;
@@ -14,8 +16,9 @@ export const INTEREST_CAP = 2;
 /** What each peak style rank, C to S, pays. */
 export const STYLE_INCOME: readonly [number, number, number, number] = [0, 1, 2, 3];
 
-export function sellValue(mod: ModId): number {
-  return Math.max(1, Math.floor(CATALOG[mod].price / 2));
+/** Half of what its copies cost, rounded down, never under a dollar: a ★★ is three copies, a ★★★ six. */
+export function sellValue(owned: { readonly mod: ModId; readonly stars: Stars }): number {
+  return Math.max(1, Math.floor((priceOf(owned.mod) * copiesIn(owned.stars)) / 2));
 }
 
 export type PaydayLabel = "base" | "result" | "interest" | "style" | "perks";

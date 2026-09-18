@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { CATALOG, MOD_IDS } from "../../src/mods/catalog.ts";
-import type { ModId } from "../../src/mods/catalog.ts";
+import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
+import type { ModId } from "../../src/mods/registry.ts";
 import {
   BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
   setBankSlot,
@@ -15,7 +15,7 @@ const sorted = (cells: ReadonlyArray<readonly [number, number]>) => cells.map(ke
 
 /** A grid of single-cell blockers on exactly these cells. */
 function blockers(cells: ReadonlyArray<readonly [number, number]>, firstUid = 100): PlacedMod[] {
-  return cells.map(([x, y], index) => ({ uid: firstUid + index, mod: "ember", rotation: 0, x, y }));
+  return cells.map(([x, y], index) => ({ uid: firstUid + index, mod: "heat-coil", stars: 1, rotation: 0, x, y }));
 }
 
 const ALL_CELLS: Array<[number, number]> = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) => [index % GRID_SIZE, Math.floor(index / GRID_SIZE)]);
@@ -64,33 +64,33 @@ describe("the grid", () => {
 
   it("accepts a placement only when every cell is on the board and empty", () => {
     const grid = Object.freeze(blockers([[1, 1]]));
-    expect(canPlace(grid, { mod: "sunburst", rotation: 0, x: 0, y: 0 })).toBe(true);
-    expect(canPlace(grid, { mod: "sunburst", rotation: 0, x: 0, y: 1 })).toBe(false);
-    expect(canPlace(grid, { mod: "sunburst", rotation: 0, x: 2, y: 0 })).toBe(false);
-    expect(canPlace(grid, { mod: "sunburst", rotation: 1, x: 2, y: 2 })).toBe(false);
-    expect(canPlace(grid, { mod: "ember", rotation: 0, x: -1, y: 0 })).toBe(false);
-    expect(canPlace(grid, { mod: "ember", rotation: 0, x: 0.5, y: 0 })).toBe(false);
+    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 0 })).toBe(true);
+    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 1 })).toBe(false);
+    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 2, y: 0 })).toBe(false);
+    expect(canPlace(grid, { mod: "furnace", rotation: 1, x: 2, y: 2 })).toBe(false);
+    expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: -1, y: 0 })).toBe(false);
+    expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: 0.5, y: 0 })).toBe(false);
     // A piece can always be checked against its own old position.
-    expect(canPlace(grid, { mod: "ember", rotation: 0, x: 1, y: 1 }, 100)).toBe(true);
+    expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: 1, y: 1 }, 100)).toBe(true);
   });
 
   it("places, refuses and removes without editing the grid it was given", () => {
     const empty: Grid = Object.freeze([]);
-    const one = place(empty, { uid: 1, mod: "static", rotation: 0, x: 0, y: 2 })!;
+    const one = place(empty, { uid: 1, mod: "chain-circuit", stars: 1, rotation: 0, x: 0, y: 2 })!;
     expect(one).toHaveLength(1);
     expect(empty).toHaveLength(0);
-    expect(place(one, { uid: 2, mod: "ember", rotation: 0, x: 1, y: 2 })).toBeNull();
-    expect(place(one, { uid: 1, mod: "ember", rotation: 0, x: 0, y: 0 })).toBeNull();
+    expect(place(one, { uid: 2, mod: "heat-coil", stars: 1, rotation: 0, x: 1, y: 2 })).toBeNull();
+    expect(place(one, { uid: 1, mod: "heat-coil", stars: 1, rotation: 0, x: 0, y: 0 })).toBeNull();
     expect(cellsOf(one[0]).map(key)).toEqual(["0,2", "1,2", "2,2"]);
     expect(removeFromGrid(one, 1)).toEqual([]);
     expect(one).toHaveLength(1);
   });
 
   it("fits a mod at the first legal spot in reading order, trying other rotations when it must", () => {
-    expect(firstFit([], "static")).toEqual({ mod: "static", rotation: 0, x: 0, y: 0 });
+    expect(firstFit([], "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 0, x: 0, y: 0 });
     const columns = blockers([[1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]]);
-    expect(firstFit(columns, "static")).toEqual({ mod: "static", rotation: 1, x: 0, y: 0 });
-    expect(firstFit(blockers(ALL_CELLS), "ember")).toBeNull();
+    expect(firstFit(columns, "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 1, x: 0, y: 0 });
+    expect(firstFit(blockers(ALL_CELLS), "heat-coil")).toBeNull();
   });
 });
 
@@ -101,7 +101,7 @@ describe("rotating a placed mod", () => {
     for (const mod of MOD_IDS as readonly ModId[]) {
       for (const rotation of ROTATIONS) {
         for (const [x, y] of ALL_CELLS) {
-          const piece: PlacedMod = { uid: 1, mod, rotation, x, y };
+          const piece: PlacedMod = { uid: 1, mod, stars: 1, rotation, x, y };
           const own = cellsOf(piece);
           if (!own.every(([cx, cy]) => cx < GRID_SIZE && cy < GRID_SIZE)) continue;
           const free = ALL_CELLS.filter((cell) => !own.some((mine) => key(mine) === key(cell)));
@@ -140,7 +140,7 @@ describe("rotating a placed mod", () => {
   });
 
   it("is always the same mod, only turned", () => {
-    for (const mod of MOD_IDS) expect(CATALOG[mod].shape in SHAPES).toBe(true);
+    for (const mod of MOD_IDS) expect(REGISTRY[mod].shape in SHAPES).toBe(true);
   });
 });
 
@@ -149,7 +149,7 @@ describe("the bank", () => {
     const bank = emptyBank();
     expect(bank).toEqual([null, null, null, null]);
     expect(BANK_SIZE).toBe(4);
-    const full = MOD_IDS.slice(0, 4).reduce((slots, mod, index) => setBankSlot(slots, index, { uid: index + 1, mod, rotation: 0 }), bank);
+    const full = MOD_IDS.slice(0, 4).reduce((slots, mod, index) => setBankSlot(slots, index, { uid: index + 1, mod, stars: 1, rotation: 0 }), bank);
     expect(firstFreeBankSlot(full)).toBeNull();
     expect(firstFreeBankSlot(setBankSlot(full, 2, null))).toBe(2);
     expect(Object.isFrozen(full)).toBe(true);

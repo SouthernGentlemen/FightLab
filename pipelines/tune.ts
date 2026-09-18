@@ -18,8 +18,8 @@ import type { BarId, SlotIndex } from "../src/battle/bars.ts";
 import { STYLE_RANKS } from "../src/battle/style.ts";
 import { fightFor, playFight, reportOf } from "../src/game/fight.ts";
 import type { Match } from "../src/game/match.ts";
-import { CATALOG } from "../src/mods/catalog.ts";
 import { firstFit } from "../src/mods/grid.ts";
+import { REGISTRY, priceOf } from "../src/mods/registry.ts";
 import { stream } from "../src/run/random.ts";
 import { beginFight, buy, finishFight, move, newRun, nextDay, rerollPrice, reroll, setAction } from "../src/run/run.ts";
 import type { DaySummary, Destination, Refusal, RunState, Source } from "../src/run/run.ts";
@@ -92,9 +92,9 @@ export function botRun(seed: number, maxDays = 40): BotRun {
     }
     for (let rerolls = 0; ; ) {
       const choices = run.shop.offers.flatMap((mod, offer) => {
-        if (mod === null || CATALOG[mod].price > run.money || CATALOG[mod].affinity === "neutral") return [];
+        if (mod === null || priceOf(mod) > run.money || REGISTRY[mod].tags.includes("neutral")) return [];
         const spot = firstFit(run.grid, mod);
-        return spot ? [{ offer, price: CATALOG[mod].price, to: { grid: { x: spot.x, y: spot.y, rotation: spot.rotation } } }] : [];
+        return spot ? [{ offer, price: priceOf(mod), to: { grid: { x: spot.x, y: spot.y, rotation: spot.rotation } } }] : [];
       }).sort((a, b) => b.price - a.price);
       if (choices.length > 0) {
         act({ kind: "buy", offer: choices[0].offer, to: choices[0].to });

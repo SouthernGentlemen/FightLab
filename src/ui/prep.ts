@@ -3,18 +3,22 @@ import type { ActionType } from "../battle/actions.ts";
 import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
-import { CATALOG, ELEMENTS, isElement } from "../mods/catalog.ts";
-import type { ElementAffinity, ModId } from "../mods/catalog.ts";
-import { CELLS_PER_LEVEL, MAX_LEVEL } from "../mods/compile.ts";
 import { BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
+import { RARITIES, RARITY, rarityLine } from "../mods/rarity.ts";
+import { REGISTRY, priceOf } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
+import { starText } from "../mods/stars.ts";
+import type { Stars } from "../mods/stars.ts";
+import { ELEMENTAL, TAG_LABEL, elementsOf, isElemental, tagLine } from "../mods/tags.ts";
+import type { Elemental } from "../mods/tags.ts";
 import { sellValue } from "../run/economy.ts";
 import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggleLock } from "../run/run.ts";
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
-import { SHOP_SIZE, TIER_ODDS, shopRank } from "../run/shop.ts";
+import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
-import { ACTION_LABEL, AFFINITY_LABEL, BAR_NAME, TIER_GEM, actionChip, bevel, iconButton, modArt, paintChip, panel, shake, toaster } from "./kit.ts";
+import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, modIcon as modIconFor, paintChip, panel, shake, toaster } from "./kit.ts";
 
 export interface PrepOptions {
   readonly run: RunState;
@@ -67,10 +71,11 @@ interface Carry {
   y: number;
 }
 
-const ELEMENT_EFFECT: Readonly<Record<ElementAffinity, string>> = {
-  solar: "every hit +1 per level",
-  void: "+10 maximum health per level",
-  arc: "every hit +2 per level in a round you entered with a Mixup",
+/** What each element is for, in the words the design uses. */
+const ELEMENT_IDENTITY: Readonly<Record<Elemental, string>> = {
+  solar: "Heat: fast build, low sustained payoff. Burn halves every round.",
+  arc: "Charge: setup and burst. Shock waits for the next hit and all of it lands.",
+  void: "Leeched Void: slow build, persistent high payoff. Poison never fades.",
 };
 
 /**
@@ -172,13 +177,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return true;
   }
 
-  function heldMod(held: Held): { mod: ModId; rotation: Rotation } | null {
+  function heldMod(held: Held): { mod: ModId; rotation: Rotation; stars: Stars } | null {
     if (held.kind === "offer") {
       const mod = run.shop.offers[held.offer];
-      return mod === null ? null : { mod, rotation: 0 };
+      return mod === null ? null : { mod, rotation: 0, stars: 1 };
     }
     const owned = held.kind === "bank" ? run.bank[held.slot] : run.grid.find((piece) => piece.uid === held.uid);
-    return owned ? { mod: owned.mod, rotation: owned.rotation } : null;
+    return owned ? { mod: owned.mod, rotation: owned.rotation, stars: owned.stars } : null;
   }
 
   function sourceOf(held: Held): Source {
@@ -204,20 +209,20 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
     bankSlots.forEach((slot, index) => {
       const owned = run.bank[index];
-      slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini")] : []));
+      slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars)] : []));
       slot.dataset.filled = owned ? "true" : "false";
-      slot.setAttribute("aria-label", owned ? `${CATALOG[owned.mod].name}, banked` : `Empty bank slot ${index + 1}`);
+      slot.setAttribute("aria-label", owned ? `${REGISTRY[owned.mod].name} ${starText(owned.stars)}, banked` : `Empty bank slot ${index + 1}`);
       slot.classList.toggle("is-carried", carry?.held.kind === "bank" && carry.held.slot === index);
     });
 
     pieces.replaceChildren(...run.grid.map((piece) => {
-      const art = modArt(piece.mod, piece.rotation, "piece");
+      const art = modArt(piece.mod, piece.rotation, "piece", piece.stars);
       art.style.left = `calc(var(--cell) * ${piece.x})`;
       art.style.top = `calc(var(--cell) * ${piece.y})`;
       art.dataset.uid = String(piece.uid);
       art.tabIndex = 0;
       art.setAttribute("role", "button");
-      art.setAttribute("aria-label", `${CATALOG[piece.mod].name} on the grid`);
+      art.setAttribute("aria-label", `${REGISTRY[piece.mod].name} ${starText(piece.stars)} on the grid`);
       art.classList.toggle("is-carried", carry?.held.kind === "piece" && carry.held.uid === piece.uid);
       return art;
     }));
@@ -228,8 +233,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       attune.replaceChildren(...(element ? [icon(element)] : []));
       node.dataset.attuned = element ?? "";
     });
-    levels.replaceChildren(...ELEMENTS.map((element) => h("span", { class: "level", "data-affinity": element, "data-element": element },
-      icon(element), h("span", { class: "level__pips" }, ...Array.from({ length: MAX_LEVEL }, (_, pip) => h("i", { class: pip < build.levels[element] ? "is-on" : "" }))))));
+    levels.replaceChildren(...ELEMENTAL.map((element) => h("span", { class: "level", "data-affinity": element, "data-element": element },
+      icon(element), h("b", {}, String(run.grid.filter((piece) => REGISTRY[piece.mod].tags.includes(element)).length)))));
 
     BAR_IDS.forEach((bar, index) => barSlots[index].forEach(({ node, chip, damage }, slot) => {
       const action = run.loadout[bar][slot];
@@ -239,16 +244,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       setText(damage, String(hit));
       node.setAttribute("aria-label", `${BAR_NAME[bar]} slot ${slot + 1}: ${ACTION_LABEL[action]}, ${hit} damage. Change it.`);
     }));
-    const extras = [
-      `♥ ${side.fighter.maxHealth} health`,
-      ...(build.parryHeal > 0 ? [`parry heals ${build.parryHeal}`] : []),
-      ...(build.surge > 0 ? [`+${build.surge} after a Mixup`] : []),
-    ];
+    const extras = [`♥ ${side.fighter.maxHealth} health`, `Charge holds ${build.capacity}`];
     setText(stats, extras.join(" · "));
 
     const rank = shopRank(run.day);
-    odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...TIER_ODDS[rank].flatMap((chance, tier) => chance === 0 ? []
-      : [h("span", { class: "odds__tier" }, h("i", { class: "gem", "data-tier": String(tier + 1) }), `${chance}%`)]));
+    odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => chance === 0 ? []
+      : [h("span", { class: "odds__tier", title: RARITY[RARITIES[index]].label }, h("i", { class: "gem", "data-material": RARITY[RARITIES[index]].material }), `${chance}%`)]));
     setText(money, `$${run.money}`);
     lock.setAttribute("aria-pressed", String(run.shop.locked));
     setText(lock.firstElementChild!, run.shop.locked ? "Locked" : "Lock");
@@ -265,12 +266,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         node.setAttribute("aria-label", "Sold");
         return;
       }
-      const definition = CATALOG[mod];
-      node.dataset.affinity = definition.affinity;
-      node.classList.toggle("is-poor", definition.price > run.money);
+      const definition = REGISTRY[mod];
+      node.dataset.affinity = definition.tags[0];
+      node.classList.toggle("is-poor", priceOf(mod) > run.money);
       node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
-        h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${definition.price}`)));
-      node.setAttribute("aria-label", `${definition.name}, ${AFFINITY_LABEL[definition.affinity]}, $${definition.price}. Buy it.`);
+        h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
+      node.setAttribute("aria-label", `${definition.name}, ${tagLine(definition.tags)}, $${priceOf(mod)}. Buy it.`);
     });
     drawCarry();
   }
@@ -331,7 +332,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
   function moveCarry(dx: number, dy: number): void {
     if (carry === null) return;
-    const [width, height] = shapeSize(shapeCells(CATALOG[carry.mod].shape, carry.rotation));
+    const [width, height] = shapeSize(shapeCells(REGISTRY[carry.mod].shape, carry.rotation));
     carry.x = Math.min(GRID_SIZE - width, Math.max(0, carry.x + dx));
     carry.y = Math.min(GRID_SIZE - height, Math.max(0, carry.y + dy));
     drawCarry();
@@ -361,7 +362,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const grid = gridBox.getBoundingClientRect();
     if (inside(grid, x, y)) {
       const size = grid.width / GRID_SIZE;
-      const [ax, ay] = shapeCells(CATALOG[current.mod].shape, current.rotation)[current.anchor];
+      const [ax, ay] = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
       const origin = { x: Math.floor((x - grid.left) / size) - ax, y: Math.floor((y - grid.top) / size) - ay };
       const except = current.held.kind === "piece" ? current.held.uid : null;
       return { kind: "grid", ...origin, legal: canPlace(run.grid, { mod: current.mod, rotation: current.rotation, ...origin }, except) };
@@ -390,7 +391,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (current.ghost === null) return;
     const bounds = screen.getBoundingClientRect();
     const size = gridBox.getBoundingClientRect().width / GRID_SIZE;
-    const [ax, ay] = shapeCells(CATALOG[current.mod].shape, current.rotation)[current.anchor];
+    const [ax, ay] = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
     current.ghost.style.left = `${current.x - bounds.left - (ax + 0.5) * size}px`;
     current.ghost.style.top = `${current.y - bounds.top - (ay + 0.5) * size}px`;
     current.target = targetAt(current.x, current.y, current);
@@ -400,7 +401,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     shop.classList.toggle("is-sell", target?.kind === "sell");
     if (current.held.kind !== "offer") {
       const owned = heldMod(current.held);
-      shop.dataset.sell = owned ? `Sell +$${sellValue(owned.mod)}` : "";
+      shop.dataset.sell = owned ? `Sell +$${sellValue(owned)}` : "";
     }
   }
 
@@ -479,7 +480,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (cell && gridBox.contains(cell)) {
       const grid = gridBox.getBoundingClientRect();
       const size = grid.width / GRID_SIZE;
-      const [ax, ay] = shapeCells(CATALOG[carry.mod].shape, carry.rotation)[0];
+      const [ax, ay] = shapeCells(REGISTRY[carry.mod].shape, carry.rotation)[0];
       carry.x = Math.floor((event.clientX - grid.left) / size) - ax;
       carry.y = Math.floor((event.clientY - grid.top) / size) - ay;
       event.preventDefault();
@@ -622,18 +623,16 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (found) {
       const mod = heldMod(found.held);
       if (mod === null) return null;
-      const definition = CATALOG[mod.mod];
-      const cellsCount = shapeCells(definition.shape, 0).length;
-      const lines: Node[] = [
-        h("b", {}, definition.name),
-        h("span", { class: "tip__meta", "data-affinity": definition.affinity }, icon(definition.affinity === "neutral" ? "chip" : definition.affinity),
-          `${AFFINITY_LABEL[definition.affinity]} · ${TIER_GEM[definition.tier]} · ${cellsCount} cell${cellsCount === 1 ? "" : "s"}`),
-        h("span", {}, isElement(definition.affinity) ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
+      const definition = REGISTRY[mod.mod];
+      const elemental = elementsOf(definition.tags).some(isElemental);
+      return [
+        h("b", {}, `${definition.name} ${starText(mod.stars)}`),
+        h("span", { class: "tip__meta", "data-affinity": definition.tags[0] }, icon(modIconFor(mod.mod)), `${tagLine(definition.tags)} · ${rarityLine(definition.rarity)}`),
+        h("span", { class: "tip__perk" }, definition.description),
+        h("span", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
+        h("small", {}, found.held.kind === "offer" ? `$${priceOf(mod.mod)} · tap to bank it, drag to place it`
+          : `Sells for $${sellValue(mod)} · drag to move, right-click or R to turn`),
       ];
-      if (definition.text) lines.push(h("span", { class: "tip__perk" }, definition.text));
-      lines.push(h("small", {}, found.held.kind === "offer" ? `$${definition.price} · tap to bank it, drag to place it`
-        : `Sells for $${sellValue(mod.mod)} · drag to move, right-click or R to turn`));
-      return lines;
     }
     const lane = target.closest<HTMLElement>("[data-lane]");
     if (lane) {
@@ -642,16 +641,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const attuned = build.attuned[action];
       return [h("b", {}, `${ACTION_LABEL[action]} lane +${build.lanes[action]}`),
         h("span", {}, `Every cell in this row powers ${ACTION_LABEL[action]} ${action === "block" ? "(the riposte)" : ""}`),
-        h("small", {}, attuned ? `Attuned to ${AFFINITY_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
+        h("small", {}, attuned ? `Attuned to ${TAG_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
     }
     const level = target.closest<HTMLElement>("[data-element]");
     if (level) {
-      const element = level.dataset.element as ElementAffinity;
-      const build = buildOf(run);
-      const next = (build.levels[element] + 1) * CELLS_PER_LEVEL;
-      return [h("b", {}, `${AFFINITY_LABEL[element]} · level ${build.levels[element]}`),
-        h("span", {}, ELEMENT_EFFECT[element]),
-        h("small", {}, build.levels[element] >= MAX_LEVEL ? "At its highest level" : `${build.cells[element]} cells; the next level at ${next}`)];
+      const element = level.dataset.element as Elemental;
+      return [h("b", {}, TAG_LABEL[element]), h("span", {}, ELEMENT_IDENTITY[element]), h("small", {}, "Mods on your grid that carry it")];
     }
     return null;
   }

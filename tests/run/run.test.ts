@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { defaultLoadout } from "../../src/battle/bars.ts";
-import { CATALOG } from "../../src/mods/catalog.ts";
-import type { ModId } from "../../src/mods/catalog.ts";
+import { priceOf } from "../../src/mods/registry.ts";
+import type { ModId } from "../../src/mods/registry.ts";
 import { STARTING_MONEY, sellValue } from "../../src/run/economy.ts";
 import {
   RUN_HEARTS, TROPHIES_TO_WIN, beginFight, buy, finishFight, move, newRun, nextDay, opponentOf, rerollPrice, reroll, rotate, sell,
@@ -55,30 +55,30 @@ describe("a new run", () => {
 
 describe("buying", () => {
   it("puts a mod in the first free bank slot, charges for it and sells out the offer", () => {
-    const run = stocked(["ember", "static", null, "corona", "coil"]);
+    const run = stocked(["heat-coil", "chain-circuit", null, "solar-flare", "live-wire"]);
     expect(buy(run, 1)).toBeNull();
-    expect(run.bank[0]).toEqual({ uid: 1, mod: "static", rotation: 0 });
-    expect(run.money).toBe(50 - CATALOG.static.price);
-    expect(run.shop.offers).toEqual(["ember", null, null, "corona", "coil"]);
+    expect(run.bank[0]).toEqual({ uid: 1, mod: "chain-circuit", stars: 1, rotation: 0 });
+    expect(run.money).toBe(50 - priceOf("chain-circuit"));
+    expect(run.shop.offers).toEqual(["heat-coil", null, null, "solar-flare", "live-wire"]);
     expect(buy(run, 0)).toBeNull();
-    expect(run.bank[1]).toEqual({ uid: 2, mod: "ember", rotation: 0 });
+    expect(run.bank[1]).toEqual({ uid: 2, mod: "heat-coil", stars: 1, rotation: 0 });
     expect(run.nextUid).toBe(3);
   });
 
   it("drops a mod straight onto the grid when the placement is legal", () => {
-    const run = stocked(["static", "ember", null, null, null]);
+    const run = stocked(["chain-circuit", "heat-coil", null, null, null]);
     expect(buy(run, 0, { grid: { x: 0, y: 0, rotation: 1 } })).toBeNull();
-    expect(run.grid).toEqual([{ uid: 1, mod: "static", rotation: 1, x: 0, y: 0 }]);
+    expect(run.grid).toEqual([{ uid: 1, mod: "chain-circuit", stars: 1, rotation: 1, x: 0, y: 0 }]);
     expect(buy(run, 1, { grid: { x: 0, y: 1, rotation: 0 } })).toBe("blocked");
-    expect(run.shop.offers[1]).toBe("ember");
-    expect(run.money).toBe(50 - CATALOG.static.price);
+    expect(run.shop.offers[1]).toBe("heat-coil");
+    expect(run.money).toBe(50 - priceOf("chain-circuit"));
   });
 
   it("refuses what it cannot afford, what is sold out, and what has nowhere to go", () => {
-    const poor = stocked(["corona", null, "ember", "ember", "ember"], 6);
+    const poor = stocked(["solar-flare", null, "heat-coil", "heat-coil", "heat-coil"], 6);
     expect(buy(poor, 0)).toBe("cannot-afford");
     expect(buy(poor, 1)).toBe("sold-out");
-    const full = stocked(["ember", "ember", "ember", "ember", "ember"]);
+    const full = stocked(["heat-coil", "heat-coil", "heat-coil", "heat-coil", "heat-coil"]);
     for (let offer = 0; offer < 4; offer++) expect(buy(full, offer)).toBeNull();
     const before = structuredClone(full);
     expect(buy(full, 4)).toBe("no-room");
@@ -90,13 +90,13 @@ describe("buying", () => {
 
 describe("owning mods", () => {
   it("sells for half price from the bank or the grid", () => {
-    const run = stocked(["corona", "overclock", null, null, null]);
+    const run = stocked(["solar-flare", "amplifier", null, null, null]);
     buy(run, 0);
     buy(run, 1, { grid: { x: 1, y: 1, rotation: 0 } });
     const money = run.money;
     expect(sell(run, { bank: 0 })).toBeNull();
     expect(sell(run, { piece: 2 })).toBeNull();
-    expect(run.money).toBe(money + sellValue("corona") + sellValue("overclock"));
+    expect(run.money).toBe(money + sellValue({ mod: "solar-flare", stars: 1 }) + sellValue({ mod: "amplifier", stars: 1 }));
     expect(run.bank[0]).toBeNull();
     expect(run.grid).toEqual([]);
     expect(sell(run, { bank: 0 })).toBe("missing");
@@ -104,25 +104,25 @@ describe("owning mods", () => {
   });
 
   it("moves between bank and grid carrying its rotation, and refuses an illegal drop without losing the piece", () => {
-    const run = stocked(["thunderclap", "static", null, null, null]);
+    const run = stocked(["thunderhead", "chain-circuit", null, null, null]);
     buy(run, 0);
     buy(run, 1);
     expect(move(run, { bank: 0 }, { grid: { x: 0, y: 1, rotation: 0 } })).toBeNull();
-    expect(run.grid).toEqual([{ uid: 1, mod: "thunderclap", rotation: 0, x: 0, y: 1 }]);
+    expect(run.grid).toEqual([{ uid: 1, mod: "thunderhead", stars: 1, rotation: 0, x: 0, y: 1 }]);
     const before = structuredClone(run);
     expect(move(run, { bank: 1 }, { grid: { x: 0, y: 1, rotation: 0 } })).toBe("blocked");
     expect(run).toEqual(before);
     expect(move(run, { bank: 1 }, { grid: { x: 0, y: 0, rotation: 0 } })).toBeNull();
     expect(move(run, { piece: 1 }, { bank: 3 })).toBeNull();
-    expect(run.bank[3]).toEqual({ uid: 1, mod: "thunderclap", rotation: 0 });
+    expect(run.bank[3]).toEqual({ uid: 1, mod: "thunderhead", stars: 1, rotation: 0 });
     // Within the grid, over its own old cells.
     expect(move(run, { piece: 2 }, { grid: { x: 0, y: 0, rotation: 1 } })).toBeNull();
-    expect(run.grid).toEqual([{ uid: 2, mod: "static", rotation: 1, x: 0, y: 0 }]);
+    expect(run.grid).toEqual([{ uid: 2, mod: "chain-circuit", stars: 1, rotation: 1, x: 0, y: 0 }]);
     expect(move(run, { bank: 3 }, { bank: 3 })).toBeNull();
   });
 
   it("rotates a banked mod freely and a placed one only where the turn is legal", () => {
-    const run = stocked(["static", "ember", null, null, null]);
+    const run = stocked(["chain-circuit", "heat-coil", null, null, null]);
     buy(run, 0);
     expect(rotate(run, { bank: 0 })).toBeNull();
     expect(run.bank[0]!.rotation).toBe(1);
@@ -164,15 +164,15 @@ describe("the shop", () => {
   });
 
   it("keeps locked offers that were not bought into tomorrow and refills the sold ones", () => {
-    const run = stocked(["ember", "static", "coil", "shade", "spark"]);
+    const run = stocked(["heat-coil", "chain-circuit", "live-wire", "void-tap", "arc-dynamo"]);
     buy(run, 1);
     toggleLock(run);
     playDay(run, WIN);
     expect(nextDay(run)).toBeNull();
     const fresh = rollOffers(SEED, 2, 0);
-    expect(run.shop).toEqual({ offers: ["ember", fresh[1], "coil", "shade", "spark"], locked: false, rerolls: 0 });
+    expect(run.shop).toEqual({ offers: ["heat-coil", fresh[1], "live-wire", "void-tap", "arc-dynamo"], locked: false, rerolls: 0 });
 
-    const unlocked = stocked(["ember", "static", "coil", "shade", "spark"]);
+    const unlocked = stocked(["heat-coil", "chain-circuit", "live-wire", "void-tap", "arc-dynamo"]);
     playDay(unlocked, WIN);
     nextDay(unlocked);
     expect(unlocked.shop.offers).toEqual(fresh);
@@ -191,7 +191,7 @@ describe("the day", () => {
   });
 
   it("locks every prep action once the fight begins", () => {
-    const run = stocked(["ember", "ember", null, null, null]);
+    const run = stocked(["heat-coil", "heat-coil", null, null, null]);
     buy(run, 0);
     expect(beginFight(run)).toBeNull();
     expect(run).toMatchObject({ phase: "fight", stake: run.money });

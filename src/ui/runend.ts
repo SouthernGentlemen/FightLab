@@ -22,7 +22,7 @@ export function mountRunEnd(root: HTMLElement, options: RunEndOptions): () => vo
   const champion = run.ending === "champion";
   const grid = h("div", { class: "runend__grid" }, ...Array.from({ length: GRID_SIZE * GRID_SIZE }, () => h("span", { class: "cell" })),
     ...run.grid.map((piece) => {
-      const art = modArt(piece.mod, piece.rotation, "piece");
+      const art = modArt(piece.mod, piece.rotation, "piece", piece.stars);
       art.style.left = `calc(var(--cell) * ${piece.x})`;
       art.style.top = `calc(var(--cell) * ${piece.y})`;
       return art;

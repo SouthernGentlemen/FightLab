@@ -3,12 +3,12 @@ import { defaultLoadout, isBarId, isSlotIndex, setLoadoutSlot } from "../battle/
 import type { ActionLoadout, BarId } from "../battle/bars.ts";
 import type { MatchOutcome, OutcomeReason } from "../battle/director.ts";
 import type { StyleRank } from "../battle/style.ts";
-import { CATALOG } from "../mods/catalog.ts";
-import type { ModId } from "../mods/catalog.ts";
 import { compileBuild } from "../mods/compile.ts";
 import type { Build } from "../mods/compile.ts";
 import { BANK_SIZE, canPlace, emptyBank, firstFreeBankSlot, place, removeFromGrid, rotateInPlace, setBankSlot } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
+import { priceOf } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { nextRotation } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { STARTING_MONEY, payday, sellValue, total } from "./economy.ts";
@@ -137,7 +137,7 @@ function put(run: RunState, owned: OwnedMod, to: Destination, except: number | n
     run.bank = setBankSlot(run.bank, to.bank, owned);
     return null;
   }
-  const placed = { uid: owned.uid, mod: owned.mod, ...to.grid };
+  const placed = { uid: owned.uid, mod: owned.mod, stars: owned.stars, ...to.grid };
   if (!canPlace(run.grid, placed, except)) return "blocked";
   run.grid = place(run.grid, placed)!;
   return null;
@@ -154,17 +154,17 @@ export function buy(run: RunState, offer: number, to?: Destination): Refusal | n
   if (!Number.isInteger(offer) || offer < 0 || offer >= SHOP_SIZE) throw new RangeError(`offer ${offer} does not exist`);
   const mod = run.shop.offers[offer];
   if (mod === null) return "sold-out";
-  if (CATALOG[mod].price > run.money) return "cannot-afford";
+  if (priceOf(mod) > run.money) return "cannot-afford";
   let destination = to;
   if (destination === undefined) {
     const slot = firstFreeBankSlot(run.bank);
     if (slot === null) return "no-room";
     destination = { bank: slot };
   }
-  const refused = put(run, { uid: run.nextUid, mod, rotation: 0 }, destination, null);
+  const refused = put(run, { uid: run.nextUid, mod, stars: 1, rotation: 0 }, destination, null);
   if (refused) return refused;
   run.nextUid++;
-  run.money -= CATALOG[mod].price;
+  run.money -= priceOf(mod);
   run.shop = { ...run.shop, offers: Object.freeze(run.shop.offers.map((candidate, index) => (index === offer ? null : candidate))) };
   return null;
 }
@@ -175,7 +175,7 @@ export function sell(run: RunState, from: Source): Refusal | null {
   const owned = ownedAt(run, from);
   if (owned === null) return "missing";
   take(run, from);
-  run.money += sellValue(owned.mod);
+  run.money += sellValue(owned);
   return null;
 }
 

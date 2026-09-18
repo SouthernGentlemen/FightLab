@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { BEATS } from "../../src/battle/matchup.ts";
 import { isMixupPlan } from "../../src/battle/mixup.ts";
 import { isActionLoadout, sameBar } from "../../src/battle/bars.ts";
-import { CATALOG } from "../../src/mods/catalog.ts";
+import { REGISTRY, priceOf } from "../../src/mods/registry.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
 import { place } from "../../src/mods/grid.ts";
 import type { Grid } from "../../src/mods/grid.ts";
@@ -86,11 +86,8 @@ describe("generated opponents", () => {
           expect(next, `seed ${seed} day ${day}`).not.toBeNull();
           rebuilt = next!;
         }
-        expect(grid.reduce((spent, piece) => spent + CATALOG[piece.mod].price, 0)).toBeLessThanOrEqual(opponentBudget(day));
-        for (const piece of grid) {
-          const mod = CATALOG[piece.mod];
-          expect(mod.affinity !== "neutral" || mod.perk?.kind === "overclock", mod.id).toBe(true);
-        }
+        expect(grid.reduce((spent, piece) => spent + priceOf(piece.mod), 0)).toBeLessThanOrEqual(opponentBudget(day));
+        for (const piece of grid) expect(REGISTRY[piece.mod].tags.includes("neutral"), piece.mod).toBe(false);
         expect(() => compileBuild(grid)).not.toThrow();
       }
     }

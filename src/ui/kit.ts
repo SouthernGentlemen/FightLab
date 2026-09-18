@@ -3,10 +3,12 @@ import type { ActionType } from "../battle/actions.ts";
 import type { BarId } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import type { StyleMeter } from "../battle/style.ts";
-import { CATALOG } from "../mods/catalog.ts";
-import type { ModAffinity, ModId } from "../mods/catalog.ts";
+import { RARITY } from "../mods/rarity.ts";
+import { REGISTRY } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
+import type { Stars } from "../mods/stars.ts";
 import { button, h, icon, replay, setData, setText } from "./dom.ts";
 import type { IconName } from "./icons.ts";
 
@@ -18,38 +20,28 @@ export const ACTION_LABEL: Readonly<Record<ActionType, string>> = {
 
 export const BAR_NAME: Readonly<Record<BarId, string>> = { primary: "Bar A", secondary: "Bar B" };
 
-export const AFFINITY_LABEL: Readonly<Record<ModAffinity, string>> = { solar: "Solar", void: "Void", arc: "Arc", neutral: "Neutral" };
-
-export const TIER_GEM = ["", "bronze", "silver", "gold", "diamond"] as const;
-
-/** An element mod shows its affinity; a neutral mod has none, so it shows what it does. */
+/** The glyph a mod names in the registry; every one of them is in the UI's icon set. */
 export function modIcon(mod: ModId): IconName {
-  const definition = CATALOG[mod];
-  if (definition.affinity !== "neutral") return definition.affinity;
-  switch (definition.perk?.kind) {
-    case "income": return "coin";
-    case "free-reroll": return "ticket";
-    case "style-payout": return "star";
-    default: return "chip";
-  }
+  return REGISTRY[mod].visual.glyph;
 }
 
 /**
  * A mod drawn as bevelled blocks in its shape. The same markup draws full size on the grid and in
  * miniature in the bank and the shop; `--cell` on an ancestor decides which.
  */
-export function modArt(mod: ModId, rotation: Rotation, className = ""): HTMLElement {
-  const definition = CATALOG[mod];
+export function modArt(mod: ModId, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
+  const definition = REGISTRY[mod];
   const cells = shapeCells(definition.shape, rotation);
   const [width, height] = shapeSize(cells);
   const node = h("div", {
     class: `mod ${className}`.trim(),
-    "data-affinity": definition.affinity,
+    "data-affinity": definition.tags[0],
+    "data-stars": String(stars),
     style: `width: calc(var(--cell) * ${width}); height: calc(var(--cell) * ${height})`,
   });
   cells.forEach(([x, y], index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
-    if (index === 0) cell.append(icon(modIcon(mod), "icon mod__icon"), h("span", { class: "gem", "data-tier": String(definition.tier) }));
+    if (index === 0) cell.append(icon(modIcon(mod), "icon mod__icon"), h("span", { class: "gem", "data-material": RARITY[definition.rarity].material }));
     node.append(cell);
   });
   return node;

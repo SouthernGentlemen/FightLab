@@ -16,10 +16,12 @@ export interface DayFight {
 /** The day's fight: the player's bars and compiled grid against the opponent the seed made for today. */
 export function fightFor(run: RunState, rules: BattleRules = RULES): DayFight {
   const opponent = opponentOf(run);
+  const builds = [compileBuild(run.grid), compileBuild(opponent.grid)] as const;
   return {
     opponent,
     config: {
-      sides: [combatSide(compileBuild(run.grid)), combatSide(compileBuild(opponent.grid))],
+      sides: [combatSide(builds[0]), combatSide(builds[1])],
+      programs: [builds[0].program, builds[1].program],
       player: run.loadout,
       opponent: opponent.plan,
       rules,

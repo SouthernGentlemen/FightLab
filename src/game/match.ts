@@ -9,10 +9,15 @@ import type { StyleMeter } from "../battle/style.ts";
 import { CombatArena } from "../combat/adapter.ts";
 import type { CombatSide } from "../combat/adapter.ts";
 import type { CombatEvent } from "../combat/kernel/index.ts";
+import { EMPTY_PROGRAM } from "../mods/program.ts";
+import type { ModProgram } from "../mods/program.ts";
+import { ModdedArena } from "./modded.ts";
 import { BARE_SIDE } from "./sides.ts";
 
 export interface MatchConfig {
   readonly sides: readonly [CombatSide, CombatSide];
+  /** Each fighter's placed mods, as the engine runs them. */
+  readonly programs: readonly [ModProgram, ModProgram];
   readonly player: ActionLoadout;
   readonly opponent: OpponentPlan;
   readonly rules: BattleRules;
@@ -20,6 +25,7 @@ export interface MatchConfig {
 
 export const DEFAULT_MATCH: MatchConfig = {
   sides: [BARE_SIDE, BARE_SIDE],
+  programs: [EMPTY_PROGRAM, EMPTY_PROGRAM],
   player: defaultLoadout(),
   opponent: REFERENCE_OPPONENT,
   rules: RULES,
@@ -36,6 +42,8 @@ export class Match {
   readonly config: MatchConfig;
   readonly battle: BattleState;
   readonly arena: CombatArena;
+  /** The arena the director fights on: the combat arena with both fighters' mods around it. */
+  readonly mods: ModdedArena;
   /** Every combat event since the fight began, in order. */
   readonly events: CombatEvent[] = [];
   /** Whether the player switched bars at each pause left so far. */
@@ -52,12 +60,13 @@ export class Match {
     this.config = config;
     this.battle = createBattle(config.player, config.opponent);
     this.arena = new CombatArena(config.sides);
+    this.mods = new ModdedArena(this.arena, [config.programs[0], config.programs[1]]);
   }
 
   step(): void {
     this.presentationTick++;
     if (this.battle.phase === "round-pause" || this.battle.phase === "ko") return;
-    stepBattle(this.battle, this.arena, this.config.rules);
+    stepBattle(this.battle, this.mods, this.config.rules);
     if (this.arena.lastReport) this.events.push(...this.arena.lastReport.events);
     if (this.over) this.endedAt = this.presentationTick;
   }

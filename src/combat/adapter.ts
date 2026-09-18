@@ -13,8 +13,6 @@ export interface CombatSide {
   readonly fighter: FighterDefinition;
   readonly actions: ActionTable;
   readonly bonus: Readonly<Record<ActionType, number>>;
-  /** Further damage every hit adds in a round the side entered by switching bars. */
-  readonly surge: number;
 }
 
 function wholeDamage(value: number): boolean {
@@ -55,11 +53,11 @@ export class CombatArena implements Arena {
   private pending: [Command, Command] = [null, null];
 
   constructor(sides: readonly [CombatSide, CombatSide]) {
-    for (const { fighter, actions, bonus, surge } of sides) {
+    for (const { fighter, actions, bonus } of sides) {
       for (const action of Object.values(actions)) {
         if (!fighter.moves[action.move]) throw new Error(`${fighter.id}: ${action.id} names missing move '${action.move}'`);
       }
-      if (!ACTION_TYPES.every((action) => wholeDamage(bonus[action])) || !wholeDamage(surge)) {
+      if (!ACTION_TYPES.every((action) => wholeDamage(bonus[action]))) {
         throw new Error(`${fighter.id}: bonuses must be whole, non-negative damage`);
       }
     }
@@ -71,15 +69,15 @@ export class CombatArena implements Arena {
     return this.simulation.getState();
   }
 
-  commit(player: ActionType, opponent: ActionType, context: CommitContext, extras: CommitExtras = NO_EXTRAS): void {
+  commit(player: ActionType, opponent: ActionType, _context: CommitContext, extras: CommitExtras = NO_EXTRAS): void {
     this.simulation.expose(0, extras.exposure[0]);
     this.simulation.expose(1, extras.exposure[1]);
-    this.pending = [this.command(0, player, context.mixedUp[0], extras), this.command(1, opponent, context.mixedUp[1], extras)];
+    this.pending = [this.command(0, player, extras), this.command(1, opponent, extras)];
   }
 
-  private command(index: 0 | 1, action: ActionType, mixedUp: boolean, extras: CommitExtras): Command {
+  private command(index: 0 | 1, action: ActionType, extras: CommitExtras): Command {
     const side = this.sides[index];
-    const bonus = side.bonus[action] + (mixedUp ? side.surge : 0) + extras.bonus[index];
+    const bonus = side.bonus[action] + extras.bonus[index];
     return { kind: "move", move: side.actions[action].move, bonus, heal: extras.heal[index] };
   }
 

@@ -2,11 +2,12 @@ import { actionLoadout, isActionLoadout } from "../battle/bars.ts";
 import type { ActionLoadout } from "../battle/bars.ts";
 import type { MatchOutcome, OutcomeReason } from "../battle/director.ts";
 import type { StyleRank } from "../battle/style.ts";
-import { isModId } from "../mods/catalog.ts";
-import type { ModId } from "../mods/catalog.ts";
 import { BANK_SIZE, place } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
+import { isModId } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { isRotation } from "../mods/shapes.ts";
+import { isStars } from "../mods/stars.ts";
 import type { PaydayLabel, PaydayLine } from "./economy.ts";
 import { isSeed } from "./random.ts";
 import { RUN_HEARTS, TROPHIES_TO_WIN } from "./run.ts";
@@ -18,7 +19,8 @@ import { SHOP_SIZE } from "./shop.ts";
  * version, a missing field, an impossible value — is discarded whole, never half-loaded. Changing
  * the saved shape means a new version and, if old saves are to survive, a migration with a test.
  */
-export const SAVE_VERSION = 1;
+/** 2 since the mod registry replaced the first catalogue: a version-1 save names mods that no longer exist. */
+export const SAVE_VERSION = 2;
 export const SAVE_KEY = "fightlab.run";
 
 /** The player's Mixup decisions in the fight in progress, one per pause left so far. */
@@ -108,7 +110,8 @@ function modId(value: unknown, what: string): ModId {
 function owned(value: unknown, what: string): OwnedMod {
   const data = record(value, what);
   if (!isRotation(data.rotation)) fail(`${what}: rotation`);
-  return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod: modId(data.mod, `${what}: mod`), rotation: data.rotation });
+  if (!isStars(data.stars)) fail(`${what}: stars`);
+  return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod: modId(data.mod, `${what}: mod`), stars: data.stars, rotation: data.rotation });
 }
 
 function readGrid(value: unknown): Grid {

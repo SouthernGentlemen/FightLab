@@ -1,20 +1,22 @@
-import { CATALOG, MOD_IDS, TIERS } from "../mods/catalog.ts";
-import type { ModId, Tier } from "../mods/catalog.ts";
+import { RARITIES } from "../mods/rarity.ts";
+import type { Rarity } from "../mods/rarity.ts";
+import { MOD_IDS, REGISTRY } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { stream } from "./random.ts";
 import type { Random } from "./random.ts";
 
-/** The catalogue is sixteen mods; the shop shows five of them at a time. */
+/** The shop shows five of the registry's mods at a time. */
 export const SHOP_SIZE = 5;
 export const REROLL_PRICE = 1;
 
 export type ShopRank = 1 | 2 | 3 | 4;
 
-/** Percent chance of each tier, T1 to T4, by shop rank. */
-export const TIER_ODDS: Readonly<Record<ShopRank, readonly [number, number, number, number]>> = {
-  1: [80, 20, 0, 0],
-  2: [55, 35, 10, 0],
-  3: [30, 40, 25, 5],
-  4: [15, 35, 35, 15],
+/** Percent chance of each rarity, Common to Legendary, by shop rank. */
+export const RARITY_ODDS: Readonly<Record<ShopRank, readonly [number, number, number, number, number]>> = {
+  1: [70, 30, 0, 0, 0],
+  2: [45, 35, 20, 0, 0],
+  3: [25, 35, 25, 12, 3],
+  4: [10, 25, 30, 25, 10],
 };
 
 export function shopRank(day: number): ShopRank {
@@ -24,17 +26,12 @@ export function shopRank(day: number): ShopRank {
   return 4;
 }
 
-const BY_TIER: Readonly<Record<Tier, readonly ModId[]>> = {
-  1: MOD_IDS.filter((id) => CATALOG[id].tier === 1),
-  2: MOD_IDS.filter((id) => CATALOG[id].tier === 2),
-  3: MOD_IDS.filter((id) => CATALOG[id].tier === 3),
-  4: MOD_IDS.filter((id) => CATALOG[id].tier === 4),
-};
+const BY_RARITY = Object.fromEntries(RARITIES.map((rarity) => [rarity, MOD_IDS.filter((id) => REGISTRY[id].rarity === rarity)])) as unknown as Record<Rarity, readonly ModId[]>;
 
-/** One offer: a tier by the day's odds, then a mod of that tier, uniformly, with replacement. */
+/** One offer: a rarity by the day's odds, then a mod of that rarity, uniformly, with replacement. */
 export function drawOffer(random: Random, day: number): ModId {
-  const tier = random.weighted(TIERS, TIER_ODDS[shopRank(day)]);
-  return random.pick(BY_TIER[tier]);
+  const rarity = random.weighted(RARITIES, RARITY_ODDS[shopRank(day)]);
+  return random.pick(BY_RARITY[rarity]);
 }
 
 /** The offers for `day` after `reroll` rerolls — a pure function of the three. */

@@ -85,7 +85,7 @@ describe("determinism", () => {
     const run = newRun(606);
     run.day = 7;
     run.money = 40;
-    run.shop = { ...run.shop, offers: ["corona", "thunderclap", "eclipse", null, null] };
+    run.shop = { ...run.shop, offers: ["solar-flare", "thunderhead", "null-reservoir", null, null] };
     buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
     buy(run, 1, { grid: { x: 0, y: 1, rotation: 2 } });
     beginFight(run);

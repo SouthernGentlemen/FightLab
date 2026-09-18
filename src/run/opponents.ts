@@ -5,8 +5,9 @@ import type { ActionBar } from "../battle/bars.ts";
 import { BEATS } from "../battle/matchup.ts";
 import { opponentPlan } from "../battle/mixup.ts";
 import type { MixupPlan, OpponentPlan } from "../battle/mixup.ts";
-import { CATALOG, isElement } from "../mods/catalog.ts";
-import type { ModId } from "../mods/catalog.ts";
+import { REGISTRY, priceOf } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
+import { elementsOf, isElemental } from "../mods/tags.ts";
 import { GRID_SIZE, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
 import type { Grid, Placement } from "../mods/grid.ts";
 import { ROTATIONS } from "../mods/shapes.ts";
@@ -111,7 +112,7 @@ function laneWeights(plan: OpponentPlan): Record<ActionType, number> {
  */
 function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionType, number>>): Placement | null {
   const owners = occupancy(grid);
-  const affinity = CATALOG[mod].affinity;
+  const elements = elementsOf(REGISTRY[mod].tags).filter(isElemental);
   let best: Placement | null = null;
   let bestScore = -Infinity;
   for (const rotation of ROTATIONS) {
@@ -121,11 +122,11 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
         if (!fits(owners, placement)) continue;
         let score = 0;
         for (const [, row] of cellsOf(placement)) {
-          if (!isElement(affinity)) continue;
+          if (elements.length === 0) continue;
           score += weights[LANES[row]];
           for (let column = 0; column < GRID_SIZE; column++) {
             const neighbour = owners.get(`${column},${row}`);
-            if (neighbour && CATALOG[neighbour.mod].affinity === affinity) score += 1;
+            if (neighbour && REGISTRY[neighbour.mod].tags.some((tag) => (elements as readonly string[]).includes(tag))) score += 1;
           }
         }
         if (score > bestScore) {
@@ -147,13 +148,12 @@ function buildFor(seed: number, day: number, plan: OpponentPlan): Grid {
     const random = stream(seed, "opponent-shop", day, roll);
     for (let offer = 0; offer < SHOP_SIZE; offer++) {
       const mod = drawOffer(random, day);
-      const definition = CATALOG[mod];
-      // Money is worth nothing to an opponent, so it only buys what changes the fight.
-      if (definition.price > budget || (definition.affinity === "neutral" && definition.perk?.kind !== "overclock")) continue;
+      // Money is worth nothing to an opponent, so it never buys a Neutral mod.
+      if (priceOf(mod) > budget || REGISTRY[mod].tags.includes("neutral")) continue;
       const placement = bestPlacement(grid, mod, weights);
       if (placement === null) continue;
-      grid = place(grid, { uid: uid++, ...placement })!;
-      budget -= definition.price;
+      grid = place(grid, { uid: uid++, stars: 1, ...placement })!;
+      budget -= priceOf(mod);
     }
   }
   return grid;

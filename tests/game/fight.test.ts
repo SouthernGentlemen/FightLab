@@ -11,8 +11,8 @@ import type { RunState } from "../../src/run/run.ts";
 function armed(seed: number): RunState {
   const run = newRun(seed);
   run.money = 40;
-  run.shop = { ...run.shop, offers: ["corona", "eclipse", "thunderclap", "nightfall", "shade"] };
-  // Corona along the top and down the middle, Eclipse in the bottom-left corner, Nightfall upright on the right.
+  run.shop = { ...run.shop, offers: ["solar-flare", "null-reservoir", "thunderhead", "venom-tap", "void-tap"] };
+  // Solar Flare along the top and down the middle, Null Reservoir in the bottom-left corner, Venom Tap upright on the right.
   for (const [offer, x, y, rotation] of [[0, 0, 0, 0], [1, 0, 1, 0], [3, 2, 1, 1]] as const) {
     if (buy(run, offer, { grid: { x, y, rotation } }) !== null) throw new Error(`offer ${offer} did not fit`);
   }
@@ -35,10 +35,11 @@ describe("the day's fight", () => {
     expect(config.opponent).toBe(opponent.plan);
     expect(config.sides[0]).toEqual(combatSide(compileBuild(run.grid)));
     expect(config.sides[1]).toEqual(combatSide(compileBuild(opponent.grid)));
-    // The compiled grid reaches the kernel: Corona's damage, a Void level's health and Eclipse's heal.
+    // The compiled grid reaches the fight: lane damage on the side, every placed mod in the program.
     expect(config.sides[0].bonus.strike).toBeGreaterThan(0);
-    expect(config.sides[0].fighter.maxHealth).toBe(110);
-    expect(config.sides[0].fighter.moves.parry.parry!.heal).toBe(5);
+    expect(config.programs[0]).toEqual(compileBuild(run.grid).program);
+    expect(config.programs[0].mods.map((mod) => mod.definition.id)).toEqual(["solar-flare", "null-reservoir", "venom-tap"]);
+    expect(config.programs[1]).toEqual(compileBuild(opponent.grid).program);
   });
 
   it("plays to a result the run can pay out on", () => {

@@ -8,7 +8,7 @@ import { SAVE_KEY, SAVE_VERSION, clearSave, decodeSave, encodeSave, readSave, wr
 function lived(): RunState {
   const run = newRun(31337);
   run.money = 40;
-  run.shop = { ...run.shop, offers: ["corona", "ember", "static", null, "coupon"] };
+  run.shop = { ...run.shop, offers: ["solar-flare", "heat-coil", "chain-circuit", null, "coupon"] };
   buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
   buy(run, 1);
   buy(run, 2, { grid: { x: 0, y: 2, rotation: 0 } });
@@ -36,14 +36,19 @@ function memory() {
 }
 
 describe("the autosave", () => {
-  it("is versioned from the first release", () => {
-    expect(SAVE_VERSION).toBe(1);
-    expect(JSON.parse(encodeSave(newRun(1), null))).toMatchObject({ version: 1, fight: null });
+  it("is versioned, and moved to version 2 when the mod registry replaced the first catalogue", () => {
+    expect(SAVE_VERSION).toBe(2);
+    expect(JSON.parse(encodeSave(newRun(1), null))).toMatchObject({ version: 2, fight: null });
+  });
+
+  it("discards a version-1 save whole: its mods no longer exist", () => {
+    const old = { version: 1, run: { ...JSON.parse(encodeSave(lived(), null)).run }, fight: null };
+    expect(decodeSave(JSON.stringify(old))).toBeNull();
   });
 
   it("round-trips a run exactly", () => {
     const run = lived();
-    expect(decodeSave(encodeSave(run, null))).toEqual({ version: 1, run, fight: null });
+    expect(decodeSave(encodeSave(run, null))).toEqual({ version: 2, run, fight: null });
     const fresh = newRun(0);
     expect(decodeSave(encodeSave(fresh, null))!.run).toEqual(fresh);
   });
@@ -61,7 +66,7 @@ describe("the autosave", () => {
 
   it("refuses any other version", () => {
     const run = lived();
-    for (const version of [0, 2, "1", null, undefined]) {
+    for (const version of [0, 1, 3, "2", null, undefined]) {
       expect(decodeSave(tampered(run, (document) => { document.version = version; })), String(version)).toBeNull();
     }
   });
@@ -80,6 +85,8 @@ describe("the autosave", () => {
       "overlapping mods": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].y = 0; },
       "a mod off the board": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].x = 1; },
       "a bad rotation": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].rotation = 4; },
+      "four stars": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].stars = 4; },
+      "no stars": (document) => { delete (document.run.bank as Array<Record<string, unknown> | null>)[0]!.stars; },
       "a short bank": (document) => { document.run.bank = [null, null, null]; },
       "a repeated uid": (document) => { (document.run.bank as Array<Record<string, unknown> | null>)[0]!.uid = 1; },
       "a uid from the future": (document) => { document.run.nextUid = 2; },

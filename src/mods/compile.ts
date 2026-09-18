@@ -1,37 +1,29 @@
-import { ACTION_TYPES } from "../battle/actions.ts";
 import type { ActionType } from "../battle/actions.ts";
-import { CATALOG, ELEMENTS, isElement } from "./catalog.ts";
-import type { ElementAffinity } from "./catalog.ts";
+import { ATTUNED_LANE_POWER, LANE_POWER } from "./balance.ts";
 import { GRID_SIZE, LANES, cellsOf, occupancy } from "./grid.ts";
 import type { Grid, PlacedMod } from "./grid.ts";
-
-/** Every three cells of one element on the grid is a level, up to three. */
-export const CELLS_PER_LEVEL = 3;
-export const MAX_LEVEL = 3;
-/** What each level of an element is worth. */
-export const SOLAR_DAMAGE_PER_LEVEL = 1;
-export const VOID_HEALTH_PER_LEVEL = 10;
-export const ARC_SURGE_PER_LEVEL = 2;
+import { programOf } from "./program.ts";
+import type { ModProgram } from "./program.ts";
+import { REGISTRY } from "./registry.ts";
+import { freshState, staticTotal } from "./resolve.ts";
+import { scaled } from "./stars.ts";
+import { ELEMENTAL, elementsOf, isElemental } from "./tags.ts";
+import type { Elemental } from "./tags.ts";
 
 /**
- * A grid as the plain numbers the rest of the game needs. This is the only thing that reads what
- * a mod does, and every number in it is damage, health, healing or money — nothing here can
- * describe a frame, an action order or a bar.
+ * A grid as what the rest of the game needs: the lane power each action's row gives it, the
+ * program the resource engine runs in a fight, and the run's perks. This is the only thing that
+ * reads a placed grid, and nothing in it can describe a frame, an action order or a bar.
  */
 export interface Build {
-  /** Lane power: what the grid's row for each action adds to that action's damage. */
+  /** What each action's row adds to every hit of that action. Block's reaches the riposte. */
   readonly lanes: Readonly<Record<ActionType, number>>;
-  /** The element a lane is attuned to, when all three of its cells share one. */
-  readonly attuned: Readonly<Record<ActionType, ElementAffinity | null>>;
-  readonly cells: Readonly<Record<ElementAffinity, number>>;
-  readonly levels: Readonly<Record<ElementAffinity, number>>;
-  /** Bonus damage on every hit of each action: lane, Solar level and perks. Block's is the riposte. */
-  readonly damage: Readonly<Record<ActionType, number>>;
-  /** Further bonus damage on every hit in a round entered with a Mixup: Arc levels and perks. */
-  readonly surge: number;
-  /** Added to the fighter's maximum health. */
-  readonly health: number;
-  readonly parryHeal: number;
+  /** The element a lane is attuned to, when every one of its three cells carries it. */
+  readonly attuned: Readonly<Record<ActionType, Elemental | null>>;
+  /** The placed mods at their stars, with the links their ports make, as the engine runs them. */
+  readonly program: ModProgram;
+  /** How much Charge the fighter can hold. */
+  readonly capacity: number;
   /** Dollars added to every payday. */
   readonly income: number;
   readonly freeRerolls: number;
@@ -39,64 +31,47 @@ export interface Build {
   readonly styleMultiplier: number;
 }
 
-function perAction(value: (action: ActionType) => number): Record<ActionType, number> {
-  return Object.fromEntries(ACTION_TYPES.map((action) => [action, value(action)])) as Record<ActionType, number>;
+function elementalOf(placed: PlacedMod): Elemental[] {
+  return elementsOf(REGISTRY[placed.mod].tags).filter(isElemental);
 }
 
-function perElement(value: (element: ElementAffinity) => number): Record<ElementAffinity, number> {
-  return Object.fromEntries(ELEMENTS.map((element) => [element, value(element)])) as Record<ElementAffinity, number>;
-}
-
-/** How many Overclocks touch `placed` — share an edge with one of its cells. */
-function overclocksTouching(placed: PlacedMod, owners: ReadonlyMap<string, PlacedMod>): number {
-  const touching = new Set<number>();
+/** What the Amplifiers touching `placed` add to each of its elemental cells. */
+function boostOn(placed: PlacedMod, owners: ReadonlyMap<string, PlacedMod>): number {
+  const touching = new Map<number, PlacedMod>();
   for (const [x, y] of cellsOf(placed)) {
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const other = owners.get(`${x + dx},${y + dy}`);
-      if (other && other.uid !== placed.uid && CATALOG[other.mod].perk?.kind === "overclock") touching.add(other.uid);
+      if (other && other.uid !== placed.uid) touching.set(other.uid, other);
     }
   }
-  return touching.size;
+  let boost = 0;
+  for (const other of touching.values()) {
+    for (const effect of REGISTRY[other.mod].effects) if (effect.kind === "lane-boost") boost += scaled(effect.amount, other.stars);
+  }
+  return boost;
 }
 
 export function compileBuild(grid: Grid): Build {
   const owners = occupancy(grid);
-  const boost = new Map(grid.map((placed) => [placed.uid, overclocksTouching(placed, owners)]));
-
-  const lanes = perAction(() => 0);
-  const attuned: Record<ActionType, ElementAffinity | null> = { strike: null, tech: null, block: null };
+  const lanes: Record<ActionType, number> = { strike: 0, tech: 0, block: 0 };
+  const attuned: Record<ActionType, Elemental | null> = { strike: null, tech: null, block: null };
   for (let y = 0; y < GRID_SIZE; y++) {
     const lane = LANES[y];
     const row = Array.from({ length: GRID_SIZE }, (_, x) => owners.get(`${x},${y}`) ?? null);
-    const affinities = row.map((placed) => (placed ? CATALOG[placed.mod].affinity : null));
-    const first = affinities[0];
-    attuned[lane] = first && isElement(first) && affinities.every((affinity) => affinity === first) ? first : null;
+    attuned[lane] = ELEMENTAL.find((element) => row.every((placed) => placed !== null && elementalOf(placed).includes(element))) ?? null;
     for (const placed of row) {
-      if (!placed || !isElement(CATALOG[placed.mod].affinity)) continue;
-      lanes[lane] += (attuned[lane] ? 2 : 1) + boost.get(placed.uid)!;
+      if (placed === null || elementalOf(placed).length === 0) continue;
+      lanes[lane] += (attuned[lane] ? ATTUNED_LANE_POWER : LANE_POWER) + boostOn(placed, owners);
     }
   }
-
-  const cells = perElement((element) =>
-    grid.filter((placed) => CATALOG[placed.mod].affinity === element).reduce((sum, placed) => sum + cellsOf(placed).length, 0));
-  const levels = perElement((element) => Math.min(MAX_LEVEL, Math.floor(cells[element] / CELLS_PER_LEVEL)));
-
-  const perks = grid.map((placed) => CATALOG[placed.mod].perk).filter((perk) => perk !== null);
-  const sum = (amount: (perk: (typeof perks)[number]) => number) => perks.reduce((total, perk) => total + amount(perk), 0);
-  const everyHit = levels.solar * SOLAR_DAMAGE_PER_LEVEL + sum((perk) => (perk.kind === "every-hit" ? perk.amount : 0));
-
+  const program = programOf(grid);
   return {
     lanes,
     attuned,
-    cells,
-    levels,
-    damage: perAction((action) => lanes[action] + everyHit
-      + sum((perk) => (perk.kind === "damage" && perk.action === action ? perk.amount : 0))),
-    surge: levels.arc * ARC_SURGE_PER_LEVEL + sum((perk) => (perk.kind === "surge" ? perk.amount : 0)),
-    health: levels.void * VOID_HEALTH_PER_LEVEL,
-    parryHeal: sum((perk) => (perk.kind === "parry-heal" ? perk.amount : 0)),
-    income: sum((perk) => (perk.kind === "income" ? perk.amount : 0)),
-    freeRerolls: sum((perk) => (perk.kind === "free-reroll" ? perk.amount : 0)),
-    styleMultiplier: 1 + sum((perk) => (perk.kind === "style-payout" ? 1 : 0)),
+    program,
+    capacity: freshState(program).capacity,
+    income: staticTotal(program, "income"),
+    freeRerolls: staticTotal(program, "free-reroll"),
+    styleMultiplier: 1 + staticTotal(program, "style"),
   };
 }

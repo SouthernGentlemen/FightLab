@@ -7,32 +7,23 @@ import { compileBuild } from "../mods/compile.ts";
 import type { Build } from "../mods/compile.ts";
 
 /**
- * The one bridge from mods to combat. A compiled build becomes a side: the same frame data with more
- * maximum health, a parry that heals, and the damage each action adds — and nothing else. Every
- * timing field is copied untouched, which is what keeps a mod from ever deciding an exchange.
+ * The static bridge from mods to combat: the authored frame data, untouched, and the damage each
+ * action's lane adds. Everything a mod does exchange by exchange runs in the engine around the
+ * arena (`ModdedArena`) and reaches the kernel as damage, healing and exposure — never as timing.
  */
 export function combatSide(build: Build, base: FighterDefinition = FIGHTLAB_FIGHTER, actions: ActionTable = DEFAULT_ACTIONS): CombatSide {
-  const guard = base.moves[actions.block.move];
-  const moves = guard.parry === null || build.parryHeal === 0
-    ? base.moves
-    : { ...base.moves, [guard.id]: { ...guard, parry: { ...guard.parry, heal: guard.parry.heal + build.parryHeal } } };
-  return {
-    fighter: { ...base, maxHealth: base.maxHealth + build.health, moves },
-    actions,
-    bonus: { ...build.damage },
-    surge: build.surge,
-  };
+  return { fighter: base, actions, bonus: { ...build.lanes } };
 }
 
 /** A fighter with nothing on its grid. */
 export const BARE_SIDE: CombatSide = combatSide(compileBuild([]));
 
 /**
- * What one hit of `action` does for this side, bonus included: the move's own hitbox, or for an
- * action that parries, the counter it answers with. `surged` adds the round-after-a-Mixup bonus.
+ * What one hit of `action` does for this side before its mods fire: the move's own hitbox, or for
+ * an action that parries, the counter it answers with, plus the lane.
  */
-export function hitDamage(side: CombatSide, action: ActionType, surged = false): number {
+export function hitDamage(side: CombatSide, action: ActionType): number {
   const move = side.fighter.moves[side.actions[action].move];
   const hitter = move.parry === null ? move : side.fighter.moves[move.parry.counter];
-  return hitter.hitboxes[0].damage + side.bonus[action] + (surged ? side.surge : 0);
+  return hitter.hitboxes[0].damage + side.bonus[action];
 }

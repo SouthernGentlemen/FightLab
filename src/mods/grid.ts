@@ -1,8 +1,9 @@
 import type { ActionType } from "../battle/actions.ts";
-import { CATALOG } from "./catalog.ts";
-import type { ModId } from "./catalog.ts";
+import { REGISTRY } from "./registry.ts";
+import type { ModId } from "./registry.ts";
 import { ROTATIONS, nextRotation, shapeCells } from "./shapes.ts";
 import type { Cell, Rotation } from "./shapes.ts";
+import type { Stars } from "./stars.ts";
 
 export const GRID_SIZE = 3;
 export const BANK_SIZE = 4;
@@ -10,10 +11,11 @@ export const BANK_SIZE = 4;
 /** Row y of the grid is the lane of `LANES[y]`: a cell powers the action of the row it sits in. */
 export const LANES: readonly ActionType[] = Object.freeze(["strike", "tech", "block"]);
 
-/** A mod the player owns. `uid` tells two copies of the same mod apart. */
+/** A mod the player owns, at its star level. `uid` tells two of the same mod apart. */
 export interface OwnedMod {
   readonly uid: number;
   readonly mod: ModId;
+  readonly stars: Stars;
   readonly rotation: Rotation;
 }
 
@@ -34,7 +36,7 @@ export interface Placement {
 }
 
 export function cellsOf(placement: Placement): Cell[] {
-  return shapeCells(CATALOG[placement.mod].shape, placement.rotation).map(([dx, dy]) => [placement.x + dx, placement.y + dy]);
+  return shapeCells(REGISTRY[placement.mod].shape, placement.rotation).map(([dx, dy]) => [placement.x + dx, placement.y + dy]);
 }
 
 function onBoard([x, y]: Cell): boolean {
@@ -107,6 +109,6 @@ export function firstFreeBankSlot(bank: Bank): number | null {
 
 export function setBankSlot(bank: Bank, slot: number, owned: OwnedMod | null): Bank {
   const next = [...bank];
-  next[slot] = owned && Object.freeze({ uid: owned.uid, mod: owned.mod, rotation: owned.rotation });
+  next[slot] = owned && Object.freeze({ uid: owned.uid, mod: owned.mod, stars: owned.stars, rotation: owned.rotation });
   return Object.freeze(next);
 }
