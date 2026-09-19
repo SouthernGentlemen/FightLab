@@ -137,10 +137,10 @@ p, h1, h2 { margin: 0; }
 [data-action="tech"] { --c: var(--tech); }
 [data-action="block"] { --c: var(--block); }
 [data-action="hidden"] { --c: #dfe7ea; }
-[data-affinity="solar"] { --mc: var(--solar); }
-[data-affinity="void"] { --mc: var(--void); }
-[data-affinity="arc"] { --mc: var(--arc); }
-[data-affinity="neutral"] { --mc: var(--neutral); }
+[data-type="solar"] { --mc: var(--solar); }
+[data-type="void"] { --mc: var(--void); }
+[data-type="arc"] { --mc: var(--arc); }
+[data-type="neutral"] { --mc: var(--neutral); }
 
 .chip {
   display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-width: 5.2rem; height: 5.2rem; padding: 0 1.2rem;
@@ -164,7 +164,12 @@ p, h1, h2 { margin: 0; }
   border: .3rem solid var(--ink); border-radius: calc(var(--cell) * .16); background: var(--mc);
   box-shadow: inset 0 calc(var(--cell) * -.09) 0 rgba(0, 0, 0, .18), inset 0 calc(var(--cell) * .06) 0 rgba(255, 255, 255, .38);
 }
-.mod__icon { position: absolute; inset: 20%; width: 60%; height: 60%; }
+.mod__action {
+  position: absolute; inset: 17%; z-index: 2; display: grid; place-items: center;
+  border: .2rem solid var(--ink); border-radius: 50%; background: var(--c);
+  box-shadow: 0 .18rem 0 rgba(0, 0, 0, .25);
+}
+.mod__action .icon { width: 70%; height: 70%; }
 .gem { position: absolute; top: 7%; right: 7%; width: 17%; height: 17%; transform: rotate(45deg); border: .2rem solid var(--ink); background: var(--g); }
 [data-material="iron"] { --g: var(--iron); }
 [data-material="bronze"] { --g: var(--bronze); }
@@ -513,24 +518,16 @@ p, h1, h2 { margin: 0; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
 }
 
-/* Mod types: one colour per tag, split on the diagonal for two. Tags are always written out too. */
-
-[data-c1="solar"] { --c1: var(--solar); } [data-c2="solar"] { --c2: var(--solar); }
-[data-c1="arc"] { --c1: var(--arc); } [data-c2="arc"] { --c2: var(--arc); }
-[data-c1="void"] { --c1: var(--void); } [data-c2="void"] { --c2: var(--void); }
-[data-c1="neutral"] { --c1: var(--neutral); } [data-c2="neutral"] { --c2: var(--neutral); }
-[data-c1="strike"] { --c1: var(--strike); } [data-c2="strike"] { --c2: var(--strike); }
-[data-c1="tech"] { --c1: var(--tech); } [data-c2="tech"] { --c2: var(--tech); }
-[data-c1="block"] { --c1: var(--block); } [data-c2="block"] { --c2: var(--block); }
-.mod__cell { background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%); }
-.mod__icon { filter: drop-shadow(0 .15rem 0 rgba(0, 0, 0, .25)); }
-
+/* Mod presentation: every piece is solid in its type colour. Action affinity is a separate disc. */
 /* Stars are the upgrade level, cast in the rarity's material. */
 .stars {
   display: inline-flex; color: var(--g); font-weight: 900; line-height: 1; letter-spacing: -.04em; white-space: nowrap;
   text-shadow: .15rem 0 var(--ink), -.15rem 0 var(--ink), 0 .15rem var(--ink), 0 -.15rem var(--ink);
 }
-.mod__stars { position: absolute; left: 6%; top: 3%; font-size: calc(var(--cell) * .27); }
+.mod__stars {
+  position: absolute; z-index: 3; right: 3%; top: 2%; font-size: calc(var(--cell) * .18);
+  pointer-events: none;
+}
 .mod--mini .mod__stars { display: none; }
 .slot__stars { position: absolute; right: .8rem; bottom: .4rem; font-size: 2rem; }
 .slot { position: relative; }
@@ -557,17 +554,23 @@ p, h1, h2 { margin: 0; }
 /* The title's quiet way out of a saved run. */
 .title__fresh { justify-self: center; }
 
-/* A mod as a square, split on the diagonal between its tag colours. */
+/* A catalogue square uses the same type colour and action-disc language as a board piece. */
 .square {
   display: grid; place-items: center; border: .35rem solid var(--ink); border-radius: 1.4rem;
-  background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%);
+  background: var(--mc);
   box-shadow: inset 0 -.8rem 0 rgba(0, 0, 0, .16), inset 0 .5rem 0 rgba(255, 255, 255, .35);
 }
-.square__glyph { width: 58%; height: 58%; filter: drop-shadow(0 .2rem 0 rgba(0, 0, 0, .25)); }
+.square__action {
+  display: grid; place-items: center; width: 58%; aspect-ratio: 1;
+  border: .25rem solid var(--ink); border-radius: 50%; background: var(--c);
+  box-shadow: 0 .2rem 0 rgba(0, 0, 0, .25);
+}
+.square__action .icon { width: 70%; height: 70%; }
 .tagchips { display: flex; flex-wrap: wrap; gap: .6rem; }
 .tagchip {
   display: inline-flex; align-items: center; gap: .4rem; padding: .3rem 1rem .3rem .4rem;
-  border: .25rem solid var(--ink); border-radius: 99rem; background: var(--c1); font-size: 1.8rem; font-weight: 900; letter-spacing: .06em;
+  border: .25rem solid var(--ink); border-radius: 99rem;
+  background: var(--mc, var(--c)); font-size: 1.8rem; font-weight: 900; letter-spacing: .06em;
 }
 .tagchip .icon { width: 2.4rem; height: 2.4rem; }
 
