@@ -22,7 +22,7 @@ import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggl
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
 import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
-import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, modIcon as modIconFor, paintChip, panel, shake, starRow, toaster } from "./kit.ts";
+import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, paintChip, panel, shake, starRow, tagIcon, toaster } from "./kit.ts";
 
 export interface PrepOptions {
   readonly run: RunState;
@@ -242,7 +242,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       attune.replaceChildren(...(element ? [icon(element)] : []));
       node.dataset.attuned = element ?? "";
     });
-    levels.replaceChildren(...ELEMENTAL.map((element) => h("span", { class: "level", "data-affinity": element, "data-element": element },
+    levels.replaceChildren(...ELEMENTAL.map((element) => h("span", { class: "level", "data-type": element, "data-element": element },
       icon(element), h("b", {}, String(run.grid.filter((piece) => REGISTRY[piece.mod].type === element).length)))));
 
     BAR_IDS.forEach((bar, index) => barSlots[index].forEach(({ node, chip, damage }, slot) => {
@@ -276,7 +276,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         return;
       }
       const definition = REGISTRY[mod];
-      node.dataset.affinity = definition.type;
+      node.dataset.type = definition.type;
       node.classList.toggle("is-poor", priceOf(mod) > run.money);
       node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
         h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
@@ -636,7 +636,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const elemental = definition.type !== "neutral";
       return [
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
-        h("span", { class: "tip__meta", "data-affinity": definition.type }, icon(modIconFor(mod.mod)), `${typeAffinityLine(definition)} · ${rarityLine(definition.rarity)}`),
+        h("span", { class: "tip__meta", "data-type": definition.type }, icon(tagIcon(definition.type)), `${typeAffinityLine(definition)} · ${rarityLine(definition.rarity)}`),
         h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
         ...(portLine(definition) ? [h("small", {}, portLine(definition)!)] : []),
