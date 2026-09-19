@@ -11,7 +11,7 @@ describe("rules text", () => {
       "Spends 1 Heat: +3 damage, 3 Burn on the opponent.",
     ]);
     expect(effectLines(REGISTRY["capacitor-guard"], 3)[1]).toBe("Spends 2 Charge: heals 8 on a parry, +5 riposte damage.");
-    expect(effectLines(REGISTRY["chain-circuit"], 1)[1]).toBe("Makes 1 Charge, +1 for every link it is part of.");
+    expect(effectLines(REGISTRY["chain-circuit"], 1)[1]).toBe("Makes 1 Charge, +1 for every adjacent mod.");
     expect(effectLines(REGISTRY["void-tap"], 1)).toEqual([
       "Fires in every exchange.",
       "Drains 1 of the opponent's Heat or Charge, whichever they hold more of, into Void.",
