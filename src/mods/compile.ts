@@ -1,6 +1,8 @@
 import type { ActionType } from "../battle/actions.ts";
+import { adjacencyGraph } from "./adjacency.ts";
+import type { AdjacencyGraph } from "./adjacency.ts";
 import { ATTUNED_LANE_POWER, LANE_POWER } from "./balance.ts";
-import { BOARD_HEIGHT, BOARD_WIDTH, LANES, cellsOf, occupancy } from "./grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, LANES, occupancy } from "./grid.ts";
 import type { Grid, PlacedMod } from "./grid.ts";
 import { programOf } from "./program.ts";
 import type { ModProgram } from "./program.ts";
@@ -22,7 +24,7 @@ export interface Build {
   readonly lanes: Readonly<Record<ActionType, number>>;
   /** The element a lane is attuned to, when every one of its three cells carries it. */
   readonly attuned: Readonly<Record<ActionType, Elemental | null>>;
-  /** The placed mods at their stars, with the links their ports make, as the engine runs them. */
+  /** The placed mods at their stars and neighbouring ids, as the engine runs them. */
   readonly program: ModProgram;
   /** How much Charge the fighter can hold. */
   readonly capacity: number;
@@ -38,17 +40,12 @@ function elementalOf(placed: PlacedMod): Elemental[] {
   return type === "neutral" ? [] : [type];
 }
 
-/** What the Amplifiers touching `placed` add to each of its elemental cells. */
-function boostOn(placed: PlacedMod, owners: ReadonlyMap<string, PlacedMod>): number {
-  const touching = new Map<number, PlacedMod>();
-  for (const { x, y } of cellsOf(placed)) {
-    for (const { x: dx, y: dy } of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
-      const other = owners.get(`${x + dx},${y + dy}`);
-      if (other && other.uid !== placed.uid) touching.set(other.uid, other);
-    }
-  }
+/** What neighbouring Amplifiers add to each of `placed`'s elemental cells. */
+function boostOn(placed: PlacedMod, graph: AdjacencyGraph, byUid: ReadonlyMap<number, PlacedMod>): number {
   let boost = 0;
-  for (const other of touching.values()) {
+  for (const uid of graph.neighbours(placed.uid)) {
+    const other = byUid.get(uid);
+    if (!other) continue;
     for (const effect of REGISTRY[other.mod].effects) if (effect.kind === "lane-boost") boost += scaled(effect.amount, other.stars);
   }
   return boost;
@@ -56,6 +53,8 @@ function boostOn(placed: PlacedMod, owners: ReadonlyMap<string, PlacedMod>): num
 
 export function compileBuild(grid: Grid): Build {
   const owners = occupancy(grid);
+  const graph = adjacencyGraph(grid);
+  const byUid = new Map(grid.map((placed) => [placed.uid, placed] as const));
   const lanes: Record<ActionType, number> = { strike: 0, tech: 0, block: 0 };
   const attuned: Record<ActionType, Elemental | null> = { strike: null, tech: null, block: null };
   for (let y = 0; y < BOARD_HEIGHT; y++) {
@@ -64,7 +63,7 @@ export function compileBuild(grid: Grid): Build {
     attuned[lane] = ELEMENTAL.find((element) => row.every((placed) => placed !== null && elementalOf(placed).includes(element))) ?? null;
     for (const placed of row) {
       if (placed === null || elementalOf(placed).length === 0) continue;
-      lanes[lane] += (attuned[lane] ? ATTUNED_LANE_POWER : LANE_POWER) + boostOn(placed, owners);
+      lanes[lane] += (attuned[lane] ? ATTUNED_LANE_POWER : LANE_POWER) + boostOn(placed, graph, byUid);
     }
   }
   const program = programOf(grid);
