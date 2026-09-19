@@ -997,7 +997,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | done |
 | tasks-007 | Remove the energy UI and the stat blocks | 2 | — | done |
 | tasks-008 | The eleven shapes | 3 | — | done |
-| tasks-009 | Board width and height | 3 | — | todo |
+| tasks-009 | Board width and height | 3 | — | done |
 | tasks-010 | Orientation math, and its tests | 4 | — | todo |
 | tasks-011 | Degrees on the placed mod | 4 | D9 ✓ | todo |
 | tasks-012 | Turning about the cursor | 4 | D9 ✓ | todo |
