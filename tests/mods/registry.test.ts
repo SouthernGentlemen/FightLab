@@ -50,7 +50,6 @@ describe("the mod registry", () => {
     expect(broken({ affinity: "guard" as ModDefinition["affinity"] })).toEqual([expect.stringMatching(/unknown affinity/)]);
     expect(broken({ effects: [generate("heat", [2, 2, 2])] })).toEqual([expect.stringMatching(/nothing grows/)]);
     expect(broken({ effects: [generate("heat", [1, 2, 3.5])] })).toContainEqual(expect.stringMatching(/three whole amounts/));
-    expect(broken({ ports: [{ cell: 1, side: "e", flow: "out", resource: "heat" }] })).toEqual([expect.stringMatching(/cell 1/)]);
     expect(registryProblems([coil, coil])).toEqual(["id 'heat-coil' is used twice", "name 'Heat Coil' is used twice"]);
   });
 
@@ -63,7 +62,7 @@ describe("the mod registry", () => {
   it("prices a mod by its rarity alone, and keeps rarity out of the star numbers", () => {
     for (const id of MOD_IDS) expect(priceOf(id)).toBe(RARITY[REGISTRY[id].rarity].price);
     // One record per mod, whatever its stars: rarity is a field of the record, stars a column of its numbers.
-    expect(Object.keys(REGISTRY["cinder-edge"]).sort()).toEqual(["affinity", "description", "effects", "id", "name", "ports", "rarity", "shape", "type", "visual"]);
+    expect(Object.keys(REGISTRY["cinder-edge"]).sort()).toEqual(["affinity", "description", "effects", "id", "name", "rarity", "shape", "type", "visual"]);
   });
 
   it("is frozen all the way down", () => {
