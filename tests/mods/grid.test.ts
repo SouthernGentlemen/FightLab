@@ -4,10 +4,10 @@ import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import type { ModId } from "../../src/mods/registry.ts";
 import {
   BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
-  setBankSlot,
+  setBankSlot, turnAbout, turnCellsAbout,
 } from "../../src/mods/grid.ts";
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
-import { ROTATIONS, SHAPES, SHAPE_IDS, nextRotation, normaliseRotation, shapeCells, shapeSize, sizeOf } from "../../src/mods/shapes.ts";
+import { ROTATIONS, SHAPES, SHAPE_IDS, cellsAt, nextRotation, normalise, shapeCells, shapeSize, sizeOf } from "../../src/mods/shapes.ts";
 import type { GridPoint, Rotation, ShapeId } from "../../src/mods/shapes.ts";
 
 const point = (x: number, y: number): GridPoint => ({ x, y });
@@ -88,6 +88,43 @@ describe("shapes", () => {
   });
 });
 
+describe("turning about a board cell", () => {
+  it("keeps every pivot fixed through every shape and orientation, and four turns return the cells", () => {
+    for (const shapeId of SHAPE_IDS) {
+      const shape = SHAPES[shapeId];
+      for (const rotation of ROTATIONS) {
+        const start = cellsAt(shape, rotation).map(({ x, y }) => point(x + 7, y + 9));
+        for (const pivot of start) {
+          const once = turnCellsAbout(start, pivot);
+          expect(once).toContainEqual(pivot);
+          expect(sorted(normalise(once))).toEqual(sorted(cellsAt(shape, nextRotation(rotation))));
+          let round = start;
+          for (let turn = 0; turn < 4; turn++) round = turnCellsAbout(round, pivot);
+          expect(sorted(round)).toEqual(sorted(start));
+        }
+      }
+    }
+  });
+
+  it("keeps the grabbed board cell occupied for every registry placement", () => {
+    for (const mod of MOD_IDS) {
+      for (const rotation of ROTATIONS) {
+        const placed = { mod, rotation, x: 7, y: 9 };
+        for (const pivot of cellsOf(placed)) {
+          const turned = turnAbout(placed, pivot);
+          expect(turned).not.toBeNull();
+          expect(cellsOf(turned!)).toContainEqual(pivot);
+        }
+      }
+    }
+  });
+
+  it("does not move or rotate an O, whichever occupied cell is the pivot", () => {
+    const placed = { mod: "singularity" as const, rotation: 0 as const, x: 1, y: 1 };
+    for (const pivot of cellsOf(placed)) expect(turnAbout(placed, pivot)).toEqual(placed);
+  });
+});
+
 describe("the grid", () => {
   it("is three lanes: Strike, Tech and Block from the top", () => {
     expect(LANES).toEqual(["strike", "tech", "block"]);
@@ -141,7 +178,9 @@ describe("rotating a placed mod", () => {
           for (let mask = 0; mask < 1 << free.length; mask++) {
             const neighbours = blockers(free.filter((_, index) => mask & (1 << index)));
             const grid: Grid = Object.freeze([piece, ...neighbours]);
-            const turned = cellsOf({ mod, rotation: nextRotation(rotation), x, y });
+            const pivot = own[0];
+            const expected = turnAbout(piece, pivot)!;
+            const turned = cellsOf(expected);
             const taken = new Set(neighbours.map((neighbour) => key(neighbour)));
             const legal = turned.every(({ x: cx, y: cy }) => cx >= 0 && cy >= 0 && cx < BOARD_WIDTH && cy < BOARD_HEIGHT && !taken.has(key(point(cx, cy))));
             const result = rotateInPlace(grid, 1);
@@ -150,8 +189,7 @@ describe("rotating a placed mod", () => {
               const turnedPiece = result?.find((placed) => placed.uid === 1);
               const others = result?.filter((placed) => placed.uid !== 1) ?? [];
               const kept = others.length === neighbours.length && others.every((other, index) => other === neighbours[index]);
-              const expectedRotation = normaliseRotation(SHAPES[REGISTRY[mod].shape], nextRotation(rotation));
-              if (turnedPiece?.rotation !== expectedRotation || turnedPiece.x !== x || turnedPiece.y !== y || !kept) {
+              if (turnedPiece?.rotation !== expected.rotation || turnedPiece.x !== expected.x || turnedPiece.y !== expected.y || !kept) {
                 expect.fail(`${where}: a legal turn was refused or moved something`);
               }
             } else {
