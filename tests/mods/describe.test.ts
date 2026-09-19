@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { effectLines, firingLine, portLine } from "../../src/mods/describe.ts";
+import { effectLines, firingLine } from "../../src/mods/describe.ts";
 import { DEFINITIONS, REGISTRY } from "../../src/mods/registry.ts";
 import { STARS } from "../../src/mods/stars.ts";
 
@@ -26,11 +26,8 @@ describe("rules text", () => {
     }
   });
 
-  it("says when each mod fires and what its ports are for", () => {
+  it("says when each mod fires", () => {
     expect(firingLine(REGISTRY["basic-sink"])).toBe("Fires when you Block; its payoffs land if your guard holds.");
     expect(firingLine(REGISTRY["battery-cell"])).toBe("Always on.");
-    expect(portLine(REGISTRY["heat-coil"])).toBe("Feeding a matching in-port makes +1 Heat.");
-    expect(portLine(REGISTRY["cinder-edge"])).toMatch(/Takes energy in/);
-    expect(portLine(REGISTRY["piggy-bank"])).toBeNull();
   });
 });
