@@ -12,8 +12,8 @@ import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { TAG_LABEL, tileFill } from "../mods/tags.ts";
-import type { ModTag, ModTags } from "../mods/tags.ts";
+import { AFFINITY_LABEL, TYPE_LABEL } from "../mods/tags.ts";
+import type { ModType } from "../mods/tags.ts";
 import { button, h, icon, replay, setData, setText } from "./dom.ts";
 import type { IconName } from "./icons.ts";
 
@@ -31,7 +31,7 @@ export function modIcon(mod: ModId): IconName {
 }
 
 /** A tag's own glyph: the element's or the action's. Neutral has none, so it borrows the chip. */
-export function tagIcon(tag: ModTag): IconName {
+export function tagIcon(tag: ModType | ActionType): IconName {
   return tag === "neutral" ? "chip" : tag;
 }
 
@@ -41,16 +41,19 @@ export function starRow(stars: Stars, material: Material, className = "stars"): 
 }
 
 /** The type written out, each tag with its glyph and colour. */
-export function tagChips(tags: ModTags): HTMLElement {
-  return h("span", { class: "tagchips" }, ...tags.map((tag) =>
-    h("span", { class: "tagchip", "data-c1": tag }, icon(tagIcon(tag)), TAG_LABEL[tag].toUpperCase())));
+export function tagChips(type: ModType, affinity: ActionType | null): HTMLElement {
+  const chips: Array<{ key: ModType | ActionType; label: string }> = [
+    { key: type, label: TYPE_LABEL[type] },
+    ...(affinity === null ? [] : [{ key: affinity, label: AFFINITY_LABEL[affinity] }]),
+  ];
+  return h("span", { class: "tagchips" }, ...chips.map(({ key, label }) =>
+    h("span", { class: "tagchip", "data-c1": key }, icon(tagIcon(key)), label.toUpperCase())));
 }
 
-/** Sets the one or two tag colours a mod's fill is split between. */
-export function paintTags<T extends HTMLElement>(node: T, tags: ModTags): T {
-  const { colors } = tileFill(tags);
-  node.dataset.c1 = colors[0];
-  node.dataset.c2 = colors[1] ?? colors[0];
+/** Keeps today's split fill while type and affinity replace tags. */
+export function paintTags<T extends HTMLElement>(node: T, type: ModType, affinity: ActionType | null): T {
+  node.dataset.c1 = type;
+  node.dataset.c2 = affinity ?? type;
   return node;
 }
 
@@ -66,10 +69,10 @@ export function modArt(mod: ModId, rotation: Rotation, className = "", stars: St
   const [width, height] = shapeSize(cells);
   const node = paintTags(h("div", {
     class: `mod ${className}`.trim(),
-    "data-affinity": definition.tags[0],
+    "data-affinity": definition.type,
     "data-stars": String(stars),
     style: `width: calc(var(--cell) * ${width}); height: calc(var(--cell) * ${height})`,
-  }), definition.tags);
+  }), definition.type, definition.affinity);
   cells.forEach(([x, y], index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
     for (const port of definition.ports) {
