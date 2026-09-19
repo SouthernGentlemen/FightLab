@@ -306,7 +306,7 @@ p, h1, h2 { margin: 0; }
 }
 .mod[data-placement="invalid"] .mod__cell::after {
   content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none;
-  background: repeating-linear-gradient(135deg, transparent 0 .7rem, color-mix(in srgb, var(--placement-invalid) 62%, transparent) .7rem 1rem);
+  background: repeating-linear-gradient(45deg, transparent 0 .7rem, color-mix(in srgb, var(--placement-invalid) 62%, transparent) .7rem 1rem);
 }
 
 .prep__bars { left: 117.6rem; top: 10rem; width: 40.6rem; height: 54.6rem; }
@@ -365,7 +365,7 @@ p, h1, h2 { margin: 0; }
 .offer.is-poor .offer__name, .offer.is-poor .offer__price { color: var(--text-disabled); text-decoration: line-through; }
 .offer[data-sold="true"] {
   background-color: var(--surface-root);
-  background-image: repeating-linear-gradient(135deg, transparent 0 1rem, color-mix(in srgb, var(--border-subtle) 55%, transparent) 1rem 1.3rem);
+  background-image: repeating-linear-gradient(45deg, transparent 0 1rem, color-mix(in srgb, var(--border-subtle) 55%, transparent) 1rem 1.3rem);
   color: var(--text-disabled); cursor: default;
 }
 .offer[data-sold="true"]::after {
