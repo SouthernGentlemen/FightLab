@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import type { ActionType } from "../../src/battle/actions.ts";
-import { LINK_BONUS } from "../../src/mods/balance.ts";
 import type { ModProgram } from "../../src/mods/program.ts";
 import { endRound, freshState, prepareExchange, settleExchange } from "../../src/mods/resolve.ts";
 import type { ModState, Outcome, Pair } from "../../src/mods/resolve.ts";
@@ -15,10 +14,9 @@ function exchange(states: Pair<ModState>, programs: Pair<ModProgram>, actions: P
 
 describe("Solar: fast build, low sustained payoff", () => {
   it("generates Heat, spends it on a burning Strike, and the Burn halves away after the round", () => {
-    // The coil's out-port faces the edge's in-port, so it makes one more Heat than it would alone.
     const solar = program(["heat-coil", 0, 0], ["cinder-edge", 1, 0]);
     const first = exchange([freshState(solar), state()], [solar, NOTHING], ["strike", "tech"], PLAYER_LANDS);
-    expect(first.prepared.states[0].heat).toBe(1 + LINK_BONUS - 1);
+    expect(first.prepared.states[0].heat).toBe(0);
     expect(first.prepared.bonus[0]).toBe(2);
     expect(first.states[1].burn).toBe(2);
     const round = endRound(first.states, [solar, NOTHING]);
@@ -34,11 +32,11 @@ describe("Arc: setup and burst", () => {
     let states: Pair<ModState> = [freshState(arc), state()];
     expect(states[0].capacity).toBe(5);
     states = exchange(states, [arc, NOTHING], ["tech", "tech"]).states;
-    expect(states[0].charge).toBe(1 + LINK_BONUS);
+    expect(states[0].charge).toBe(1);
     states = exchange(states, [arc, NOTHING], ["tech", "tech"]).states;
     expect(states[0].charge).toBe(4);
     const burst = exchange(states, [arc, NOTHING], ["strike", "tech"], PLAYER_LANDS);
-    expect(burst.prepared.states[0].charge).toBe(5 - 2);
+    expect(burst.prepared.states[0].charge).toBe(1);
     expect(burst.states[1].shock).toBe(4);
     // The next damaging hit on the opponent carries all four stacks and leaves none.
     const hit = prepareExchange(burst.states, [NOTHING, NOTHING], ["strike", "tech"]);
@@ -73,31 +71,22 @@ describe("stars, rotation and tags", () => {
     expect([1, 2, 3].map((stars) => at(stars as 1 | 2 | 3).pending[0][0].amount)).toEqual([2, 3, 5]);
   });
 
-  it("feed a neighbour only while the port faces it", () => {
-    const facing = program(["heat-coil", 0, 0, 1, 0], ["cinder-edge", 1, 0]);
-    const turned = program(["heat-coil", 0, 0, 1, 180], ["cinder-edge", 1, 0]);
-    const heat = (built: ModProgram) => prepareExchange([state(), state()], [built, NOTHING], ["tech", "tech"]).states[0].heat;
-    expect(heat(facing)).toBe(1 + LINK_BONUS);
-    expect(heat(turned)).toBe(1);
-  });
-
-  it("let Chain Circuit make more Charge for every link", () => {
-    // The dynamo turned to face down feeds the circuit's first cell from above.
+  it("let Chain Circuit make more Charge for every adjacent mod", () => {
     const alone = program(["chain-circuit", 0, 1]);
-    const chained = program(["arc-dynamo", 0, 0, 1, 90], ["chain-circuit", 0, 1]);
-    const circuit = chained.mods.find((mod) => mod.definition.id === "chain-circuit")!;
-    expect(circuit.links).toBe(1);
+    const neighbouring = program(["arc-dynamo", 0, 0], ["chain-circuit", 0, 1]);
+    const circuit = neighbouring.mods.find((mod) => mod.definition.id === "chain-circuit")!;
+    expect(circuit.adjacent).toHaveLength(1);
     const charge = (built: ModProgram) => prepareExchange([state({ capacity: 99 }), state()], [built, NOTHING], ["tech", "tech"]).states[0].charge;
     expect(charge(alone)).toBe(1);
-    expect(charge(chained)).toBe((1 + LINK_BONUS) + (1 + 1));
+    expect(charge(neighbouring)).toBe(3);
   });
 
-  it("refund Charge through a Feedback Loop when a linked mod spends it", () => {
-    const loop = program(["arc-dynamo", 0, 0], ["feedback-loop", 1, 0], ["capacitor-guard", 2, 0]);
+  it("refund Charge when an adjacent mod spends it", () => {
+    const loop = program(["arc-dynamo", 0, 0, 2], ["feedback-loop", 1, 0], ["capacitor-guard", 2, 0]);
     const blocked = prepareExchange([freshState(loop), state()], [loop, NOTHING], ["block", "strike"]);
     expect(blocked.heal[0]).toBe(3);
-    expect(blocked.states[0].charge).toBe(1 + LINK_BONUS - 2 + 1);
+    expect(blocked.states[0].charge).toBe(1);
     const struck = prepareExchange([freshState(loop), state()], [loop, NOTHING], ["strike", "strike"]);
-    expect(struck.states[0].charge).toBe(1 + LINK_BONUS);
+    expect(struck.states[0].charge).toBe(2);
   });
 });
