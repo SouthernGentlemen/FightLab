@@ -628,18 +628,38 @@ p, h1, h2 { margin: 0; }
 .palette-sheet__head { display: flex; align-items: baseline; justify-content: space-between; gap: 2rem; }
 .palette-sheet__head h2 { font-size: 3rem; text-transform: uppercase; letter-spacing: .05em; }
 .palette-sheet__head p { color: var(--text-secondary); font-size: 1.7rem; }
+.palette-sheet__body { display: grid; grid-template-columns: minmax(0, 1fr) 34rem; gap: 1rem; min-height: 0; }
 .palette-sheet__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 1rem; min-height: 0; }
 .palette-sheet__pair {
-  display: grid; grid-template-columns: 8.6rem 1fr 1fr; align-items: center; gap: .8rem; min-width: 0; padding: .7rem;
+  display: grid; grid-template-columns: 7rem minmax(0, 1fr) minmax(0, 1.15fr); align-items: center; gap: .6rem; min-width: 0; padding: .6rem;
   border: .25rem solid var(--border-subtle); border-radius: 1rem; background: var(--surface-panel);
 }
-.palette-sheet__label { display: grid; gap: .2rem; color: var(--text-primary); font-size: 1.6rem; text-transform: uppercase; }
-.palette-sheet__label small { color: var(--text-secondary); font-size: 1.3rem; }
+.palette-sheet__label { display: grid; gap: .2rem; color: var(--text-primary); font-size: 1.45rem; text-transform: uppercase; }
+.palette-sheet__label small { color: var(--text-secondary); font-size: 1.2rem; }
 .palette-sheet__sample { display: grid; grid-template-rows: auto 1fr; place-items: center; align-self: stretch; min-width: 0; }
 .palette-sheet__sample small { color: var(--text-disabled); font-size: 1.1rem; text-transform: uppercase; }
 .palette-sheet__sample--card { --cell: 3.2rem; }
 .palette-sheet__sample--board { --cell: 5.2rem; }
 .palette-sheet .mod__stars { display: none; }
+.palette-sheet__states {
+  display: grid; grid-template-rows: auto 1fr; gap: .6rem; min-height: 0; padding: .7rem;
+  border: .25rem solid var(--border-subtle); border-radius: 1rem; background: var(--surface-panel);
+}
+.palette-sheet__states h3 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: .04em; }
+.palette-sheet__state-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: .6rem; min-height: 0; }
+.palette-sheet__state {
+  display: grid; grid-template-rows: auto 1fr; align-items: center; min-height: 0; padding: .5rem;
+  border: .2rem solid var(--border-subtle); border-radius: .8rem; background: var(--surface-card);
+}
+.palette-sheet__state > small { color: var(--text-secondary); font-size: 1.1rem; text-transform: uppercase; }
+.palette-sheet__state .tile { width: 100%; min-height: 7.4rem; grid-template-columns: 4.4rem 1fr; padding: .6rem; box-shadow: none; }
+.palette-sheet__state .tile__square { width: 4.4rem; height: 4.4rem; }
+.palette-sheet__state .tile__stars { font-size: 1.4rem; }
+.palette-sheet__state .tile__name { font-size: 1.2rem; }
+.palette-sheet__state .offer { width: 100%; min-height: 6.8rem; --cell: 2.2rem; }
+.palette-sheet__state .offer__foot { font-size: 1.1rem; }
+.palette-sheet__state .offer__price { font-size: 1.3rem; }
+.palette-sheet__state .piece { position: relative; --cell: 3.2rem; justify-self: center; }
 .palette-sheet__rarities { display: flex; align-items: center; justify-content: center; gap: 3rem; font-size: 2rem; font-weight: 900; }
 .palette-sheet__rarity[data-rarity="common"] { color: var(--rarity-common); }
 .palette-sheet__rarity[data-rarity="uncommon"] { color: var(--rarity-uncommon); }
