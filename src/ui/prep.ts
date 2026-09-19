@@ -3,7 +3,7 @@ import type { ActionType } from "../battle/actions.ts";
 import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
-import { BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
+import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
 import { RARITIES, RARITY } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
@@ -104,11 +104,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const tag = h("span", { class: "lane__tag", "data-action": lane }, icon(lane), h("span", { class: "stroke" }, ACTION_LABEL[lane]));
     return { lane, bonus, attune, node: h("div", { class: "lane", "data-lane": lane }, attune, tag, bonus) };
   });
-  const cells = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) =>
-    h("div", { class: "cell", "data-x": String(index % GRID_SIZE), "data-y": String(Math.floor(index / GRID_SIZE)) }));
+  const cells = Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, index) =>
+    h("div", { class: "cell", "data-x": String(index % BOARD_WIDTH), "data-y": String(Math.floor(index / BOARD_WIDTH)) }));
   const pieces = h("div", { class: "pieces" });
   const carried = h("div", { class: "carried", hidden: "" });
-  const gridBox = h("div", { class: "grid" }, ...cells, pieces, carried);
+  const gridBox = h("div", { class: "grid", style: `--board-w:${BOARD_WIDTH};--board-h:${BOARD_HEIGHT}` }, ...cells, pieces, carried);
   const mods = panel("Mods", "rose", [], h("div", { class: "board" }, h("div", { class: "lanes" }, ...lanes.map(({ node }) => node)), gridBox));
   mods.classList.add("prep__mods");
 
@@ -323,8 +323,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function moveCarry(dx: number, dy: number): void {
     if (carry === null) return;
     const [width, height] = shapeSize(shapeCells(REGISTRY[carry.mod].shape, carry.rotation));
-    carry.x = Math.min(GRID_SIZE - width, Math.max(0, carry.x + dx));
-    carry.y = Math.min(GRID_SIZE - height, Math.max(0, carry.y + dy));
+    carry.x = Math.min(BOARD_WIDTH - width, Math.max(0, carry.x + dx));
+    carry.y = Math.min(BOARD_HEIGHT - height, Math.max(0, carry.y + dy));
     drawCarry();
   }
 
@@ -351,9 +351,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function targetAt(x: number, y: number, current: Drag): Target | null {
     const grid = gridBox.getBoundingClientRect();
     if (inside(grid, x, y)) {
-      const size = grid.width / GRID_SIZE;
+      const cellWidth = grid.width / BOARD_WIDTH;
+      const cellHeight = grid.height / BOARD_HEIGHT;
       const anchor = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-      const origin = { x: Math.floor((x - grid.left) / size) - anchor.x, y: Math.floor((y - grid.top) / size) - anchor.y };
+      const origin = { x: Math.floor((x - grid.left) / cellWidth) - anchor.x, y: Math.floor((y - grid.top) / cellHeight) - anchor.y };
       const except = current.held.kind === "piece" ? current.held.uid : null;
       return { kind: "grid", ...origin, legal: canPlace(run.grid, { mod: current.mod, rotation: current.rotation, ...origin }, except) };
     }
@@ -368,9 +369,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   }
 
   function drawGhost(current: Drag): void {
-    const size = gridBox.getBoundingClientRect().width / GRID_SIZE;
+    const grid = gridBox.getBoundingClientRect();
+    const cellWidth = grid.width / BOARD_WIDTH;
     const ghost = modArt(current.mod, current.rotation, "ghost");
-    ghost.style.setProperty("--cell", `${size}px`);
+    ghost.style.setProperty("--cell", `${cellWidth}px`);
     current.ghost?.remove();
     current.ghost = ghost;
     screen.append(ghost);
@@ -380,10 +382,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function placeGhost(current: Drag): void {
     if (current.ghost === null) return;
     const bounds = screen.getBoundingClientRect();
-    const size = gridBox.getBoundingClientRect().width / GRID_SIZE;
+    const grid = gridBox.getBoundingClientRect();
+    const cellWidth = grid.width / BOARD_WIDTH;
+    const cellHeight = grid.height / BOARD_HEIGHT;
     const anchor = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-    current.ghost.style.left = `${current.x - bounds.left - (anchor.x + 0.5) * size}px`;
-    current.ghost.style.top = `${current.y - bounds.top - (anchor.y + 0.5) * size}px`;
+    current.ghost.style.left = `${current.x - bounds.left - (anchor.x + 0.5) * cellWidth}px`;
+    current.ghost.style.top = `${current.y - bounds.top - (anchor.y + 0.5) * cellHeight}px`;
     current.target = targetAt(current.x, current.y, current);
     const target = current.target;
     markCells(target?.kind === "grid" ? { mod: current.mod, rotation: current.rotation, x: target.x, y: target.y } : null, target?.kind === "grid" && target.legal);
@@ -469,10 +473,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const cell = event.target.closest<HTMLElement>(".cell, .grid");
     if (cell && gridBox.contains(cell)) {
       const grid = gridBox.getBoundingClientRect();
-      const size = grid.width / GRID_SIZE;
+      const cellWidth = grid.width / BOARD_WIDTH;
+      const cellHeight = grid.height / BOARD_HEIGHT;
       const anchor = shapeCells(REGISTRY[carry.mod].shape, carry.rotation)[0];
-      carry.x = Math.floor((event.clientX - grid.left) / size) - anchor.x;
-      carry.y = Math.floor((event.clientY - grid.top) / size) - anchor.y;
+      carry.x = Math.floor((event.clientX - grid.left) / cellWidth) - anchor.x;
+      carry.y = Math.floor((event.clientY - grid.top) / cellHeight) - anchor.y;
       event.preventDefault();
       placeCarry();
       return true;

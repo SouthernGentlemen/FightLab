@@ -1,6 +1,6 @@
 import { BAR_IDS } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
-import { GRID_SIZE } from "../mods/grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH } from "../mods/grid.ts";
 import type { RunState } from "../run/run.ts";
 import { h } from "./dom.ts";
 import { BAR_NAME, actionChip, bevel, modArt } from "./kit.ts";
@@ -20,7 +20,8 @@ export function mountRunEnd(root: HTMLElement, options: RunEndOptions): () => vo
   const { run } = options;
   const { wins, losses, draws, bestStyle } = run.record;
   const champion = run.ending === "champion";
-  const grid = h("div", { class: "runend__grid" }, ...Array.from({ length: GRID_SIZE * GRID_SIZE }, () => h("span", { class: "cell" })),
+  const grid = h("div", { class: "runend__grid", style: `--board-w:${BOARD_WIDTH};--board-h:${BOARD_HEIGHT}` },
+    ...Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, () => h("span", { class: "cell" })),
     ...run.grid.map((piece) => {
       const art = modArt(piece.mod, piece.rotation, "piece", piece.stars);
       art.style.left = `calc(var(--cell) * ${piece.x})`;
