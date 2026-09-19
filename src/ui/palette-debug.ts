@@ -4,9 +4,10 @@ import { REGISTRY } from "../mods/registry.ts";
 import type { ShapeId } from "../mods/shapes.ts";
 import { MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
 import { AFFINITY_LABEL } from "../mods/tags.ts";
+import { catalogCard } from "./catalogcard.ts";
+import { catalogCardView } from "./catalogcardview.ts";
 import { h } from "./dom.ts";
 import { modArt } from "./kit.ts";
-import { modTile } from "./modtile.ts";
 import type { ModArtDefinition } from "./kit.ts";
 
 const AFFINITIES = [null, ...ACTION_TYPES] as const;
@@ -28,11 +29,11 @@ function stateSample(label: string, node: HTMLElement): HTMLElement {
 
 function stateSheet(): HTMLElement {
   const card = (state: "hover" | "selected" | "focus") => {
-    const tile = modTile(REGISTRY["cinder-edge"], 1, 1);
-    tile.tabIndex = -1;
-    if (state === "selected") tile.setAttribute("aria-pressed", "true");
-    else tile.dataset.demoState = state;
-    return tile;
+    const node = catalogCardView(catalogCard(REGISTRY["cinder-edge"], 1));
+    node.tabIndex = -1;
+    if (state === "selected") node.setAttribute("aria-pressed", "true");
+    else node.dataset.demoState = state;
+    return node;
   };
   const poor = h("div", { class: "offer is-poor" },
     h("div", { class: "offer__art" }, modArt("cinder-edge", 0, "mod--mini")),
