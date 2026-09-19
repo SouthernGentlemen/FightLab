@@ -87,7 +87,7 @@ describe("generated opponents", () => {
           rebuilt = next!;
         }
         expect(grid.reduce((spent, piece) => spent + priceOf(piece.mod), 0)).toBeLessThanOrEqual(opponentBudget(day));
-        for (const piece of grid) expect(REGISTRY[piece.mod].tags.includes("neutral"), piece.mod).toBe(false);
+        for (const piece of grid) expect(REGISTRY[piece.mod].type === "neutral", piece.mod).toBe(false);
         expect(() => compileBuild(grid)).not.toThrow();
       }
     }
