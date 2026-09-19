@@ -70,12 +70,12 @@ describe("compiling a grid", () => {
     expect(compileBuild(grid(["heat-coil", 1, 1], ["amplifier", 0, 1, 0, 3])).lanes.tech).toBe(1 + 3);
   });
 
-  it("hands the engine every placed mod at its stars, with the links its ports make where it stands", () => {
+  it("hands the engine every placed mod at its stars with its neighbouring ids", () => {
     const build = compileBuild(grid(["heat-coil", 0, 0], ["cinder-edge", 1, 0, 0, 2], ["battery-cell", 0, 2, 0, 2]));
     expect(build.program.mods.map((mod) => [mod.definition, mod.stars])).toEqual([
       [REGISTRY["heat-coil"], 1], [REGISTRY["cinder-edge"], 2], [REGISTRY["battery-cell"], 2],
     ]);
-    expect(build.program.mods[0].feeds).toEqual(["heat"]);
+    expect(build.program.mods[0].adjacent).toEqual([build.program.mods[1].uid]);
     expect(build.capacity).toBe(BASE_CHARGE_CAPACITY + 3);
   });
 
