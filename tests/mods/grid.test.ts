@@ -7,7 +7,7 @@ import {
   setBankSlot,
 } from "../../src/mods/grid.ts";
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
-import { ROTATIONS, SHAPES, SHAPE_IDS, nextRotation, shapeCells, shapeSize, sizeOf } from "../../src/mods/shapes.ts";
+import { ROTATIONS, SHAPES, SHAPE_IDS, nextRotation, normaliseRotation, shapeCells, shapeSize, sizeOf } from "../../src/mods/shapes.ts";
 import type { GridPoint, Rotation, ShapeId } from "../../src/mods/shapes.ts";
 
 const point = (x: number, y: number): GridPoint => ({ x, y });
@@ -68,11 +68,11 @@ describe("shapes", () => {
   });
 
   it("turn clockwise, and four turns come back where they started", () => {
-    expect(shapeCells("domino", 1)).toEqual([point(0, 0), point(0, 1)]);
+    expect(shapeCells("domino", 90)).toEqual([point(0, 0), point(0, 1)]);
     // ▪·      ▪▪
     // ▪▪  →   ▪·   (the L triomino's corner cell moves from bottom-left to top-left)
-    expect(sorted(shapeCells("triomino-l", 1))).toEqual(sorted([point(0, 0), point(1, 0), point(0, 1)]));
-    expect(sorted(shapeCells("tetromino-t", 2))).toEqual(sorted([point(1, 0), point(0, 1), point(1, 1), point(2, 1)]));
+    expect(sorted(shapeCells("triomino-l", 90))).toEqual(sorted([point(0, 0), point(1, 0), point(0, 1)]));
+    expect(sorted(shapeCells("tetromino-t", 180))).toEqual(sorted([point(1, 0), point(0, 1), point(1, 1), point(2, 1)]));
     for (const shape of SHAPE_IDS) {
       let rotation: Rotation = 0;
       for (let turn = 0; turn < 4; turn++) rotation = nextRotation(rotation);
@@ -83,8 +83,8 @@ describe("shapes", () => {
   it("keep their cell order through a turn, so a grabbed cell stays grabbed", () => {
     // Cell 0 of the straight triomino is its left end; turned once it is the top end.
     expect(shapeCells("triomino-i", 0)[0]).toEqual(point(0, 0));
-    expect(shapeCells("triomino-i", 1)[0]).toEqual(point(0, 0));
-    expect(shapeCells("triomino-i", 1)[2]).toEqual(point(0, 2));
+    expect(shapeCells("triomino-i", 90)[0]).toEqual(point(0, 0));
+    expect(shapeCells("triomino-i", 90)[2]).toEqual(point(0, 2));
   });
 });
 
@@ -99,7 +99,7 @@ describe("the grid", () => {
     expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 0 })).toBe(true);
     expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 1 })).toBe(false);
     expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 2, y: 0 })).toBe(false);
-    expect(canPlace(grid, { mod: "furnace", rotation: 1, x: 2, y: 2 })).toBe(false);
+    expect(canPlace(grid, { mod: "furnace", rotation: 90, x: 2, y: 2 })).toBe(false);
     expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: -1, y: 0 })).toBe(false);
     expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: 0.5, y: 0 })).toBe(false);
     // A piece can always be checked against its own old position.
@@ -121,7 +121,7 @@ describe("the grid", () => {
   it("fits a mod at the first legal spot in reading order, trying other rotations when it must", () => {
     expect(firstFit([], "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 0, x: 0, y: 0 });
     const columns = blockers([point(1, 0), point(1, 1), point(1, 2), point(2, 0), point(2, 1), point(2, 2)]);
-    expect(firstFit(columns, "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 1, x: 0, y: 0 });
+    expect(firstFit(columns, "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 90, x: 0, y: 0 });
     expect(firstFit(blockers(ALL_CELLS), "heat-coil")).toBeNull();
   });
 });
@@ -150,7 +150,8 @@ describe("rotating a placed mod", () => {
               const turnedPiece = result?.find((placed) => placed.uid === 1);
               const others = result?.filter((placed) => placed.uid !== 1) ?? [];
               const kept = others.length === neighbours.length && others.every((other, index) => other === neighbours[index]);
-              if (turnedPiece?.rotation !== nextRotation(rotation) || turnedPiece.x !== x || turnedPiece.y !== y || !kept) {
+              const expectedRotation = normaliseRotation(SHAPES[REGISTRY[mod].shape], nextRotation(rotation));
+              if (turnedPiece?.rotation !== expectedRotation || turnedPiece.x !== x || turnedPiece.y !== y || !kept) {
                 expect.fail(`${where}: a legal turn was refused or moved something`);
               }
             } else {

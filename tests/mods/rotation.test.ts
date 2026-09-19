@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DEGREE_ROTATIONS,
+  ROTATIONS,
   SHAPES,
   SHAPE_IDS,
   cellsAt,
@@ -78,7 +78,7 @@ describe("canonical orientation math", () => {
   it("keeps every orientation on non-negative integer cells with min x = min y = 0", () => {
     for (const shapeId of SHAPE_IDS) {
       const shape = SHAPES[shapeId];
-      for (const rotation of DEGREE_ROTATIONS) {
+      for (const rotation of ROTATIONS) {
         const cells = cellsAt(shape, rotation);
         expect(cells.every(({ x, y }) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0)).toBe(true);
         expect(Math.min(...cells.map(({ x }) => x))).toBe(0);

@@ -67,8 +67,8 @@ describe("buying", () => {
 
   it("drops a mod straight onto the grid when the placement is legal", () => {
     const run = stocked(["chain-circuit", "heat-coil", null, null, null]);
-    expect(buy(run, 0, { grid: { x: 0, y: 0, rotation: 1 } })).toBeNull();
-    expect(run.grid).toEqual([{ uid: 1, mod: "chain-circuit", stars: 1, rotation: 1, x: 0, y: 0 }]);
+    expect(buy(run, 0, { grid: { x: 0, y: 0, rotation: 90 } })).toBeNull();
+    expect(run.grid).toEqual([{ uid: 1, mod: "chain-circuit", stars: 1, rotation: 90, x: 0, y: 0 }]);
     expect(buy(run, 1, { grid: { x: 0, y: 1, rotation: 0 } })).toBe("blocked");
     expect(run.shop.offers[1]).toBe("heat-coil");
     expect(run.money).toBe(50 - priceOf("chain-circuit"));
@@ -117,8 +117,8 @@ describe("owning mods", () => {
     expect(move(run, { piece: 1 }, { bank: 3 })).toBeNull();
     expect(run.bank[3]).toEqual({ uid: 1, mod: "thunderhead", stars: 1, rotation: 0 });
     // Within the grid, over its own old cells.
-    expect(move(run, { piece: 2 }, { grid: { x: 0, y: 0, rotation: 1 } })).toBeNull();
-    expect(run.grid).toEqual([{ uid: 2, mod: "chain-circuit", stars: 1, rotation: 1, x: 0, y: 0 }]);
+    expect(move(run, { piece: 2 }, { grid: { x: 0, y: 0, rotation: 90 } })).toBeNull();
+    expect(run.grid).toEqual([{ uid: 2, mod: "chain-circuit", stars: 1, rotation: 90, x: 0, y: 0 }]);
     expect(move(run, { bank: 3 }, { bank: 3 })).toBeNull();
   });
 
@@ -127,10 +127,10 @@ describe("owning mods", () => {
     buy(run, 0);
     expect(rotate(run, { bank: 0 })).toBeNull();
     expect(run.bank[0]!.rotation).toBe(1);
-    expect(move(run, { bank: 0 }, { grid: { x: 1, y: 0, rotation: 1 } })).toBeNull();
+    expect(move(run, { bank: 0 }, { grid: { x: 1, y: 0, rotation: 90 } })).toBeNull();
     // Standing in the middle column, turning flat from (1,0) would run off the board.
     expect(rotate(run, { piece: 1 })).toBe("blocked");
-    expect(run.grid[0]).toMatchObject({ rotation: 1, x: 1, y: 0 });
+    expect(run.grid[0]).toMatchObject({ rotation: 90, x: 1, y: 0 });
     expect(move(run, { piece: 1 }, { grid: { x: 0, y: 0, rotation: 0 } })).toBeNull();
     expect(buy(run, 1, { grid: { x: 0, y: 1, rotation: 0 } })).toBeNull();
     // Flat along the top, turning upright into (0,1) would land on the Ember.
@@ -138,7 +138,7 @@ describe("owning mods", () => {
     expect(run.grid.find((piece) => piece.uid === 1)).toMatchObject({ rotation: 0, x: 0, y: 0 });
     expect(sell(run, { piece: 2 })).toBeNull();
     expect(rotate(run, { piece: 1 })).toBeNull();
-    expect(run.grid[0]).toMatchObject({ rotation: 1, x: 0, y: 0 });
+    expect(run.grid[0]).toMatchObject({ rotation: 90, x: 0, y: 0 });
   });
 });
 

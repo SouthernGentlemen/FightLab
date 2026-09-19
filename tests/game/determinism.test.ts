@@ -87,7 +87,7 @@ describe("determinism", () => {
     run.money = 40;
     run.shop = { ...run.shop, offers: ["solar-flare", "thunderhead", "null-reservoir", null, null] };
     buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
-    buy(run, 1, { grid: { x: 0, y: 1, rotation: 2 } });
+    buy(run, 1, { grid: { x: 0, y: 1, rotation: 180 } });
     beginFight(run);
     const { config, opponent } = fightFor(run);
     expect(opponent.grid.length).toBeGreaterThan(0);

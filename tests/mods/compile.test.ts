@@ -39,7 +39,7 @@ describe("compiling a grid", () => {
     expect(compileBuild(grid(["void-tap", 2, 1])).lanes).toEqual({ strike: 0, tech: 1, block: 0 });
     expect(compileBuild(grid(["arc-dynamo", 1, 2])).lanes).toEqual({ strike: 0, tech: 0, block: 1 });
     // Standing up across all three rows, a three-cell piece is +1 to each.
-    expect(compileBuild(grid(["chain-circuit", 0, 0, 1])).lanes).toEqual({ strike: 1, tech: 1, block: 1 });
+    expect(compileBuild(grid(["chain-circuit", 0, 0, 90])).lanes).toEqual({ strike: 1, tech: 1, block: 1 });
   });
 
   it("attunes a row whose three cells share one type, at two per cell", () => {

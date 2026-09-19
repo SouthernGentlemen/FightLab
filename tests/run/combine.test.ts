@@ -22,8 +22,8 @@ function buyAll(run: RunState, destinations: ReadonlyArray<Parameters<typeof buy
 describe("combining copies", () => {
   it("makes one ★★ from three ★ copies, where the oldest copy stood and turned the way it was", () => {
     const run = stocked(["heat-coil", "heat-coil", "heat-coil", null, null]);
-    buyAll(run, [{ grid: { x: 1, y: 1, rotation: 2 } }, undefined, { grid: { x: 0, y: 0, rotation: 0 } }]);
-    expect(run.grid).toEqual([{ uid: 1, mod: "heat-coil", stars: 2, rotation: 2, x: 1, y: 1 }]);
+    buyAll(run, [{ grid: { x: 1, y: 1, rotation: 180 } }, undefined, { grid: { x: 0, y: 0, rotation: 0 } }]);
+    expect(run.grid).toEqual([{ uid: 1, mod: "heat-coil", stars: 2, rotation: 0, x: 1, y: 1 }]);
     expect(run.bank).toEqual([null, null, null, null]);
     expect(run.money).toBe(80 - 3 * priceOf("heat-coil"));
   });
