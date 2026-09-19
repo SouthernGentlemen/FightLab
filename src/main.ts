@@ -53,7 +53,7 @@ function showTitle(): void {
 
 /** Ownership is not persisted yet, so the Armory browses a seeded development collection. */
 function showArmory(): void {
-  mount(() => mountArmory(root!, { collection: seededCollection(), back: showTitle }));
+  mount(() => mountArmory(root!, { collection: seededCollection(), debug, back: showTitle }));
 }
 
 function showSettings(back: () => void): void {
