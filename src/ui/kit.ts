@@ -49,7 +49,7 @@ export function modArt(mod: ModId, rotation: Rotation, className = "", stars: St
     "data-stars": String(stars),
     style: `width: calc(var(--cell) * ${width}); height: calc(var(--cell) * ${height})`,
   });
-  cells.forEach(([x, y], index) => {
+  cells.forEach(({ x, y }, index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
     if (index === 0 && definition.affinity !== null) {
       cell.append(h("span", { class: "mod__action", "data-action": definition.affinity }, icon(definition.affinity)));

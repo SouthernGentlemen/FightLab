@@ -1,5 +1,5 @@
 import { shapeCells } from "./shapes.ts";
-import type { Cell, Rotation, ShapeId } from "./shapes.ts";
+import type { GridPoint, Rotation, ShapeId } from "./shapes.ts";
 
 /**
  * Directional connections between mods. A port sits on one cell of a mod, on one side of that
@@ -26,7 +26,7 @@ export interface Port {
 }
 
 /** On a grid whose y points down. */
-export const STEP: Readonly<Record<Side, Cell>> = { n: [0, -1], e: [1, 0], s: [0, 1], w: [-1, 0] };
+export const STEP: Readonly<Record<Side, GridPoint>> = { n: { x: 0, y: -1 }, e: { x: 1, y: 0 }, s: { x: 0, y: 1 }, w: { x: -1, y: 0 } };
 
 export function turnSide(side: Side, rotation: Rotation): Side {
   return SIDES[(SIDES.indexOf(side) + rotation) % SIDES.length];
@@ -49,7 +49,7 @@ export interface PortedPiece {
 /** A port as it stands on the board: the cell it is on and the way it faces now. */
 export interface BoardPort {
   readonly uid: number;
-  readonly at: Cell;
+  readonly at: GridPoint;
   readonly side: Side;
   readonly flow: Flow;
   readonly resource: Resource;
@@ -59,7 +59,7 @@ export function boardPorts(piece: PortedPiece): BoardPort[] {
   const cells = shapeCells(piece.shape, piece.rotation);
   return piece.ports.map((port) => ({
     uid: piece.uid,
-    at: [piece.x + cells[port.cell][0], piece.y + cells[port.cell][1]] as const,
+    at: { x: piece.x + cells[port.cell].x, y: piece.y + cells[port.cell].y },
     side: turnSide(port.side, piece.rotation),
     flow: port.flow,
     resource: port.resource,
@@ -73,7 +73,7 @@ export interface Link {
   readonly resource: Resource;
 }
 
-const at = ([x, y]: Cell, side: Side): string => `${x},${y},${side}`;
+const at = ({ x, y }: GridPoint, side: Side): string => `${x},${y},${side}`;
 
 /** Every link on a board, in the order the pieces and their ports are listed. */
 export function links(pieces: readonly PortedPiece[]): Link[] {
@@ -87,8 +87,8 @@ export function links(pieces: readonly PortedPiece[]): Link[] {
   const found: Link[] = [];
   for (const out of ports) {
     if (out.flow !== "out") continue;
-    const [dx, dy] = STEP[out.side];
-    for (const input of inputs.get(at([out.at[0] + dx, out.at[1] + dy], opposite(out.side))) ?? []) {
+    const { x: dx, y: dy } = STEP[out.side];
+    for (const input of inputs.get(at({ x: out.at.x + dx, y: out.at.y + dy }, opposite(out.side))) ?? []) {
       if (input.uid !== out.uid && input.resource === out.resource) found.push({ from: out.uid, to: input.uid, resource: out.resource });
     }
   }

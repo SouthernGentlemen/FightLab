@@ -120,7 +120,7 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
         const placement = { mod, rotation, x, y };
         if (!fits(owners, placement)) continue;
         let score = 0;
-        for (const [, row] of cellsOf(placement)) {
+        for (const { y: row } of cellsOf(placement)) {
           if (type === null) continue;
           score += weights[LANES[row]];
           for (let column = 0; column < GRID_SIZE; column++) {

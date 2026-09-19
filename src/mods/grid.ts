@@ -2,7 +2,7 @@ import type { ActionType } from "../battle/actions.ts";
 import { REGISTRY } from "./registry.ts";
 import type { ModId } from "./registry.ts";
 import { ROTATIONS, nextRotation, shapeCells } from "./shapes.ts";
-import type { Cell, Rotation } from "./shapes.ts";
+import type { GridPoint, Rotation } from "./shapes.ts";
 import type { Stars } from "./stars.ts";
 
 export const GRID_SIZE = 3;
@@ -35,11 +35,12 @@ export interface Placement {
   readonly y: number;
 }
 
-export function cellsOf(placement: Placement): Cell[] {
-  return shapeCells(REGISTRY[placement.mod].shape, placement.rotation).map(([dx, dy]) => [placement.x + dx, placement.y + dy]);
+export function cellsOf(placement: Placement): GridPoint[] {
+  return shapeCells(REGISTRY[placement.mod].shape, placement.rotation)
+    .map(({ x, y }) => ({ x: placement.x + x, y: placement.y + y }));
 }
 
-function onBoard([x, y]: Cell): boolean {
+function onBoard({ x, y }: GridPoint): boolean {
   return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GRID_SIZE && y < GRID_SIZE;
 }
 
@@ -48,14 +49,14 @@ export function occupancy(grid: Grid, except: number | null = null): Map<string,
   const owners = new Map<string, PlacedMod>();
   for (const placed of grid) {
     if (placed.uid === except) continue;
-    for (const [x, y] of cellsOf(placed)) owners.set(`${x},${y}`, placed);
+    for (const { x, y } of cellsOf(placed)) owners.set(`${x},${y}`, placed);
   }
   return owners;
 }
 
 /** Legal against an occupancy already worked out: every cell on the board and empty. */
 export function fits(taken: ReadonlyMap<string, PlacedMod>, placement: Placement): boolean {
-  return cellsOf(placement).every((cell) => onBoard(cell) && !taken.has(`${cell[0]},${cell[1]}`));
+  return cellsOf(placement).every((cell) => onBoard(cell) && !taken.has(`${cell.x},${cell.y}`));
 }
 
 /** Legal when every cell is on the board and empty. */

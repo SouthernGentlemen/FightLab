@@ -41,8 +41,8 @@ function elementalOf(placed: PlacedMod): Elemental[] {
 /** What the Amplifiers touching `placed` add to each of its elemental cells. */
 function boostOn(placed: PlacedMod, owners: ReadonlyMap<string, PlacedMod>): number {
   const touching = new Map<number, PlacedMod>();
-  for (const [x, y] of cellsOf(placed)) {
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+  for (const { x, y } of cellsOf(placed)) {
+    for (const { x: dx, y: dy } of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
       const other = owners.get(`${x + dx},${y + dy}`);
       if (other && other.uid !== placed.uid) touching.set(other.uid, other);
     }

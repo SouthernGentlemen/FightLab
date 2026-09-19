@@ -269,7 +269,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   // The carried piece: shown snapped onto the grid, green where it would fit and red where not.
 
   function markCells(placement: { mod: ModId; rotation: Rotation; x: number; y: number } | null, legal: boolean): void {
-    const covered = new Set(placement ? cellsOf(placement).map(([x, y]) => `${x},${y}`) : []);
+    const covered = new Set(placement ? cellsOf(placement).map(({ x, y }) => `${x},${y}`) : []);
     for (const cell of cells) {
       const hit = covered.has(`${cell.dataset.x},${cell.dataset.y}`);
       cell.classList.toggle("is-ok", hit && legal);
@@ -352,8 +352,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const grid = gridBox.getBoundingClientRect();
     if (inside(grid, x, y)) {
       const size = grid.width / GRID_SIZE;
-      const [ax, ay] = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-      const origin = { x: Math.floor((x - grid.left) / size) - ax, y: Math.floor((y - grid.top) / size) - ay };
+      const anchor = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
+      const origin = { x: Math.floor((x - grid.left) / size) - anchor.x, y: Math.floor((y - grid.top) / size) - anchor.y };
       const except = current.held.kind === "piece" ? current.held.uid : null;
       return { kind: "grid", ...origin, legal: canPlace(run.grid, { mod: current.mod, rotation: current.rotation, ...origin }, except) };
     }
@@ -381,9 +381,9 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (current.ghost === null) return;
     const bounds = screen.getBoundingClientRect();
     const size = gridBox.getBoundingClientRect().width / GRID_SIZE;
-    const [ax, ay] = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-    current.ghost.style.left = `${current.x - bounds.left - (ax + 0.5) * size}px`;
-    current.ghost.style.top = `${current.y - bounds.top - (ay + 0.5) * size}px`;
+    const anchor = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
+    current.ghost.style.left = `${current.x - bounds.left - (anchor.x + 0.5) * size}px`;
+    current.ghost.style.top = `${current.y - bounds.top - (anchor.y + 0.5) * size}px`;
     current.target = targetAt(current.x, current.y, current);
     const target = current.target;
     markCells(target?.kind === "grid" ? { mod: current.mod, rotation: current.rotation, x: target.x, y: target.y } : null, target?.kind === "grid" && target.legal);
@@ -470,9 +470,9 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (cell && gridBox.contains(cell)) {
       const grid = gridBox.getBoundingClientRect();
       const size = grid.width / GRID_SIZE;
-      const [ax, ay] = shapeCells(REGISTRY[carry.mod].shape, carry.rotation)[0];
-      carry.x = Math.floor((event.clientX - grid.left) / size) - ax;
-      carry.y = Math.floor((event.clientY - grid.top) / size) - ay;
+      const anchor = shapeCells(REGISTRY[carry.mod].shape, carry.rotation)[0];
+      carry.x = Math.floor((event.clientX - grid.left) / size) - anchor.x;
+      carry.y = Math.floor((event.clientY - grid.top) / size) - anchor.y;
       event.preventDefault();
       placeCarry();
       return true;
