@@ -126,7 +126,7 @@ describe("owning mods", () => {
     const run = stocked(["chain-circuit", "heat-coil", null, null, null]);
     buy(run, 0);
     expect(rotate(run, { bank: 0 })).toBeNull();
-    expect(run.bank[0]!.rotation).toBe(1);
+    expect(run.bank[0]!.rotation).toBe(90);
     expect(move(run, { bank: 0 }, { grid: { x: 1, y: 0, rotation: 90 } })).toBeNull();
     // Standing in the middle column, turning flat from (1,0) would run off the board.
     expect(rotate(run, { piece: 1 })).toBe("blocked");
