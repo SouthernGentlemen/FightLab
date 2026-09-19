@@ -25,11 +25,6 @@ export const ACTION_LABEL: Readonly<Record<ActionType, string>> = {
 
 export const BAR_NAME: Readonly<Record<BarId, string>> = { primary: "Bar A", secondary: "Bar B" };
 
-/** The glyph a mod names in the registry; every one of them is in the UI's icon set. */
-export function modIcon(mod: ModId): IconName {
-  return REGISTRY[mod].visual.glyph;
-}
-
 /** A tag's own glyph: the element's or the action's. Neutral has none, so it borrows the chip. */
 export function tagIcon(tag: ModType | ActionType): IconName {
   return tag === "neutral" ? "chip" : tag;
@@ -40,47 +35,42 @@ export function starRow(stars: Stars, material: Material, className = "stars"): 
   return h("span", { class: className, "data-material": material, role: "img", "aria-label": `${stars} star${stars === 1 ? "" : "s"}` }, starText(stars));
 }
 
-/** The type written out, each tag with its glyph and colour. */
+/** The type and optional affinity written out with their own signals. */
 export function tagChips(type: ModType, affinity: ActionType | null): HTMLElement {
-  const chips: Array<{ key: ModType | ActionType; label: string }> = [
-    { key: type, label: TYPE_LABEL[type] },
-    ...(affinity === null ? [] : [{ key: affinity, label: AFFINITY_LABEL[affinity] }]),
+  const typeChip = h("span", { class: "tagchip", "data-type": type }, icon(tagIcon(type)), TYPE_LABEL[type].toUpperCase());
+  const affinityChip = affinity === null ? [] : [
+    h("span", { class: "tagchip", "data-action": affinity }, icon(affinity), AFFINITY_LABEL[affinity].toUpperCase()),
   ];
-  return h("span", { class: "tagchips" }, ...chips.map(({ key, label }) =>
-    h("span", { class: "tagchip", "data-c1": key }, icon(tagIcon(key)), label.toUpperCase())));
-}
-
-/** Keeps today's split fill while type and affinity replace tags. */
-export function paintTags<T extends HTMLElement>(node: T, type: ModType, affinity: ActionType | null): T {
-  node.dataset.c1 = type;
-  node.dataset.c2 = affinity ?? type;
-  return node;
+  return h("span", { class: "tagchips" }, typeChip, ...affinityChip);
 }
 
 /**
- * A mod drawn as bevelled blocks in its shape, each block split between its tag colours, with its
- * ports on the sides its rotation points them at and its stars in its rarity's material. The same
- * markup draws full size on the grid and in miniature in the bank and the shop; `--cell` on an
- * ancestor decides which. Only the blocks turn: nothing written on them is ever rotated.
+ * A mod drawn as solid type-coloured blocks with at most one action-affinity icon on its first cell.
+ * Ports still turn with the piece until tasks-005/tasks-015 retire them; stars sit at the piece corner.
+ * The same markup draws full size on the grid and in miniature in the bank and shop.
  */
 export function modArt(mod: ModId, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
   const definition = REGISTRY[mod];
   const cells = shapeCells(definition.shape, rotation);
   const [width, height] = shapeSize(cells);
-  const node = paintTags(h("div", {
+  const node = h("div", {
     class: `mod ${className}`.trim(),
-    "data-affinity": definition.type,
+    "data-type": definition.type,
+    "data-affinity": definition.affinity ?? undefined,
     "data-stars": String(stars),
     style: `width: calc(var(--cell) * ${width}); height: calc(var(--cell) * ${height})`,
-  }), definition.type, definition.affinity);
+  });
   cells.forEach(([x, y], index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
     for (const port of definition.ports) {
       if (port.cell === index) cell.append(h("i", { class: "port", "data-side": turnSide(port.side, rotation), "data-flow": port.flow, "data-resource": port.resource }));
     }
-    if (index === 0) cell.append(icon(modIcon(mod), "icon mod__icon"), starRow(stars, RARITY[definition.rarity].material, "stars mod__stars"));
+    if (index === 0 && definition.affinity !== null) {
+      cell.append(h("span", { class: "mod__action", "data-action": definition.affinity }, icon(definition.affinity)));
+    }
     node.append(cell);
   });
+  node.append(starRow(stars, RARITY[definition.rarity].material, "stars mod__stars"));
   return node;
 }
 
