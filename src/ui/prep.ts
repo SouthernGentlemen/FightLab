@@ -4,15 +4,15 @@ import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
 import { BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
-import { RARITIES, RARITY, rarityLine } from "../mods/rarity.ts";
+import { RARITIES, RARITY } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
-import type { ModDefinition, ModId } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { effectLines } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
+import { MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
 import type { ModType } from "../mods/tags.ts";
 
 type Elemental = Exclude<ModType, "neutral">;
@@ -22,7 +22,8 @@ import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggl
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
 import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
-import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, paintChip, panel, shake, starRow, tagIcon, toaster } from "./kit.ts";
+import { modLabel } from "./modlabel.ts";
+import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, paintChip, panel, shake, starRow, toaster } from "./kit.ts";
 
 export interface PrepOptions {
   readonly run: RunState;
@@ -81,10 +82,6 @@ const ELEMENT_IDENTITY: Readonly<Record<Elemental, string>> = {
   arc: "Charge: setup and burst. Shock waits for the next hit and all of it lands.",
   void: "Leeched Void: slow build, persistent high payoff. Poison never fades.",
 };
-
-function typeAffinityLine(definition: ModDefinition): string {
-  return `${TYPE_LABEL[definition.type].toUpperCase()}${definition.affinity === null ? "" : ` / ${AFFINITY_LABEL[definition.affinity].toUpperCase()}`}`;
-}
 
 /**
  * The shop, box for box in Batomon's proportions: bank and grid in the centre, the two action bars
@@ -220,7 +217,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars),
         starRow(owned.stars, RARITY[REGISTRY[owned.mod].rarity].material, "stars slot__stars")] : []));
       slot.dataset.filled = owned ? "true" : "false";
-      slot.setAttribute("aria-label", owned ? `${REGISTRY[owned.mod].name} ${starText(owned.stars)}, banked` : `Empty bank slot ${index + 1}`);
+      slot.setAttribute("aria-label", owned ? modLabel(REGISTRY[owned.mod], owned.stars) : `Empty bank slot ${index + 1}`);
       slot.classList.toggle("is-carried", carry?.held.kind === "bank" && carry.held.slot === index);
     });
 
@@ -231,7 +228,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       art.dataset.uid = String(piece.uid);
       art.tabIndex = 0;
       art.setAttribute("role", "button");
-      art.setAttribute("aria-label", `${REGISTRY[piece.mod].name} ${starText(piece.stars)} on the grid`);
+      art.setAttribute("aria-label", modLabel(REGISTRY[piece.mod], piece.stars));
       art.classList.toggle("is-carried", carry?.held.kind === "piece" && carry.held.uid === piece.uid);
       return art;
     }));
@@ -280,7 +277,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       node.classList.toggle("is-poor", priceOf(mod) > run.money);
       node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
         h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
-      node.setAttribute("aria-label", `${definition.name}, ${typeAffinityLine(definition)}, $${priceOf(mod)}. Buy it.`);
+      node.setAttribute("aria-label", modLabel(definition, 1));
     });
     drawCarry();
   }
@@ -636,7 +633,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const elemental = definition.type !== "neutral";
       return [
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
-        h("span", { class: "tip__meta", "data-type": definition.type }, icon(tagIcon(definition.type)), `${typeAffinityLine(definition)} · ${rarityLine(definition.rarity)}`),
         h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
         h("small", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
