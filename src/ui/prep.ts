@@ -9,7 +9,7 @@ import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModDefinition, ModId } from "../mods/registry.ts";
 import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
-import { effectLines, portLine } from "../mods/describe.ts";
+import { effectLines } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
@@ -639,7 +639,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         h("span", { class: "tip__meta", "data-type": definition.type }, icon(tagIcon(definition.type)), `${typeAffinityLine(definition)} · ${rarityLine(definition.rarity)}`),
         h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
-        ...(portLine(definition) ? [h("small", {}, portLine(definition)!)] : []),
         h("small", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
         h("small", {}, found.held.kind === "offer" ? `$${priceOf(mod.mod)} · tap to bank it, drag to place it`
           : `Sells for $${sellValue(mod)} · drag to move, right-click or R to turn`),
