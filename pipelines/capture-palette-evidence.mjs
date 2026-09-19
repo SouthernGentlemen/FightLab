@@ -71,7 +71,7 @@ const evidence = await evaluate(`(() => ({
   boardActions: document.querySelectorAll(".palette-sheet__sample--board .mod__action").length,
   rarities: document.querySelectorAll(".palette-sheet__rarity").length,
   states: [...document.querySelectorAll(".palette-sheet__state > small")].map((node) => node.textContent?.trim() ?? ""),
-  selectedCorners: Boolean(document.querySelector('.palette-sheet__state .tile[aria-pressed="true"]')),
+  selectedCorners: Boolean(document.querySelector('.palette-sheet__state .catalog-card[aria-pressed="true"]')),
   poor: Boolean(document.querySelector(".palette-sheet__state .offer.is-poor")),
   sold: Boolean(document.querySelector('.palette-sheet__state .offer[data-sold="true"]')),
   valid: Boolean(document.querySelector('.palette-sheet__state .mod[data-placement="valid"]')),
