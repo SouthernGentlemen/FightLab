@@ -1,5 +1,4 @@
 import { effectLines } from "../mods/describe.ts";
-import { RARITY } from "../mods/rarity.ts";
 import { REGISTRY } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { RECIPES, STARS, bestStars, copiesIn, starText } from "../mods/stars.ts";
@@ -40,10 +39,9 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   function render(): void {
     if (mod === null) return;
     const definition = REGISTRY[mod];
-    const material = RARITY[definition.rarity].material;
-    node.dataset.material = material;
+    node.dataset.rarity = definition.rarity;
     setText(name, definition.name);
-    square.replaceChildren(modSquare(definition, "square card__big"), starRow(stars, material, "stars card__bigstars"));
+    square.replaceChildren(modSquare(definition, "square card__big"), starRow(stars, "stars card__bigstars"));
     setText(description, definition.description);
     starButtons.forEach((node, index) => node.setAttribute("aria-pressed", String(STARS[index] === stars)));
     rules.replaceChildren(...effectLines(definition, stars).map((line) => h("p", {}, line)));
