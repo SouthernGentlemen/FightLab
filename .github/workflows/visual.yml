@@ -149,6 +149,10 @@ jobs:
           })()`);
           if (!selected) throw new Error("Could not select Cinder Edge in the Armory");
           await sleep(250);
+          const armoryText = await evaluate('document.querySelector(".card")?.textContent ?? ""');
+          if (/\bports?\b|Orientation/i.test(armoryText)) {
+            throw new Error(`Armory card still exposes port/orientation text: ${armoryText}`);
+          }
           await shot("armory");
 
           let prepSeed = null;
@@ -168,7 +172,20 @@ jobs:
             }
           }
           if (prepSeed === null) throw new Error("No Solar Strike offer found in seeds 1-40");
+          const tipOpened = await evaluate(`(() => {
+            const art = document.querySelector(".shop .mod[data-type=solar][data-affinity=strike]");
+            const offer = art?.closest(".offer");
+            if (!offer) return false;
+            offer.focus();
+            return true;
+          })()`);
+          if (!tipOpened) throw new Error("Could not focus the Solar Strike offer for tooltip evidence");
+          await waitFor(".tip:not([hidden])");
           await sleep(250);
+          const tipText = await evaluate('document.querySelector(".tip:not([hidden])")?.textContent ?? ""');
+          if (/\bports?\b|in-port|out-port/i.test(tipText)) {
+            throw new Error(`Prep tooltip still exposes port text: ${tipText}`);
+          }
           await shot("prep");
 
           socket.close();
