@@ -7,7 +7,6 @@ import { opponentPlan } from "../battle/mixup.ts";
 import type { MixupPlan, OpponentPlan } from "../battle/mixup.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { elementsOf, isElemental } from "../mods/tags.ts";
 import { GRID_SIZE, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
 import type { Grid, Placement } from "../mods/grid.ts";
 import { ROTATIONS } from "../mods/shapes.ts";
@@ -112,7 +111,7 @@ function laneWeights(plan: OpponentPlan): Record<ActionType, number> {
  */
 function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionType, number>>): Placement | null {
   const owners = occupancy(grid);
-  const elements = elementsOf(REGISTRY[mod].tags).filter(isElemental);
+  const type = REGISTRY[mod].type === "neutral" ? null : REGISTRY[mod].type;
   let best: Placement | null = null;
   let bestScore = -Infinity;
   for (const rotation of ROTATIONS) {
@@ -122,11 +121,11 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
         if (!fits(owners, placement)) continue;
         let score = 0;
         for (const [, row] of cellsOf(placement)) {
-          if (elements.length === 0) continue;
+          if (type === null) continue;
           score += weights[LANES[row]];
           for (let column = 0; column < GRID_SIZE; column++) {
             const neighbour = owners.get(`${column},${row}`);
-            if (neighbour && REGISTRY[neighbour.mod].tags.some((tag) => (elements as readonly string[]).includes(tag))) score += 1;
+            if (neighbour && REGISTRY[neighbour.mod].type === type) score += 1;
           }
         }
         if (score > bestScore) {
@@ -149,7 +148,7 @@ function buildFor(seed: number, day: number, plan: OpponentPlan): Grid {
     for (let offer = 0; offer < SHOP_SIZE; offer++) {
       const mod = drawOffer(random, day);
       // Money is worth nothing to an opponent, so it never buys a Neutral mod.
-      if (priceOf(mod) > budget || REGISTRY[mod].tags.includes("neutral")) continue;
+      if (priceOf(mod) > budget || REGISTRY[mod].type === "neutral") continue;
       const placement = bestPlacement(grid, mod, weights);
       if (placement === null) continue;
       grid = place(grid, { uid: uid++, stars: 1, ...placement })!;
