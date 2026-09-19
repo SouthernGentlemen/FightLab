@@ -25,53 +25,53 @@
   --sky: #4cb8f0;
 
   /* Mod types. */
-  --mod-solar: #ff8c42;
-  --mod-arc: #35d07f;
-  --mod-void: #9b6bff;
-  --mod-neutral: #aab4bf;
+  --mod-solar: #ff7a1a;
+  --mod-arc: #18c978;
+  --mod-void: #8b5cf6;
+  --mod-neutral: #b7c3d0;
 
   /* Actions. */
-  --action-strike: #e5484d;
-  --action-tech: #f2c94c;
-  --action-block: #4c8df6;
+  --action-strike: #f43f5e;
+  --action-tech: #eaff5a;
+  --action-block: #3f83f8;
 
   /* Rarity. */
-  --rarity-common: #f3f6f8;
-  --rarity-uncommon: #9ee37d;
-  --rarity-rare: #63d8f2;
-  --rarity-super-rare: #e277ff;
-  --rarity-legendary: #f6cd3d;
+  --rarity-common: #f8fafc;
+  --rarity-uncommon: #b8ef72;
+  --rarity-rare: #45d6ff;
+  --rarity-super-rare: #f27cff;
+  --rarity-legendary: #ffc247;
 
   /* Mod surfaces. */
-  --surface-root: #0f141a;
-  --surface-panel: #151d26;
-  --surface-card: #1c2732;
-  --surface-card-hover: #24323f;
-  --surface-selected: #2c3b49;
+  --surface-root: #080c12;
+  --surface-panel: #101722;
+  --surface-card: #18212d;
+  --surface-card-hover: #223041;
+  --surface-selected: #2d4054;
 
   /* Mod borders. */
-  --border-subtle: #344452;
-  --border-strong: #586b7d;
-  --border-selected: #f8c630;
-  --focus-ring: #4cb8f0;
+  --border-subtle: #344657;
+  --border-strong: #5a7087;
+  --border-selected: #ffcf4a;
+  --focus-ring: #5ac8ff;
 
   /* Mod text. */
-  --text-primary: #f3f6f8;
-  --text-secondary: #b8c4ce;
-  --text-disabled: #778692;
+  --text-primary: #f8fbff;
+  --text-secondary: #c0ccda;
+  --text-disabled: #8998a8;
 
   /* Placement. */
-  --placement-valid: #56d364;
-  --placement-invalid: #ef566b;
+  --placement-valid: #2de38c;
+  --placement-invalid: #ff4f6d;
 
   /* Pieces. */
-  --cell-edge: #111820;
-  --cell-bevel-light: #ffffff59;
-  --cell-bevel-dark: #0000002e;
-  --icon-backing: #111820;
-  --icon-outline: #f3f6f8;
-  --star-on: #f3f6f8;
-  --star-off: #687785;
+  --cell-edge: #080c12;
+  --cell-bevel-light: #ffffff40;
+  --cell-bevel-dark: #00000040;
+  --icon-backing: #09111b;
+  --icon-outline: #f8fbff;
+  --star-on: #f8fbff;
+  --star-off: #6b7b8e;
 
   /* Typography and shared geometry. */
   --font: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
