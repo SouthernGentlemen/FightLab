@@ -51,10 +51,11 @@ describe("mods in a real fight", () => {
   it("Arc: stored Charge becomes Shock, and the next landed hit takes every stack at once", () => {
     const match = new Match(config(grid(["arc-dynamo", 0, 0], ["battery-cell", 1, 0], ["storm-cell", 0, 1]), [], "strike", "tech"));
     untilPause(match);
-    const [first, second] = match.battle.history;
-    expect(second.damage[1] - first.damage[1]).toBe(4);
-    // The third hit consumed the four stacks the second strike's Storm Cell put back, then left four more.
-    expect(match.mods.states[1].shock).toBe(4);
+    const [first, second, third] = match.battle.history;
+    expect(second.damage[1] - first.damage[1]).toBe(0);
+    expect(third.damage[1] - second.damage[1]).toBe(4);
+    // Without the old producer bonus, Storm Cell pays on the second strike; the third consumes those stacks.
+    expect(match.mods.states[1].shock).toBe(0);
   });
 
   it("Void: leeched energy becomes Poison that stays and grows round after round", () => {
