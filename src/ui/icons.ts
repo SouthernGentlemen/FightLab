@@ -20,17 +20,17 @@ export const ICONS = {
   dice: glyph(`<rect x="2" y="2" width="12" height="12" rx="3" fill="#fff" stroke="${INK}" stroke-width="1.5"/><circle cx="5.3" cy="5.3" r="1.2" fill="${INK}"/><circle cx="8" cy="8" r="1.2" fill="${INK}"/><circle cx="10.7" cy="10.7" r="1.2" fill="${INK}"/>`),
   mixup: glyph(`<path d="M2 5h9m-3-3 3 3-3 3M14 11H5m3-3-3 3 3 3" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`),
 
-  strike: glyph(`<path d="M3 7h9.5A1.5 1.5 0 0 1 14 8.5V11a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z" fill="#fff" stroke="${INK}" stroke-width="1.4"/><path d="M5 7V4.5M7.7 7V3.8M10.4 7V4.3M3 9.5h3" fill="none" stroke="${INK}" stroke-width="1.4" stroke-linecap="round"/>`),
-  tech: glyph(`<path d="M2 2.5h8V7H2z" fill="#fff" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 7 12 14" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/><path d="M10 4.8h3.5" stroke="${INK}" stroke-width="1.4"/>`),
-  block: glyph(`<path d="M8 1.5 14 4v4c0 3.5-2.8 5.8-6 6.8C4.8 13.8 2 11.5 2 8V4z" fill="#fff" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 4v8" stroke="${INK}" stroke-width="1.2"/>`),
+  strike: glyph(`<path class="icon__outline" d="M3 7h9.5A1.5 1.5 0 0 1 14 8.5V11a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z" fill="currentColor" stroke-width="1.4"/><path class="icon__outline" d="M5 7V4.5M7.7 7V3.8M10.4 7V4.3M3 9.5h3" fill="none" stroke-width="1.4" stroke-linecap="round"/>`),
+  tech: glyph(`<path class="icon__outline" d="M2 2.5h8V7H2z" fill="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path class="icon__outline" d="M6.5 7 12 14" fill="none" stroke-width="2.6" stroke-linecap="round"/><path class="icon__outline" d="M10 4.8h3.5" fill="none" stroke-width="1.4"/>`),
+  block: glyph(`<path class="icon__outline" d="M8 1.5 14 4v4c0 3.5-2.8 5.8-6 6.8C4.8 13.8 2 11.5 2 8V4z" fill="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path class="icon__outline" d="M8 4v8" fill="none" stroke-width="1.2"/>`),
 
   solar: glyph(`<circle cx="8" cy="8" r="3.4" fill="#fff" stroke="${INK}" stroke-width="1.4"/><path d="M8 .8v2.4M8 12.8v2.4M.8 8h2.4M12.8 8h2.4M2.9 2.9l1.7 1.7M11.4 11.4l1.7 1.7M2.9 13.1l1.7-1.7M11.4 4.6l1.7-1.7" stroke="${INK}" stroke-width="1.5" stroke-linecap="round"/>`),
   void: glyph(`<circle cx="8" cy="8" r="6" fill="#fff" stroke="${INK}" stroke-width="1.4"/><path d="M8 3.5a4.5 4.5 0 1 0 4.2 6.1A3.4 3.4 0 1 1 8 3.5z" fill="${INK}"/>`),
   arc: glyph(`<path d="M9.5 1 3 9h4.5L6 15l7-8.5H8.5z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),
 
-  burn: glyph(`<path d="M8 1.5c.6 2.6 3.9 4 3.9 7.7A3.9 3.9 0 0 1 8 13.2a3.9 3.9 0 0 1-3.9-4c0-1.8 1.1-2.7 1.8-3.9.3 1.2.9 1.9 1.6 2.2C7.3 5.7 7.2 3.4 8 1.5z" fill="#ff8c42" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),
-  shock: glyph(`<path d="M9.5 1 3 9h4.5L6 15l7-8.5H8.5z" fill="#35d07f" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>`),
-  poison: glyph(`<path d="M8 1.5C6 5 3.5 7.3 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.3 10 5 8 1.5z" fill="#9b6bff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="6.4" cy="10.2" r="1.1" fill="#fff"/>`),
+  burn: glyph(`<path class="icon__outline" d="M8 1.5c.6 2.6 3.9 4 3.9 7.7A3.9 3.9 0 0 1 8 13.2a3.9 3.9 0 0 1-3.9-4c0-1.8 1.1-2.7 1.8-3.9.3 1.2.9 1.9 1.6 2.2C7.3 5.7 7.2 3.4 8 1.5z" fill="currentColor" stroke-width="1.3" stroke-linejoin="round"/>`),
+  shock: glyph(`<path class="icon__outline" d="M9.5 1 3 9h4.5L6 15l7-8.5H8.5z" fill="currentColor" stroke-width="1.3" stroke-linejoin="round"/>`),
+  poison: glyph(`<path class="icon__outline" d="M8 1.5C6 5 3.5 7.3 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.3 10 5 8 1.5z" fill="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle class="icon__outline" cx="6.4" cy="10.2" r="1.1" fill="none" stroke-width="1.1"/>`),
 
   coin: glyph(`<circle cx="8" cy="8" r="6" fill="#fff" stroke="${INK}" stroke-width="1.4"/><path d="M10 5.8C9.5 5 8.8 4.8 8 4.8c-1.2 0-2 .6-2 1.5 0 2 4 1.2 4 3.3 0 .9-.9 1.6-2 1.6-.9 0-1.7-.3-2.1-1.1M8 3.6v8.8" fill="none" stroke="${INK}" stroke-width="1.2"/>`),
   ticket: glyph(`<path d="M1.5 4.5h13v2a1.5 1.5 0 0 0 0 3v2h-13v-2a1.5 1.5 0 0 0 0-3z" fill="#fff" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 4.8v6.4" stroke="${INK}" stroke-width="1.1" stroke-dasharray="1.2 1"/>`),
