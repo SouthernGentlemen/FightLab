@@ -78,7 +78,7 @@ await evaluate(`(async () => {
 
 await send("Page.navigate", { url: "http://127.0.0.1:5192/" });
 await waitFor(".title");
-await clickText("Continue");
+await clickText("Play");
 await waitFor('.piece[data-uid="1"]');
 await sleep(150);
 
