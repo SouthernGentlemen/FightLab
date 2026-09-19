@@ -1,7 +1,7 @@
 import type { ActionType } from "../battle/actions.ts";
 import { REGISTRY } from "./registry.ts";
 import type { ModId } from "./registry.ts";
-import { SHAPES, cellsAt, nextRotation, normaliseRotation, orientations } from "./shapes.ts";
+import { SHAPES, cellsAt, nextRotation, normalise, normaliseRotation, orientations } from "./shapes.ts";
 import type { GridPoint, Rotation } from "./shapes.ts";
 import type { Stars } from "./stars.ts";
 
@@ -50,6 +50,47 @@ function onBoard({ x, y }: GridPoint): boolean {
   return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < BOARD_WIDTH && y < BOARD_HEIGHT;
 }
 
+/** A pure clockwise quarter turn around one occupied board cell. */
+export function turnCellsAbout(cells: readonly GridPoint[], pivot: GridPoint): GridPoint[] {
+  return cells.map(({ x, y }) => {
+    const dx = x - pivot.x;
+    const dy = y - pivot.y;
+    return { x: pivot.x - dy, y: pivot.y + dx };
+  });
+}
+
+function sameCells(left: readonly GridPoint[], right: readonly GridPoint[]): boolean {
+  if (left.length !== right.length) return false;
+  const key = (cells: readonly GridPoint[]) => normalise(cells).map(({ x, y }) => `${x},${y}`).join(";");
+  return key(left) === key(right);
+}
+
+/**
+ * Turns a placement a quarter clockwise about one of its occupied board cells. The pivot stays at the
+ * same board coordinate; the returned top-left and rotation describe the turned canonical footprint.
+ * A shape with only one distinct orientation (O or single) does not move.
+ */
+export function turnAbout(placement: Placement, pivot: GridPoint): Placement | null {
+  const shape = SHAPES[REGISTRY[placement.mod].shape];
+  const rotation = canonicalRotation(placement.mod, placement.rotation);
+  const current: Placement = { ...placement, rotation };
+  const cells = cellsOf(current);
+  if (!cells.some(({ x, y }) => x === pivot.x && y === pivot.y)) return null;
+
+  const next = canonicalRotation(placement.mod, nextRotation(rotation));
+  if (next === rotation) return current;
+
+  const turned = turnCellsAbout(cells, pivot);
+  const match = orientations(shape).find(({ cells: orientation }) => sameCells(orientation, turned));
+  if (!match) return null;
+  return {
+    ...placement,
+    rotation: match.rotation,
+    x: Math.min(...turned.map(({ x }) => x)),
+    y: Math.min(...turned.map(({ y }) => y)),
+  };
+}
+
 /** Which placed mod covers each cell, by `"x,y"`, ignoring the mod `except` so it can move over itself. */
 export function occupancy(grid: Grid, except: number | null = null): Map<string, PlacedMod> {
   const owners = new Map<string, PlacedMod>();
@@ -83,15 +124,17 @@ export function removeFromGrid(grid: Grid, uid: number): Grid {
 }
 
 /**
- * The grid with `uid` turned a quarter clockwise where it stands — the top-left of its bounding box
- * stays put — or null when that placement would not be legal. A refused rotation changes nothing.
+ * The grid with `uid` turned a quarter clockwise about `pivot`, or about its first cell when no
+ * pivot is supplied. A refused turn changes nothing.
  */
-export function rotateInPlace(grid: Grid, uid: number): Grid | null {
+export function rotateInPlace(grid: Grid, uid: number, pivot?: GridPoint): Grid | null {
   const placed = grid.find((candidate) => candidate.uid === uid);
   if (!placed) return null;
-  const turned: PlacedMod = { ...placed, rotation: canonicalRotation(placed.mod, nextRotation(placed.rotation)) };
-  if (!canPlace(grid, turned, uid)) return null;
-  return Object.freeze(grid.map((candidate) => (candidate.uid === uid ? Object.freeze(turned) : candidate)));
+  const anchor = pivot ?? cellsOf(placed)[0];
+  const turned = turnAbout(placed, anchor);
+  if (turned === null || !canPlace(grid, turned, uid)) return null;
+  const next: PlacedMod = { ...placed, ...turned };
+  return Object.freeze(grid.map((candidate) => (candidate.uid === uid ? Object.freeze(next) : candidate)));
 }
 
 /** The first legal placement in reading order, trying the given rotation first and then the rest. */
