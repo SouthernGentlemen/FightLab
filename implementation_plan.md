@@ -1000,7 +1000,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-009 | Board width and height | 3 | — | done |
 | tasks-010 | Orientation math, and its tests | 4 | — | done |
 | tasks-011 | Degrees on the placed mod | 4 | D9 ✓ | done |
-| tasks-012 | Turning about the cursor | 4 | D9 ✓ | todo |
+| tasks-012 | Turning about the cursor | 4 | D9 ✓ | done |
 | tasks-013 | Controls | 4 | D9 ✓ | todo |
 | tasks-014 | The adjacency primitive | 5 | — | todo |
 | tasks-015 | Adjacency replaces ports | 5 | — | todo |
