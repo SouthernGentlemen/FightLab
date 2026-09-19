@@ -573,7 +573,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 
 ### Pass 3 — The canonical shape library
 
-#### tasks-008 — The eleven shapes
+#### tasks-008 — The eleven shapes · **done**
 *Spec §9–§12, §14.*
 - `shapes.ts` holds `GridPoint`, the spec's 11 `ShapeId`s, `ModShape`, `SHAPES` (§5's footprints),
   `sizeOf` and `SHAPE_LABEL` ("I tetromino", "straight triomino", …).
@@ -996,7 +996,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-005 | Remove port drawing and port text | 2 | — | done |
 | tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | done |
 | tasks-007 | Remove the energy UI and the stat blocks | 2 | — | done |
-| tasks-008 | The eleven shapes | 3 | — | todo |
+| tasks-008 | The eleven shapes | 3 | — | done |
 | tasks-009 | Board width and height | 3 | — | todo |
 | tasks-010 | Orientation math, and its tests | 4 | — | todo |
 | tasks-011 | Degrees on the placed mod | 4 | D9 ✓ | todo |
