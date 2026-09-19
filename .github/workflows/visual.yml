@@ -8,6 +8,7 @@ on:
       - ".github/workflows/visual.yml"
       - "pipelines/capture-turn-evidence.mjs"
       - "pipelines/capture-palette-evidence.mjs"
+      - "pipelines/capture-runend-evidence.mjs"
   workflow_dispatch:
 
 permissions:
@@ -243,6 +244,10 @@ jobs:
       - name: Capture palette sheet at 1920x1080
         working-directory: FightLab
         run: node pipelines/capture-palette-evidence.mjs
+
+      - name: Capture Run End at 1920x1080
+        working-directory: FightLab
+        run: node pipelines/capture-runend-evidence.mjs
 
       - name: Capture straight-I turn evidence at 1920x1080
         working-directory: FightLab
