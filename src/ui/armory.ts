@@ -2,7 +2,7 @@ import { ACTION_TYPES } from "../battle/actions.ts";
 import type { ActionType } from "../battle/actions.ts";
 import { EVERYTHING, armoryList, collected } from "../mods/armory.ts";
 import type { ArmoryFilter, Owned } from "../mods/armory.ts";
-import { MATERIAL_LABEL, RARITIES, RARITY } from "../mods/rarity.ts";
+import { RARITIES, RARITY } from "../mods/rarity.ts";
 import type { Rarity } from "../mods/rarity.ts";
 import { MOD_IDS } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
@@ -52,7 +52,7 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
   const actions = segments<ActionType | "all">("Action", ["all", ...ACTION_TYPES], () => filter.affinity, (affinity) => { filter = { ...filter, affinity }; },
     (value) => (value === "all" ? ["All"] : [icon(value), AFFINITY_LABEL[value]]));
   const rarities = segments<Rarity | "all">("Rarity", ["all", ...RARITIES], () => filter.rarity, (rarity) => { filter = { ...filter, rarity }; },
-    (value) => (value === "all" ? ["All"] : [h("i", { class: "gem", "data-material": RARITY[value].material }), MATERIAL_LABEL[RARITY[value].material]]));
+    (value) => (value === "all" ? ["All"] : [h("i", { class: "rarity-dot", "data-rarity": value }), RARITY[value].label]));
   const ownedOnly = button("Owned only", "segment armory__owned", () => {
     filter = { ...filter, ownedOnly: !filter.ownedOnly };
     render();
