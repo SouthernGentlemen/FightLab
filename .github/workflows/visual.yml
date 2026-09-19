@@ -153,35 +153,69 @@ jobs:
           if (!selected) throw new Error("Could not select Cinder Edge in the Armory");
           await sleep(250);
           const armoryState = await evaluate(`(() => {
-            const tile = document.querySelector('[data-mod="cinder-edge"]');
-            const card = document.querySelector(".card");
-            if (!tile || !card) return null;
-            const clone = tile.cloneNode(true);
-            clone.querySelectorAll(".tile__stars").forEach((node) => node.remove());
+            const catalog = document.querySelector('[data-mod="cinder-edge"]');
+            const detail = document.querySelector(".card");
+            if (!catalog || !detail) return null;
+            const cells = [...catalog.querySelectorAll(".catalog-card__cell")];
+            const cellSizes = cells.map((cell) => {
+              const style = getComputedStyle(cell);
+              return [style.width, style.height];
+            });
+            const name = catalog.querySelector(".catalog-card__name");
             return {
-              tileText: clone.textContent.replace(/\\s+/g, " ").trim(),
-              tileLabel: tile.getAttribute("aria-label") ?? "",
-              repeatedTileLabels: tile.querySelectorAll(".tile__owned, .tile__type, .tile__rarity").length,
-              tileMaterial: tile.hasAttribute("data-material"),
-              repeatedCardLabels: card.querySelectorAll(".card__rarity, .tagchips").length,
-              statBlocks: card.querySelectorAll(".card__table, .card__profile").length,
-              cardText: card.textContent ?? "",
+              visibleText: name?.textContent?.trim() ?? "",
+              label: catalog.getAttribute("aria-label") ?? "",
+              cells: cells.length,
+              cellSizes,
+              actions: catalog.querySelectorAll(".catalog-card__action").length,
+              pips: catalog.querySelectorAll(".catalog-card__pip").length,
+              legacy: document.querySelectorAll(".tile, .square, [class*='tile__'], [class*='square__']").length,
+              repeatedCardLabels: detail.querySelectorAll(".card__rarity, .tagchips").length,
+              statBlocks: detail.querySelectorAll(".card__table, .card__profile").length,
+              cardText: detail.textContent ?? "",
+              nameOverflow: name ? getComputedStyle(name).textOverflow : "",
+              nameWhiteSpace: name ? getComputedStyle(name).whiteSpace : "",
             };
           })()`);
-          if (!armoryState) throw new Error("Could not inspect Armory task-006 state");
-          if (armoryState.tileText !== "Cinder Edge") throw new Error(`Tile repeats visible text: ${armoryState.tileText}`);
-          if (!/^Cinder Edge, Solar, Strike affinity, domino, Uncommon, [123] stars$/.test(armoryState.tileLabel)) {
-            throw new Error(`Tile accessible label is incomplete: ${armoryState.tileLabel}`);
+          if (!armoryState) throw new Error("Could not inspect Armory catalogue card state");
+          if (armoryState.visibleText !== "Cinder Edge") throw new Error(`Catalogue card name is wrong: ${armoryState.visibleText}`);
+          if (!/^Cinder Edge, Solar, Strike affinity, domino, Uncommon$/.test(armoryState.label)) {
+            throw new Error(`Catalogue card accessible label is incomplete: ${armoryState.label}`);
           }
-          if (armoryState.repeatedTileLabels !== 0 || armoryState.tileMaterial) {
-            throw new Error("Armory tile still exposes repeated labels or a material-band hook");
+          if (armoryState.cells !== 2 || armoryState.cellSizes.some(([width, height]) => width !== height)) {
+            throw new Error(`Catalogue shape cells are not the expected uniform domino: ${JSON.stringify(armoryState)}`);
           }
-          if (armoryState.repeatedCardLabels !== 0) throw new Error("Armory card still repeats rarity/type labels");
-          if (armoryState.statBlocks !== 0) throw new Error("Armory card still renders energy/number stat blocks");
+          if (armoryState.actions > 1 || armoryState.pips !== 3 || armoryState.legacy !== 0) {
+            throw new Error(`Catalogue card contract failed: ${JSON.stringify(armoryState)}`);
+          }
+          if (armoryState.nameOverflow !== "ellipsis" || armoryState.nameWhiteSpace !== "nowrap") {
+            throw new Error(`Catalogue name is not one-line ellipsis: ${JSON.stringify(armoryState)}`);
+          }
+          if (armoryState.repeatedCardLabels !== 0) throw new Error("Armory detail still repeats rarity/type labels");
+          if (armoryState.statBlocks !== 0) throw new Error("Armory detail still renders energy/number stat blocks");
           if (/\bports?\b|Orientation/i.test(armoryState.cardText)) {
-            throw new Error(`Armory card still exposes port/orientation text: ${armoryState.cardText}`);
+            throw new Error(`Armory detail still exposes port/orientation text: ${armoryState.cardText}`);
           }
           await shot("armory");
+
+          const longName = await evaluate(`(() => {
+            const catalog = document.querySelector('[data-mod="cinder-edge"]');
+            const name = catalog?.querySelector(".catalog-card__name");
+            if (!catalog || !name) return null;
+            name.textContent = "12345678901234567890123456789012";
+            const style = getComputedStyle(name);
+            return {
+              length: name.textContent.length,
+              overflowed: name.scrollWidth > name.clientWidth,
+              oneLine: style.whiteSpace === "nowrap",
+              cardContained: catalog.scrollWidth <= catalog.clientWidth,
+              textOverflow: style.textOverflow,
+            };
+          })()`);
+          if (!longName || longName.length !== 32 || !longName.overflowed || !longName.oneLine || !longName.cardContained || longName.textOverflow !== "ellipsis") {
+            throw new Error(`32-character catalogue name broke the layout: ${JSON.stringify(longName)}`);
+          }
+          await shot("armory-long-name");
 
           let prepSeed = null;
           for (let seed = 1; seed <= 40; seed++) {
