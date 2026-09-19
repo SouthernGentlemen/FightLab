@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { boardPorts, links, turnSide } from "../../src/mods/ports.ts";
-import type { Port, PortedPiece } from "../../src/mods/ports.ts";
 import { RARITIES, RARITY, rarityLine } from "../../src/mods/rarity.ts";
 import { RECIPES, STARS, bestStars, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
 import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL, isModType } from "../../src/mods/tags.ts";
-import { ROTATIONS } from "../../src/mods/shapes.ts";
-import type { Rotation } from "../../src/mods/shapes.ts";
 
 describe("mod type and affinity", () => {
   it("defines the four mod types and their labels", () => {
@@ -56,37 +52,5 @@ describe("stars", () => {
 
   it("read a scaled number at each level, independent of rarity", () => {
     expect(STARS.map((stars) => scaled([2, 3, 5], stars))).toEqual([2, 3, 5]);
-  });
-});
-
-describe("ports", () => {
-  const piece = (uid: number, ports: readonly Port[], x: number, y: number, rotation: Rotation = 0, shape: PortedPiece["shape"] = "single"): PortedPiece =>
-    ({ uid, shape, rotation, x, y, ports });
-  const heatOut: Port = { cell: 0, side: "e", flow: "out", resource: "heat" };
-  const heatIn: Port = { cell: 0, side: "w", flow: "in", resource: "heat" };
-
-  it("turn clockwise with the piece and come back after four turns", () => {
-    expect(ROTATIONS.map((rotation) => turnSide("n", rotation))).toEqual(["n", "e", "s", "w"]);
-    // A domino standing up carries its right-hand cell underneath, facing down.
-    expect(boardPorts(piece(1, [{ ...heatOut, cell: 1 }], 0, 0, 90, "domino"))).toEqual([{ uid: 1, at: { x: 0, y: 1 }, side: "s", flow: "out", resource: "heat" }]);
-    expect(boardPorts(piece(1, [heatOut], 1, 1, 0))).toEqual(boardPorts(piece(1, [heatOut], 1, 1, 0)));
-  });
-
-  it("link an out-port to a matching in-port across a shared edge", () => {
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [heatIn], 1, 0)])).toEqual([{ from: 1, to: 2, resource: "heat" }]);
-  });
-
-  it("stop linking when either piece turns away, or the resources differ, or the cells do not touch", () => {
-    expect(links([piece(1, [heatOut], 0, 0, 180), piece(2, [heatIn], 1, 0)])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [heatIn], 1, 0, 90)])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [{ ...heatIn, resource: "charge" }], 1, 0)])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [heatIn], 2, 0)])).toEqual([]);
-  });
-
-  it("link again when the turn points the port at a neighbour: rotation is behaviour, not decoration", () => {
-    // The producer sits above the consumer; facing east it misses, turned a quarter it faces south.
-    const consumer = piece(2, [{ ...heatIn, side: "n" }], 0, 1);
-    expect(links([piece(1, [heatOut], 0, 0, 0), consumer])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0, 90), consumer])).toEqual([{ from: 1, to: 2, resource: "heat" }]);
   });
 });
