@@ -6,14 +6,17 @@ import { combatSide, hitDamage } from "../game/sides.ts";
 import { BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
 import { RARITIES, RARITY, rarityLine } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
-import type { ModId } from "../mods/registry.ts";
+import type { ModDefinition, ModId } from "../mods/registry.ts";
 import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { effectLines, portLine } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { ELEMENTAL, TAG_LABEL, elementsOf, isElemental, tagLine } from "../mods/tags.ts";
-import type { Elemental } from "../mods/tags.ts";
+import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
+import type { ModType } from "../mods/tags.ts";
+
+type Elemental = Exclude<ModType, "neutral">;
+const ELEMENTAL: readonly Elemental[] = MOD_TYPES.filter((type): type is Elemental => type !== "neutral");
 import { sellValue } from "../run/economy.ts";
 import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggleLock } from "../run/run.ts";
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
@@ -78,6 +81,10 @@ const ELEMENT_IDENTITY: Readonly<Record<Elemental, string>> = {
   arc: "Charge: setup and burst. Shock waits for the next hit and all of it lands.",
   void: "Leeched Void: slow build, persistent high payoff. Poison never fades.",
 };
+
+function typeAffinityLine(definition: ModDefinition): string {
+  return `${TYPE_LABEL[definition.type].toUpperCase()}${definition.affinity === null ? "" : ` / ${AFFINITY_LABEL[definition.affinity].toUpperCase()}`}`;
+}
 
 /**
  * The shop, box for box in Batomon's proportions: bank and grid in the centre, the two action bars
@@ -236,7 +243,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       node.dataset.attuned = element ?? "";
     });
     levels.replaceChildren(...ELEMENTAL.map((element) => h("span", { class: "level", "data-affinity": element, "data-element": element },
-      icon(element), h("b", {}, String(run.grid.filter((piece) => REGISTRY[piece.mod].tags.includes(element)).length)))));
+      icon(element), h("b", {}, String(run.grid.filter((piece) => REGISTRY[piece.mod].type === element).length)))));
 
     BAR_IDS.forEach((bar, index) => barSlots[index].forEach(({ node, chip, damage }, slot) => {
       const action = run.loadout[bar][slot];
@@ -269,11 +276,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         return;
       }
       const definition = REGISTRY[mod];
-      node.dataset.affinity = definition.tags[0];
+      node.dataset.affinity = definition.type;
       node.classList.toggle("is-poor", priceOf(mod) > run.money);
       node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
         h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
-      node.setAttribute("aria-label", `${definition.name}, ${tagLine(definition.tags)}, $${priceOf(mod)}. Buy it.`);
+      node.setAttribute("aria-label", `${definition.name}, ${typeAffinityLine(definition)}, $${priceOf(mod)}. Buy it.`);
     });
     drawCarry();
   }
@@ -626,10 +633,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const mod = heldMod(found.held);
       if (mod === null) return null;
       const definition = REGISTRY[mod.mod];
-      const elemental = elementsOf(definition.tags).some(isElemental);
+      const elemental = definition.type !== "neutral";
       return [
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
-        h("span", { class: "tip__meta", "data-affinity": definition.tags[0] }, icon(modIconFor(mod.mod)), `${tagLine(definition.tags)} · ${rarityLine(definition.rarity)}`),
+        h("span", { class: "tip__meta", "data-affinity": definition.type }, icon(modIconFor(mod.mod)), `${typeAffinityLine(definition)} · ${rarityLine(definition.rarity)}`),
         h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
         ...(portLine(definition) ? [h("small", {}, portLine(definition)!)] : []),
@@ -645,12 +652,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const attuned = build.attuned[action];
       return [h("b", {}, `${ACTION_LABEL[action]} lane +${build.lanes[action]}`),
         h("span", {}, `Every cell in this row powers ${ACTION_LABEL[action]} ${action === "block" ? "(the riposte)" : ""}`),
-        h("small", {}, attuned ? `Attuned to ${TAG_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
+        h("small", {}, attuned ? `Attuned to ${TYPE_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
     }
     const level = target.closest<HTMLElement>("[data-element]");
     if (level) {
       const element = level.dataset.element as Elemental;
-      return [h("b", {}, TAG_LABEL[element]), h("span", {}, ELEMENT_IDENTITY[element]), h("small", {}, "Mods on your grid that carry it")];
+      return [h("b", {}, TYPE_LABEL[element]), h("span", {}, ELEMENT_IDENTITY[element]), h("small", {}, "Mods on your grid that carry it")];
     }
     return null;
   }
