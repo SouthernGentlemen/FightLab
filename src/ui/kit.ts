@@ -11,7 +11,6 @@ import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { AFFINITY_LABEL, TYPE_LABEL } from "../mods/tags.ts";
 import type { ModType } from "../mods/tags.ts";
 import { button, h, icon, replay, setData, setText } from "./dom.ts";
 import type { IconName } from "./icons.ts";
@@ -32,15 +31,6 @@ export function tagIcon(tag: ModType | ActionType): IconName {
 /** `★★` in the rarity's material: the upgrade level, never the rarity itself. */
 export function starRow(stars: Stars, material: Material, className = "stars"): HTMLElement {
   return h("span", { class: className, "data-material": material, role: "img", "aria-label": `${stars} star${stars === 1 ? "" : "s"}` }, starText(stars));
-}
-
-/** The type and optional affinity written out with their own signals. */
-export function tagChips(type: ModType, affinity: ActionType | null): HTMLElement {
-  const typeChip = h("span", { class: "tagchip", "data-type": type }, icon(tagIcon(type)), TYPE_LABEL[type].toUpperCase());
-  const affinityChip = affinity === null ? [] : [
-    h("span", { class: "tagchip", "data-action": affinity }, icon(affinity), AFFINITY_LABEL[affinity].toUpperCase()),
-  ];
-  return h("span", { class: "tagchips" }, typeChip, ...affinityChip);
 }
 
 /**
