@@ -157,8 +157,17 @@ if (!dimensions || dimensions.width <= dimensions.height) throw new Error("R did
 await evaluate('window.dispatchEvent(new KeyboardEvent("keydown", { key: "R", bubbles: true }))');
 await sleep(100);
 
-const valid = await evaluate('document.querySelectorAll(".cell.is-ok").length');
-if (valid !== 3) throw new Error(`Expected 3 valid carry cells, got ${valid}`);
+const valid = await evaluate(`(() => {
+  const art = document.querySelector('.carried .mod[data-placement="valid"]');
+  if (!art) return null;
+  const cell = art.querySelector(".mod__cell");
+  if (!cell) return null;
+  const style = getComputedStyle(cell);
+  return { opacity: style.opacity, outline: style.outlineColor, staleCells: document.querySelectorAll(".cell.is-ok, .cell.is-bad").length };
+})()`);
+if (!valid || valid.opacity !== "1" || valid.staleCells !== 0) {
+  throw new Error(`Valid carry did not use the full-colour piece state: ${JSON.stringify(valid)}`);
+}
 await shot("controls-valid-carry");
 
 await clickPointer('.cell[data-x="1"][data-y="1"]');
@@ -166,8 +175,17 @@ await waitFor(`Boolean(document.querySelector(\'.piece[data-uid="1"]\')) && docu
 
 await clickPointer('.piece[data-uid="1"] .mod__cell[data-index="0"]');
 await moveToCell(2, 0);
-const invalid = await evaluate('document.querySelectorAll(".cell.is-bad").length');
-if (invalid !== 3) throw new Error(`Expected 3 invalid carry cells, got ${invalid}`);
+const invalid = await evaluate(`(() => {
+  const art = document.querySelector('.carried .mod[data-placement="invalid"]');
+  const cell = art?.querySelector(".mod__cell");
+  if (!art || !cell) return null;
+  const style = getComputedStyle(cell);
+  const overlay = getComputedStyle(cell, "::after");
+  return { opacity: style.opacity, outline: style.outlineColor, hatch: overlay.backgroundImage, staleCells: document.querySelectorAll(".cell.is-ok, .cell.is-bad").length };
+})()`);
+if (!invalid || invalid.opacity !== "1" || invalid.staleCells !== 0 || invalid.hatch === "none") {
+  throw new Error(`Invalid carry did not use the full-colour hatched piece state: ${JSON.stringify(invalid)}`);
+}
 await shot("controls-invalid-carry");
 
 await clickPointer('.cell[data-x="2"][data-y="0"]');
@@ -180,7 +198,7 @@ await waitFor('document.querySelector(".carried")?.hidden === true', "Escape can
 const restored = await evaluate(`(() => {
   const piece = document.querySelector('.piece[data-uid="1"]');
   if (!piece) return false;
-  return !piece.classList.contains("is-carried") && piece.style.left.includes("* 1") && piece.style.top.includes("* 0");
+  return !piece.classList.contains("is-source") && piece.style.left.includes("* 1") && piece.style.top.includes("* 0");
 })()`);
 if (!restored) throw new Error("Escape did not restore the carried piece");
 
