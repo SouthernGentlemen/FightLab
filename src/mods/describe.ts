@@ -1,5 +1,4 @@
-import type { Effect, Payoff } from "./effects.ts";
-import type { Resource } from "./ports.ts";
+import type { Effect, Payoff, Resource } from "./effects.ts";
 import type { ModDefinition } from "./registry.ts";
 import { scaled } from "./stars.ts";
 import type { Stars } from "./stars.ts";
@@ -29,12 +28,12 @@ const TAG_DEBUFF = { burn: "Burn", shock: "Shock", poison: "Poison" } as const;
 function effectText(effect: Effect, stars: Stars, blocks: boolean): string {
   const at = (values: readonly [number, number, number]) => scaled(values, stars);
   switch (effect.kind) {
-    case "generate": return `Makes ${at(effect.amount)} ${RESOURCE[effect.resource]}${effect.perLink ? `, +${at(effect.perLink)} for every link it is part of` : ""}.`;
+    case "generate": return `Makes ${at(effect.amount)} ${RESOURCE[effect.resource]}${effect.perAdjacent ? `, +${at(effect.perAdjacent)} for every adjacent mod` : ""}.`;
     case "leech": return `Drains ${at(effect.amount)} of the opponent's ${effect.from === "either" ? "Heat or Charge, whichever they hold more of," : RESOURCE[effect.from]} into Void.`;
     case "convert": return `Turns up to ${at(effect.amount)} of your ${RESOURCE[effect.from]} into ${RESOURCE[effect.to]}.`;
     case "spend": return `Spends ${at(effect.cost)} ${RESOURCE[effect.resource]}: ${effect.payoff.map((payoff) => payoffText(payoff, stars, blocks)).join(", ")}.`;
     case "sink": return `Sinks up to ${at(effect.upTo)} ${RESOURCE[effect.resource]}; for each one, ${effect.per.map((payoff) => payoffText(payoff, stars, blocks)).join(", ")}.`;
-    case "refund": return `Gives back ${at(effect.amount)} Charge each time a mod linked to it spends Charge.`;
+    case "refund": return `Gives back ${at(effect.amount)} Charge each time an adjacent mod spends Charge.`;
     case "accrue": return `+${at(effect.amount)} Void when each round ends.`;
     case "capacity": return `Stores ${at(effect.amount)} more Charge.`;
     case "lane-boost": return `Each elemental cell of every mod touching it powers its lane +${at(effect.amount)}.`;
