@@ -3,8 +3,6 @@ import type { ActionType } from "../battle/actions.ts";
 import type { BarId } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import type { StyleMeter } from "../battle/style.ts";
-import { RARITY } from "../mods/rarity.ts";
-import type { Material } from "../mods/rarity.ts";
 import { REGISTRY } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { shapeCells, shapeSize } from "../mods/shapes.ts";
@@ -28,9 +26,9 @@ export function tagIcon(tag: ModType | ActionType): IconName {
   return tag === "neutral" ? "chip" : tag;
 }
 
-/** `★★` in the rarity's material: the upgrade level, never the rarity itself. */
-export function starRow(stars: Stars, material: Material, className = "stars"): HTMLElement {
-  return h("span", { class: className, "data-material": material, role: "img", "aria-label": `${stars} star${stars === 1 ? "" : "s"}` }, starText(stars));
+/** `★★`: the upgrade level, independent of rarity. */
+export function starRow(stars: Stars, className = "stars"): HTMLElement {
+  return h("span", { class: className, role: "img", "aria-label": `${stars} star${stars === 1 ? "" : "s"}` }, starText(stars));
 }
 
 /**
@@ -56,7 +54,7 @@ export function modArt(mod: ModId, rotation: Rotation, className = "", stars: St
     }
     node.append(cell);
   });
-  node.append(starRow(stars, RARITY[definition.rarity].material, "stars mod__stars"));
+  node.append(starRow(stars, "stars mod__stars"));
   return node;
 }
 
