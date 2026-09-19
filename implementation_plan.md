@@ -16,11 +16,29 @@ hierarchy, filtering, the selected-item pane and readability — not something t
 
 ## 1. How to work this plan
 
-- Every task has an id, `tasks-NNN`. A task is one small branch off `main` (or a few commits on one),
-  green under `npm run verify` before it merges, with its id in the commit message body.
+- **GitHub is the working copy and remote `main` is authoritative.** Do not assume or require a
+  checkout at `~/Documents/GitHub/FightLab`, a local worktree, a later push, or any other state that
+  exists only on one machine. Start every task by re-reading current remote `main`, `AGENTS.md`,
+  this plan and the task's prerequisites, then create its remote branch from that exact `main`.
+- Every task has an id, `tasks-NNN`. Work happens on a small remote branch (normally
+  `tasks-NNN`, or the task's explicitly named branch), in small commits whose body contains the task
+  id. Open a pull request to `main`, merge it remotely once its gates are satisfied, then delete the
+  remote branch. **There is no separate push step.**
+- **Remote verification is a hard prerequisite for implementation work.** `npm run verify` remains
+  the canonical executable gate, but FightLab currently depends on `boneyard: file:../Boneyard` and
+  the pinned Boneyard checkout is not available to a GitHub runner. Before an implementation task may
+  claim "verify green" or merge under this plan, the exact pinned Boneyard contents must be made
+  remotely retrievable without weakening C1, and a GitHub Actions workflow must run install plus
+  `npm run verify` on the task branch / pull request. Until that remote gate exists, planning- or
+  documentation-only changes may land after source review, but code-changing tasks stop before merge.
 - A task lists the files it touches, what it deletes and when it is done. Done always includes the
-  tests the task names. A task that changes what is drawn also needs screenshots from the running game
-  at 1920 × 1080 (`AGENTS.md`: verify visually).
+  tests the task names. A task that changes what is drawn also needs **remote** visual evidence at
+  1920 × 1080 (`AGENTS.md`: verify visually), from a GitHub-hosted preview, artifact or equivalent
+  remote browser target. If no remote preview exists, the visual task stops before merge rather than
+  silently falling back to a local machine.
+- Task prompts must describe the remote workflow above. Do not instruct an agent to `git pull`,
+  work in a Mac path, use a local worktree, "don't push", or fast-forward a local branch. The remote
+  branch, its commits, pull request, checks and merge are the work.
 - Tasks run in order within a pass, and passes run in order, unless a task says it can move. A task
   gated by a decision in §3 waits for that decision.
 - Write files in pieces of about 250 lines at most and extend them with edits.
@@ -53,8 +71,8 @@ hierarchy, filtering, the selected-item pane and readability — not something t
 ## 3. Decisions — confirm or veto before the tasks they gate
 
 The spec settles most questions. These are the ones the code raised, each with the recommendation
-the tasks are written against. D1 is done, and Jacob has confirmed D2 and D11. `tasks-002` is him
-confirming or changing the rest.
+the tasks are written against. D1 is done, and Jacob has confirmed D2, D4 and D11. `tasks-002`
+remains open for D3 and D5–D10.
 
 **D1 — done: the run's plan moved to [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md).** This Mac's filesystem
 is case-insensitive, so `implementation_plan.md` *is* `IMPLEMENTATION_PLAN.md`. Writing this file in
@@ -79,11 +97,11 @@ defers the energy economy and names heat generation, capacity, batteries, routin
 fields to retire — which is today's engine. *Instead:* keeping the engine and hiding it from the UI
 leaves a second model beside the new one, which the spec rules out.
 
-**D4 — one type per mod; the status follows the type.** *Gates tasks-003, tasks-029.* Affinity is
-optional, and Neutral may carry one. A mod that applies a status applies its type's: Solar → Burn,
-Arc → Shock, Void → Poison. Neutral applies none. The two hybrids (`black-battery` VOID / ARC and
-`heat-death` VOID / SOLAR) retire. This gives each type a mechanical meaning without energy.
-*Instead:* any status on any type.
+**D4 — confirmed: one type per mod; the status follows the type.** *Jacob, 2026-09-18. Gates
+tasks-003 and tasks-029.* Affinity is optional, and Neutral may carry one. A mod that applies a
+status applies its type's: Solar → Burn, Arc → Shock, Void → Poison. Neutral applies none. The two
+hybrids (`black-battery` VOID / ARC and `heat-death` VOID / SOLAR) retire. This gives each type a
+mechanical meaning without energy. *Instead:* any status on any type.
 
 **D5 — rarity materials retire.** *Gates tasks-006, tasks-016.* Iron, Bronze, Silver, Gold and
 Diamond — the star colours, the gem badge on every piece and the tile's colour band — go. Rarity is
@@ -247,8 +265,7 @@ normaliseRotation(shape, rotation): Rotation   // an O is always 0; I, S, Z, str
 turnAbout(placement, pivot: GridPoint): Placement  // a quarter turn clockwise; the pivot cell stays put
 ```
 
-The distinct orientations are O 1, I 2, S 2, Z 2, T 4, J 4, L 4, straight triomino 2, L triomino 4,
-domino 2 and single 1 — 28 in all. A 4 × 4 board holds every one of them. A 3 × 3 board holds
+The distinct orientations are O 1, I 2, S 2, Z 2, T 4, J 4, L 4, straight triomino 2, L triomino 4,domino 2 and single 1 — 28 in all. A 4 × 4 board holds every one of them. A 3 × 3 board holds
 neither orientation of the I, and a board of three rows holds only the flat I. A throwaway script
 checked both facts while this plan was written; tasks-010 and tasks-032 make them tests.
 
@@ -492,12 +509,12 @@ is done. Every task ends green under `npm run verify`.
 size, colour, tag, lane and energy model, and the spec terms with no counterpart in the code.
 
 #### tasks-002 — Confirm the decisions
-*Owner: Jacob.* D2 (the 4 × 4 board) and D11 (more tetrominoes) are confirmed. Confirm, change or veto
-D3–D10 in §3. Any change is written back into §3, and into the tasks it gates, before those tasks
-start. Pass 2 through Pass 5 depend only on D4, D5 and D9.
+*Owner: Jacob.* D2 (the 4 × 4 board), D4 (one type plus optional affinity) and D11 (more
+tetrominoes) are confirmed. Confirm, change or veto D3 and D5–D10 in §3. Any change is written back
+into §3, and into the tasks it gates, before those tasks start. Pass 2 through Pass 5 depend only on
+D4, D5 and D9.
 
 ### Pass 2 — Remove visual clutter
-
 #### tasks-003 — Split tags into type and affinity
 *Spec §4–§6, §33 · D4.*
 - Rewrite `src/mods/tags.ts` down to `MOD_TYPES`, `ModType`, `TYPE_LABEL`, `AFFINITY_LABEL` and
@@ -747,7 +764,6 @@ start. Pass 2 through Pass 5 depend only on D4, D5 and D9.
 - Done when the screenshot is checked. The DOM test comes in tasks-042.
 
 ### Pass 9 — Filters
-
 #### tasks-027 — The filter model
 *Spec §23 · D8.*
 - `src/mods/armory.ts` gains:
@@ -971,8 +987,8 @@ them. There are no directories for them (`AGENTS.md`).
 | Task | Title | Pass | Gated by | Status |
 | --- | --- | --- | --- | --- |
 | tasks-001 | Audit the mod system | 1 | — | done |
-| tasks-002 | Confirm the decisions | 1 | — | todo |
-| tasks-003 | Split tags into type and affinity | 2 | D4 | todo |
+| tasks-002 | Confirm the decisions | 1 | — | in progress |
+| tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | todo |
 | tasks-004 | One type colour per piece, one action icon | 2 | — | todo |
 | tasks-005 | Remove port drawing and port text | 2 | — | todo |
 | tasks-006 | Remove the labels the shape already says | 2 | D5 | todo |
@@ -997,8 +1013,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-025 | The catalogue screen | 7 | — | todo |
 | tasks-026 | The detail pane | 8 | — | todo |
 | tasks-027 | The filter model | 9 | D8 | todo |
-| tasks-028 | The filter modal | 9 | — | todo |
-| tasks-029 | The effect vocabulary | 10 | D4 | todo |
+| tasks-028 | The filter modal | 9 | — | todo || tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
