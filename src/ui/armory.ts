@@ -14,9 +14,11 @@ import { armoryCard } from "./armorycard.ts";
 import { button, h, icon } from "./dom.ts";
 import { iconButton, tagIcon } from "./kit.ts";
 import { modTile } from "./modtile.ts";
+import { paletteDebugSheet } from "./palette-debug.ts";
 
 export interface ArmoryOptions {
   readonly collection: CollectionRepository;
+  readonly debug?: boolean;
   back(): void;
 }
 
@@ -66,14 +68,15 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
   const grid = h("div", { class: "armory__grid" });
   const empty = h("p", { class: "armory__empty", hidden: "" }, "No mod matches these filters.");
   const count = h("footer", { class: "armory__count" });
-  const screen = h("main", { class: "screen armory teal" },
+  const screen = h("main", { class: `screen armory teal${options.debug ? " armory--debug" : ""}` },
     h("header", { class: "armory__top" }, h("h1", { class: "armory__title stroke" }, "Armory"), iconButton("exit", "Back to the title", options.back, "rose")),
     card.node,
     h("section", { class: "armory__browser", "aria-label": "Catalogue" },
       h("div", { class: "armory__filters" }, types.node, actions.node),
       h("div", { class: "armory__filters" }, rarities.node, ownedOnly, search),
       h("div", { class: "armory__scroll" }, grid, empty),
-      count));
+      count),
+    ...(options.debug ? [paletteDebugSheet()] : []));
   root.replaceChildren(screen);
 
   function select(mod: ModId): void {
