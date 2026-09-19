@@ -3,7 +3,6 @@ import type { ActionType } from "../battle/actions.ts";
 import type { BarId } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import type { StyleMeter } from "../battle/style.ts";
-import { turnSide } from "../mods/ports.ts";
 import { RARITY } from "../mods/rarity.ts";
 import type { Material } from "../mods/rarity.ts";
 import { REGISTRY } from "../mods/registry.ts";
@@ -46,8 +45,8 @@ export function tagChips(type: ModType, affinity: ActionType | null): HTMLElemen
 
 /**
  * A mod drawn as solid type-coloured blocks with at most one action-affinity icon on its first cell.
- * Ports still turn with the piece until tasks-005/tasks-015 retire them; stars sit at the piece corner.
- * The same markup draws full size on the grid and in miniature in the bank and shop.
+ * Stars sit at the piece corner. The same markup draws full size on the grid and in miniature in the
+ * bank and shop.
  */
 export function modArt(mod: ModId, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
   const definition = REGISTRY[mod];
@@ -62,9 +61,6 @@ export function modArt(mod: ModId, rotation: Rotation, className = "", stars: St
   });
   cells.forEach(([x, y], index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
-    for (const port of definition.ports) {
-      if (port.cell === index) cell.append(h("i", { class: "port", "data-side": turnSide(port.side, rotation), "data-flow": port.flow, "data-resource": port.resource }));
-    }
     if (index === 0 && definition.affinity !== null) {
       cell.append(h("span", { class: "mod__action", "data-action": definition.affinity }, icon(definition.affinity)));
     }
