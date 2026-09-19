@@ -7,8 +7,8 @@ import type { Rarity } from "../mods/rarity.ts";
 import { MOD_IDS } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { bestStars, copiesIn } from "../mods/stars.ts";
-import { ELEMENTS, TAG_LABEL } from "../mods/tags.ts";
-import type { Element } from "../mods/tags.ts";
+import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
+import type { ModType } from "../mods/tags.ts";
 import type { CollectionRepository } from "../run/collection.ts";
 import { armoryCard } from "./armorycard.ts";
 import { button, h, icon } from "./dom.ts";
@@ -47,10 +47,10 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
     };
   }
 
-  const elements = segments<Element | "all">("Element", ["all", ...ELEMENTS], () => filter.element, (element) => { filter = { ...filter, element }; },
-    (value) => (value === "all" ? ["All"] : [icon(tagIcon(value)), TAG_LABEL[value]]));
-  const actions = segments<ActionType | "all">("Action", ["all", ...ACTION_TYPES], () => filter.action, (action) => { filter = { ...filter, action }; },
-    (value) => (value === "all" ? ["All"] : [icon(value), TAG_LABEL[value]]));
+  const types = segments<ModType | "all">("Type", ["all", ...MOD_TYPES], () => filter.type, (type) => { filter = { ...filter, type }; },
+    (value) => (value === "all" ? ["All"] : [icon(tagIcon(value)), TYPE_LABEL[value]]));
+  const actions = segments<ActionType | "all">("Action", ["all", ...ACTION_TYPES], () => filter.affinity, (affinity) => { filter = { ...filter, affinity }; },
+    (value) => (value === "all" ? ["All"] : [icon(value), AFFINITY_LABEL[value]]));
   const rarities = segments<Rarity | "all">("Rarity", ["all", ...RARITIES], () => filter.rarity, (rarity) => { filter = { ...filter, rarity }; },
     (value) => (value === "all" ? ["All"] : [h("i", { class: "gem", "data-material": RARITY[value].material }), MATERIAL_LABEL[RARITY[value].material]]));
   const ownedOnly = button("Owned only", "segment armory__owned", () => {
@@ -70,7 +70,7 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
     h("header", { class: "armory__top" }, h("h1", { class: "armory__title stroke" }, "Armory"), iconButton("exit", "Back to the title", options.back, "rose")),
     card.node,
     h("section", { class: "armory__browser", "aria-label": "Catalogue" },
-      h("div", { class: "armory__filters" }, elements.node, actions.node),
+      h("div", { class: "armory__filters" }, types.node, actions.node),
       h("div", { class: "armory__filters" }, rarities.node, ownedOnly, search),
       h("div", { class: "armory__scroll" }, grid, empty),
       count));
@@ -83,7 +83,7 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
   }
 
   function render(): void {
-    for (const group of [elements, actions, rarities]) group.refresh();
+    for (const group of [types, actions, rarities]) group.refresh();
     ownedOnly.setAttribute("aria-pressed", String(filter.ownedOnly));
     const listed = armoryList(filter, owned);
     grid.replaceChildren(...listed.map((definition) => {
