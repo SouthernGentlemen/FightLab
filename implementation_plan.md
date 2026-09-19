@@ -265,7 +265,7 @@ normaliseRotation(shape, rotation): Rotation   // an O is always 0; I, S, Z, str
 turnAbout(placement, pivot: GridPoint): Placement  // a quarter turn clockwise; the pivot cell stays put
 ```
 
-The distinct orientations are O 1, I 2, S 2, Z 2, T 4, J 4, L 4, straight triomino 2, L triomino 4,domino 2 and single 1 — 28 in all. A 4 × 4 board holds every one of them. A 3 × 3 board holds
+The distinct orientations are O 1, I 2, S 2, Z 2, T 4, J 4, L 4, straight triomino 2, L triomino 4,\ndomino 2 and single 1 — 28 in all. A 4 × 4 board holds every one of them. A 3 × 3 board holds
 neither orientation of the I, and a board of three rows holds only the flat I. A throwaway script
 checked both facts while this plan was written; tasks-010 and tasks-032 make them tests.
 
@@ -1013,7 +1013,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-025 | The catalogue screen | 7 | — | todo |
 | tasks-026 | The detail pane | 8 | — | todo |
 | tasks-027 | The filter model | 9 | D8 | todo |
-| tasks-028 | The filter modal | 9 | — | todo || tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
+| tasks-028 | The filter modal | 9 | — | todo |\n| tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
@@ -1033,4 +1033,4 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-046 | Opponents, the bot and measurements | 12 | — | todo |
 | tasks-047 | Every screen at three resolutions | 12 | — | todo |
 | tasks-048 | Docs and the contract | 12 | — | todo |
-| tasks-049 | Final sweep | 12 | — | todo |
+| tasks-049 | Final sweep | 12 | — | todo |\n
