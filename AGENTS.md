@@ -226,6 +226,7 @@ SVG built by hand.
 ## Working rules
 
 - Small branches off `main`. `verify` before merge. Merge promptly, then delete the branch.
+- The controlled lifecycle is branch → commit(s) → verify → merge → delete. `push` is transport only; a request not to push never blocks or replaces that lifecycle.
 - Never edit a file that has uncommitted changes in it. Use a separate worktree.
 - Comments explain *why*. No narration of what the code plainly does.
 - When a number is tuned — a frame count, a reach, a damage value, a price — measure it in the

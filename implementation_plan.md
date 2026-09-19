@@ -24,6 +24,7 @@ hierarchy, filtering, the selected-item pane and readability — not something t
   `tasks-NNN`, or the task's explicitly named branch), in small commits whose body contains the task
   id. Open a pull request to `main`, merge it remotely once its gates are satisfied, then delete the
   remote branch. **There is no separate push step.**
+- **Branch/commit/merge is the workflow.** `push` is only transport. A task that says "don't push" still creates its branch, commits, verifies, merges, and deletes the branch; never stop or skip the lifecycle because pushing is unavailable or forbidden.
 - **Remote verification is a hard prerequisite for implementation work.** `npm run verify` remains
   the canonical executable gate. FightLab keeps `boneyard: file:../Boneyard`; the remote source for
   that sibling is `SouthernGentlemen/Boneyard`, and `boneyard.pin.json` names the exact commit and
