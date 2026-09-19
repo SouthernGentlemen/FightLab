@@ -12,11 +12,7 @@ import type { Rotation } from "../mods/shapes.ts";
 import { effectLines } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
-import type { ModType } from "../mods/tags.ts";
-
-type Elemental = Exclude<ModType, "neutral">;
-const ELEMENTAL: readonly Elemental[] = MOD_TYPES.filter((type): type is Elemental => type !== "neutral");
+import { TYPE_LABEL } from "../mods/tags.ts";
 import { sellValue } from "../run/economy.ts";
 import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggleLock } from "../run/run.ts";
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
@@ -76,13 +72,6 @@ interface Carry {
   y: number;
 }
 
-/** What each element is for, in the words the design uses. */
-const ELEMENT_IDENTITY: Readonly<Record<Elemental, string>> = {
-  solar: "Heat: fast build, low sustained payoff. Burn halves every round.",
-  arc: "Charge: setup and burst. Shock waits for the next hit and all of it lands.",
-  void: "Leeched Void: slow build, persistent high payoff. Poison never fades.",
-};
-
 /**
  * The shop, box for box in Batomon's proportions: bank and grid in the centre, the two action bars
  * in the negative space on the right, and nothing at all about the next opponent.
@@ -109,7 +98,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   bank.classList.add("prep__bank");
 
   // The grid and its lanes.
-  const levels = h("div", { class: "levels" });
   const lanes = LANES.map((lane) => {
     const bonus = h("b", { class: "lane__bonus stroke" });
     const attune = h("span", { class: "lane__attune" });
@@ -121,7 +109,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   const pieces = h("div", { class: "pieces" });
   const carried = h("div", { class: "carried", hidden: "" });
   const gridBox = h("div", { class: "grid" }, ...cells, pieces, carried);
-  const mods = panel("Mods", "rose", [levels], h("div", { class: "board" }, h("div", { class: "lanes" }, ...lanes.map(({ node }) => node)), gridBox));
+  const mods = panel("Mods", "rose", [], h("div", { class: "board" }, h("div", { class: "lanes" }, ...lanes.map(({ node }) => node)), gridBox));
   mods.classList.add("prep__mods");
 
   // The two action bars, in the negative space on the right.
@@ -239,9 +227,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       attune.replaceChildren(...(element ? [icon(element)] : []));
       node.dataset.attuned = element ?? "";
     });
-    levels.replaceChildren(...ELEMENTAL.map((element) => h("span", { class: "level", "data-type": element, "data-element": element },
-      icon(element), h("b", {}, String(run.grid.filter((piece) => REGISTRY[piece.mod].type === element).length)))));
-
     BAR_IDS.forEach((bar, index) => barSlots[index].forEach(({ node, chip, damage }, slot) => {
       const action = run.loadout[bar][slot];
       const hit = hitDamage(side, action);
@@ -250,8 +235,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       setText(damage, String(hit));
       node.setAttribute("aria-label", `${BAR_NAME[bar]} slot ${slot + 1}: ${ACTION_LABEL[action]}, ${hit} damage. Change it.`);
     }));
-    const extras = [`♥ ${side.fighter.maxHealth} health`, `Charge holds ${build.capacity}`];
-    setText(stats, extras.join(" · "));
+    setText(stats, `♥ ${side.fighter.maxHealth} health`);
 
     const rank = shopRank(run.day);
     odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => chance === 0 ? []
@@ -649,11 +633,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         h("span", {}, `Every cell in this row powers ${ACTION_LABEL[action]} ${action === "block" ? "(the riposte)" : ""}`),
         h("small", {}, attuned ? `Attuned to ${TYPE_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
     }
-    const level = target.closest<HTMLElement>("[data-element]");
-    if (level) {
-      const element = level.dataset.element as Elemental;
-      return [h("b", {}, TYPE_LABEL[element]), h("span", {}, ELEMENT_IDENTITY[element]), h("small", {}, "Mods on your grid that carry it")];
-    }
     return null;
   }
 
@@ -677,7 +656,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
   function onPointerOver(event: PointerEvent): void {
     if (event.pointerType === "touch" || !(event.target instanceof Element)) return;
-    const describable = event.target.closest(".offer, .slot, .piece, [data-lane], [data-element]");
+    const describable = event.target.closest(".offer, .slot, .piece, [data-lane]");
     if (describable) showTip(describable);
     else hideTip();
   }
