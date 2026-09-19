@@ -44,7 +44,7 @@ describe("the Armory's catalogue", () => {
     const owned: Owned = (mod) => (mod === "furnace" || mod === "coupon" ? 2 : 0);
     expect(names(armoryList({ ...EVERYTHING, ownedOnly: true }, owned))).toEqual(["Furnace", "Coupon"]);
     expect(names(armoryList({ ...EVERYTHING, text: "cinder" }, NONE))).toEqual(["Cinder Edge"]);
-    expect(armoryList({ ...EVERYTHING, text: "SILVER" }, NONE).every((definition) => definition.rarity === "rare")).toBe(true);
+    expect(armoryList({ ...EVERYTHING, text: "UNCOMMON" }, NONE).every((definition) => definition.rarity === "uncommon")).toBe(true);
     expect(names(armoryList({ ...EVERYTHING, text: "void / tech" }, NONE))).toEqual(["Event Horizon", "Singularity"]);
     expect(armoryList({ ...EVERYTHING, text: "nothing like this" }, NONE)).toEqual([]);
   });
