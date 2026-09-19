@@ -42,17 +42,17 @@ describe("compiling a grid", () => {
     expect(compileBuild(grid(["chain-circuit", 0, 0, 1])).lanes).toEqual({ strike: 1, tech: 1, block: 1 });
   });
 
-  it("attunes a row whose three cells share an element, at two per cell — a hybrid shares both of its elements", () => {
+  it("attunes a row whose three cells share one type, at two per cell", () => {
     const attuned = compileBuild(grid(["chain-circuit", 0, 0]));
     expect(attuned.lanes.strike).toBe(6);
     expect(attuned.attuned).toEqual({ strike: "arc", tech: null, block: null });
     const mixed = compileBuild(grid(["heat-coil", 0, 1], ["void-tap", 1, 1], ["arc-dynamo", 2, 1]));
     expect(mixed.lanes.tech).toBe(3);
     expect(mixed.attuned.tech).toBeNull();
-    // Heat Death (Void / Solar) covers two cells of the bottom row; a Heat Coil finishes it in Solar.
-    const hybrid = compileBuild(grid(["heat-death", 0, 1], ["heat-coil", 2, 2]));
-    expect(hybrid.attuned.block).toBe("solar");
-    expect(hybrid.lanes.block).toBe(6);
+    // Heat Death is now Void only; a Solar Heat Coil no longer completes an attuned row.
+    const bridged = compileBuild(grid(["heat-death", 0, 1], ["heat-coil", 2, 2]));
+    expect(bridged.attuned.block).toBeNull();
+    expect(bridged.lanes.block).toBe(3);
     expect(compileBuild(grid(["furnace", 0, 0])).lanes.strike).toBe(2);
   });
 
