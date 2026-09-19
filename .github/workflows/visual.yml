@@ -149,9 +149,32 @@ jobs:
           })()`);
           if (!selected) throw new Error("Could not select Cinder Edge in the Armory");
           await sleep(250);
-          const armoryText = await evaluate('document.querySelector(".card")?.textContent ?? ""');
-          if (/\bports?\b|Orientation/i.test(armoryText)) {
-            throw new Error(`Armory card still exposes port/orientation text: ${armoryText}`);
+          const armoryState = await evaluate(`(() => {
+            const tile = document.querySelector('[data-mod="cinder-edge"]');
+            const card = document.querySelector(".card");
+            if (!tile || !card) return null;
+            const clone = tile.cloneNode(true);
+            clone.querySelectorAll(".tile__stars").forEach((node) => node.remove());
+            return {
+              tileText: clone.textContent.replace(/\\s+/g, " ").trim(),
+              tileLabel: tile.getAttribute("aria-label") ?? "",
+              repeatedTileLabels: tile.querySelectorAll(".tile__owned, .tile__type, .tile__rarity").length,
+              tileMaterial: tile.hasAttribute("data-material"),
+              repeatedCardLabels: card.querySelectorAll(".card__rarity, .tagchips").length,
+              cardText: card.textContent ?? "",
+            };
+          })()`);
+          if (!armoryState) throw new Error("Could not inspect Armory task-006 state");
+          if (armoryState.tileText !== "Cinder Edge") throw new Error(`Tile repeats visible text: ${armoryState.tileText}`);
+          if (!/^Cinder Edge, Solar, Strike affinity, domino, Uncommon, [123] stars$/.test(armoryState.tileLabel)) {
+            throw new Error(`Tile accessible label is incomplete: ${armoryState.tileLabel}`);
+          }
+          if (armoryState.repeatedTileLabels !== 0 || armoryState.tileMaterial) {
+            throw new Error("Armory tile still exposes repeated labels or a material-band hook");
+          }
+          if (armoryState.repeatedCardLabels !== 0) throw new Error("Armory card still repeats rarity/type labels");
+          if (/\bports?\b|Orientation/i.test(armoryState.cardText)) {
+            throw new Error(`Armory card still exposes port/orientation text: ${armoryState.cardText}`);
           }
           await shot("armory");
 
@@ -182,9 +205,24 @@ jobs:
           if (!tipOpened) throw new Error("Could not hover the Solar Strike offer for tooltip evidence");
           await waitFor(".tip:not([hidden])");
           await sleep(250);
-          const tipText = await evaluate('document.querySelector(".tip:not([hidden])")?.textContent ?? ""');
-          if (/\bports?\b|in-port|out-port/i.test(tipText)) {
-            throw new Error(`Prep tooltip still exposes port text: ${tipText}`);
+          const prepState = await evaluate(`(() => {
+            const tip = document.querySelector(".tip:not([hidden])");
+            const art = document.querySelector(".shop .mod[data-type=solar][data-affinity=strike]");
+            const offer = art?.closest(".offer");
+            if (!tip || !offer) return null;
+            return {
+              tipText: tip.textContent ?? "",
+              repeatedMeta: tip.querySelectorAll(".tip__meta").length,
+              offerLabel: offer.getAttribute("aria-label") ?? "",
+            };
+          })()`);
+          if (!prepState) throw new Error("Could not inspect Prep task-006 state");
+          if (/\bports?\b|in-port|out-port/i.test(prepState.tipText)) {
+            throw new Error(`Prep tooltip still exposes port text: ${prepState.tipText}`);
+          }
+          if (prepState.repeatedMeta !== 0) throw new Error("Prep tooltip still repeats type/rarity metadata");
+          if (!/^[^,]+, (Solar|Arc|Void|Neutral), (Strike|Tech|Block) affinity, .+, (Common|Uncommon|Rare|Super Rare|Legendary), 1 star$/.test(prepState.offerLabel)) {
+            throw new Error(`Prep offer accessible label is incomplete: ${prepState.offerLabel}`);
           }
           await shot("prep");
 
