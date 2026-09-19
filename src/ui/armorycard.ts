@@ -78,7 +78,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
     setText(name, definition.name);
     setText(rarity, rarityLine(definition.rarity));
     square.replaceChildren(modSquare(definition, "square card__big"), starRow(stars, material, "stars card__bigstars"));
-    chips.replaceChildren(tagChips(definition.tags));
+    chips.replaceChildren(tagChips(definition.type, definition.affinity));
     setText(description, definition.description);
     starButtons.forEach((node, index) => node.setAttribute("aria-pressed", String(STARS[index] === stars)));
     rules.replaceChildren(...effectLines(definition, stars).map((line) => h("p", {}, line)));
