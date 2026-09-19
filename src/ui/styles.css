@@ -35,6 +35,11 @@
   --action-tech: #eaff5a;
   --action-block: #3f83f8;
 
+  /* Combat statuses reuse their type hues. */
+  --status-burn: var(--mod-solar);
+  --status-shock: var(--mod-arc);
+  --status-poison: var(--mod-void);
+
   /* Rarity. */
   --rarity-common: #f8fafc;
   --rarity-uncommon: #b8ef72;
@@ -101,6 +106,7 @@ p, h1, h2 { margin: 0; }
 
 .icon { display: inline-flex; flex: none; width: 1em; height: 1em; }
 .icon svg { display: block; width: 100%; height: 100%; }
+.icon__outline { stroke: var(--icon-outline); }
 
 /* White type with a heavy ink outline, the way Batomon letters its numbers. */
 .stroke {
@@ -202,10 +208,9 @@ p, h1, h2 { margin: 0; }
 }
 .mod__action {
   position: absolute; inset: 17%; z-index: 2; display: grid; place-items: center;
-  border: .2rem solid var(--ink); border-radius: 50%; background: var(--c);
-  box-shadow: 0 .18rem 0 rgba(0, 0, 0, .25);
+  border: .2rem solid var(--icon-outline); border-radius: 50%; background: var(--icon-backing); color: var(--c);
 }
-.mod__action .icon { width: 70%; height: 70%; }
+.mod__action .icon { width: 72%; height: 72%; }
 .mod--mini .mod__cell { border-width: .22rem; border-radius: calc(var(--cell) * .2); }
 
 .toast {
@@ -557,8 +562,12 @@ p, h1, h2 { margin: 0; }
 /* Burn, Shock and Poison under each fighter's hearts; nothing shows while a count is zero. */
 .debuffs { display: flex; gap: .8rem; min-height: 3.6rem; }
 .hud__health--opponent .debuffs { justify-content: flex-end; }
-.debuff { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .8rem .1rem .3rem; border: .25rem solid var(--ink); border-radius: 99rem; background: var(--paper); font-size: 2rem; }
-.debuff .icon { width: 2.8rem; height: 2.8rem; }
+.debuff { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .8rem .1rem .3rem; border: .25rem solid var(--status, var(--ink)); border-radius: 99rem; background: var(--paper); font-size: 2rem; }
+.debuff[data-debuff="burn"] { --status: var(--status-burn); }
+.debuff[data-debuff="shock"] { --status: var(--status-shock); }
+.debuff[data-debuff="poison"] { --status: var(--status-poison); }
+.debuff .icon { width: 2.8rem; height: 2.8rem; color: var(--status, var(--ink)); }
+.debuff b { color: var(--ink); }
 .debuff.is-in { animation: stamp .3s ease-out; }
 
 /* The title's quiet way out of a saved run. */
@@ -572,10 +581,9 @@ p, h1, h2 { margin: 0; }
 }
 .square__action {
   display: grid; place-items: center; width: 58%; aspect-ratio: 1;
-  border: .25rem solid var(--ink); border-radius: 50%; background: var(--c);
-  box-shadow: 0 .2rem 0 rgba(0, 0, 0, .25);
+  border: .25rem solid var(--icon-outline); border-radius: 50%; background: var(--icon-backing); color: var(--c);
 }
-.square__action .icon { width: 70%; height: 70%; }
+.square__action .icon { width: 72%; height: 72%; }
 /* The Armory: the card on the left, the catalogue on the right. */
 .armory { background: var(--surface-root); background-image: none; color: var(--text-primary); }
 .armory :focus-visible { outline-color: var(--focus-ring); }
