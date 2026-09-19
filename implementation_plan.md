@@ -729,8 +729,9 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - The shape is the artwork: large, centred, and not framed as a small diagram inside a square.
 - Draw at most one action icon, and the name at the bottom in its rarity colour, on one line with an
   ellipsis past the width.
-- Secondary, and dropped if the screenshot says they compete: three small pips down the right edge
-  (★ owned, ★★ ready, ★★★ ready), silhouetted until reached, like Batomon's trophy column.
+- Secondary: three small pips down the right edge (★ owned, ★★ ready, ★★★ ready), silhouetted until
+  reached, like Batomon's trophy column. The tasks-023 1920 × 1080 screenshot keeps them: they stay
+  visually subordinate to the shape and do not crowd the name.
 - Delete `modtile.ts` (`modSquare`, `modTile`) and the `.tile*` and `.square*` rules.
 - Done when a screenshot of the grid is checked, and a 32-character name leaves the layout intact.
 
@@ -1013,7 +1014,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-020 | States | 6 | — | done |
 | tasks-021 | The palette on Prep's mod surfaces | 6 | D6 ✓ | done |
 | tasks-022 | The card's view model | 7 | — | done |
-| tasks-023 | The card | 7 | — | todo |
+| tasks-023 | The card | 7 | — | done |
 | tasks-024 | Icon placement: centre or anchor | 7 | — | todo |
 | tasks-025 | The catalogue screen | 7 | — | todo |
 | tasks-026 | The detail pane | 8 | — | todo |
