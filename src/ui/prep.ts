@@ -3,7 +3,7 @@ import type { ActionType } from "../battle/actions.ts";
 import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
-import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, firstFit, turnAbout } from "../mods/grid.ts";
+import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, firstFit, turnAbout } from "../mods/grid.ts";
 import { RARITIES, RARITY } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
