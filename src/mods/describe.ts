@@ -1,4 +1,3 @@
-import { LINK_BONUS } from "./balance.ts";
 import type { Effect, Payoff } from "./effects.ts";
 import type { Resource } from "./ports.ts";
 import type { ModDefinition } from "./registry.ts";
@@ -58,15 +57,6 @@ export function firingLine(definition: ModDefinition): string {
 export function effectLines(definition: ModDefinition, stars: Stars): string[] {
   const blocks = definition.affinity === "block";
   return [firingLine(definition), ...definition.effects.map((effect) => effectText(effect, stars, blocks))];
-}
-
-/** What a port on this mod does for it, in words. */
-export function portLine(definition: ModDefinition): string | null {
-  if (definition.ports.length === 0) return null;
-  const outs = definition.ports.filter((port) => port.flow === "out");
-  return outs.length > 0
-    ? `Feeding a matching in-port makes +${LINK_BONUS} ${outs.map((port) => RESOURCE[port.resource]).join(" and ")}.`
-    : "Takes energy in from a neighbour whose out-port faces it.";
 }
 
 /** One number a mod scales, labelled, at ★, ★★ and ★★★: a row of the Armory's table. */
