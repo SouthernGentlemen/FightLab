@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { contrastRatio, oklabDeltaE } from "./palette-metrics.ts";
 
 const CSS = readFileSync(new URL("../../src/ui/styles.css", import.meta.url), "utf8");
+const ICON_SOURCE = readFileSync(new URL("../../src/ui/icons.ts", import.meta.url), "utf8");
 const SEPARATION = 0.13;
 
 const SURFACES = [
@@ -153,6 +154,21 @@ describe("mod palette", () => {
 
     expectSeparated("--text-secondary", "--text-disabled", tokens);
     expectSeparated("--border-selected", "--border-subtle", tokens);
+  });
+
+
+  it("keeps action and status glyphs on semantic colour tokens", () => {
+    expect(CSS).toContain(".icon__outline { stroke: var(--icon-outline); }");
+
+    for (const name of ["strike", "tech", "block", "burn", "shock", "poison"]) {
+      const match = ICON_SOURCE.match(new RegExp(`\\b${name}: glyph\\(\\\`([\\s\\S]*?)\\\`\\),`));
+      expect(match, `missing ${name} glyph`).not.toBeNull();
+      const body = match![1];
+      expect(body, `${name} fill`).toContain('fill="currentColor"');
+      expect(body, `${name} outline`).toContain('class="icon__outline"');
+      expect(body, `${name} literal colour`).not.toMatch(/#[0-9a-f]{3,8}\\b|rgb\\([^)]*\\)|hsl\\([^)]*\\)/i);
+      expect(body, `${name} legacy ink outline`).not.toContain("${INK}");
+    }
   });
 
   it("allows no new literal colours in mod UI rules", () => {
