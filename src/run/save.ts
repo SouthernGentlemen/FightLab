@@ -4,9 +4,10 @@ import type { MatchOutcome, OutcomeReason } from "../battle/director.ts";
 import type { StyleRank } from "../battle/style.ts";
 import { BANK_SIZE, place } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
-import { isModId } from "../mods/registry.ts";
+import { REGISTRY, isModId } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { isRotation } from "../mods/shapes.ts";
+import { SHAPES, isRotation, normaliseRotation } from "../mods/shapes.ts";
+import type { Rotation } from "../mods/shapes.ts";
 import { isStars } from "../mods/stars.ts";
 import type { PaydayLabel, PaydayLine } from "./economy.ts";
 import { isSeed } from "./random.ts";
@@ -19,8 +20,8 @@ import { SHOP_SIZE } from "./shop.ts";
  * version, a missing field, an impossible value — is discarded whole, never half-loaded. Changing
  * the saved shape means a new version and, if old saves are to survive, a migration with a test.
  */
-/** 2 since the mod registry replaced the first catalogue: a version-1 save names mods that no longer exist. */
-export const SAVE_VERSION = 2;
+/** Version 3 stores canonical degree rotations; version 2 quarter turns migrate on read. */
+export const SAVE_VERSION = 3;
 export const SAVE_KEY = "fightlab.run";
 
 /** The player's Mixup decisions in the fight in progress, one per pause left so far. */
@@ -107,18 +108,20 @@ function modId(value: unknown, what: string): ModId {
   return value;
 }
 
-function owned(value: unknown, what: string): OwnedMod {
+function owned(value: unknown, what: string, v2 = false): OwnedMod {
   const data = record(value, what);
-  if (!isRotation(data.rotation)) fail(`${what}: rotation`);
-  if (!isStars(data.stars)) fail(`${what}: stars`);
-  return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod: modId(data.mod, `${what}: mod`), stars: data.stars, rotation: data.rotation });
+  const mod = modId(data.mod, `${what}: mod`);
+  const raw = v2 ? integer(data.rotation, `${what}: rotation`, 0, 3) * 90 : data.rotation;
+  if (!isRotation(raw) || !isStars(data.stars)) fail(`${what}: rotation or stars`);
+  const rotation = normaliseRotation(SHAPES[REGISTRY[mod].shape], raw as Rotation);
+  return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod, stars: data.stars, rotation });
 }
 
-function readGrid(value: unknown): Grid {
+function readGrid(value: unknown, v2 = false): Grid {
   if (!Array.isArray(value)) fail("grid");
   let grid: Grid = Object.freeze([]);
   for (const [index, entry] of value.entries()) {
-    const piece = owned(entry, `grid ${index}`);
+    const piece = owned(entry, `grid ${index}`, v2);
     const data = record(entry, `grid ${index}`);
     const next = place(grid, { ...piece, x: integer(data.x, `grid ${index}: x`, 0), y: integer(data.y, `grid ${index}: y`, 0) });
     if (next === null) fail(`grid ${index}: not a legal placement`);
@@ -127,9 +130,9 @@ function readGrid(value: unknown): Grid {
   return grid;
 }
 
-function readBank(value: unknown): Bank {
+function readBank(value: unknown, v2 = false): Bank {
   if (!Array.isArray(value) || value.length !== BANK_SIZE) fail("bank");
-  return Object.freeze(value.map((entry, index) => (entry === null ? null : owned(entry, `bank ${index}`))));
+  return Object.freeze(value.map((entry, index) => (entry === null ? null : owned(entry, `bank ${index}`, v2))));
 }
 
 function readShop(value: unknown): ShopState {
@@ -186,12 +189,12 @@ function readRecord(value: unknown): RunRecord {
   };
 }
 
-function readRun(value: unknown): RunState {
+function readRun(value: unknown, v2 = false): RunState {
   const data = record(value, "run");
   if (!isSeed(data.seed)) fail("seed");
   const phase = oneOf(data.phase, PHASES, "phase");
-  const grid = readGrid(data.grid);
-  const bank = readBank(data.bank);
+  const grid = readGrid(data.grid, v2);
+  const bank = readBank(data.bank, v2);
   const nextUid = integer(data.nextUid, "next uid", 1);
   const uids = [...grid.map((piece) => piece.uid), ...bank.flatMap((slot) => (slot ? [slot.uid] : []))];
   if (new Set(uids).size !== uids.length || uids.some((uid) => uid >= nextUid)) fail("mod uids");
@@ -221,8 +224,8 @@ function readRun(value: unknown): RunState {
 function readDocument(value: unknown): SaveDocument | null {
   try {
     const data = record(value, "document");
-    if (data.version !== SAVE_VERSION) return null;
-    const run = readRun(data.run);
+    if (data.version !== 2 && data.version !== SAVE_VERSION) return null;
+    const run = readRun(data.run, data.version === 2);
     let fight: FightProgress | null = null;
     if (data.fight !== null) {
       const progress = record(data.fight, "fight");
