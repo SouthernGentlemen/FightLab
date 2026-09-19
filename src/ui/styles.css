@@ -578,6 +578,7 @@ p, h1, h2 { margin: 0; }
 .square__action .icon { width: 70%; height: 70%; }
 /* The Armory: the card on the left, the catalogue on the right. */
 .armory { background: var(--surface-root); background-image: none; color: var(--text-primary); }
+.armory :focus-visible { outline-color: var(--focus-ring); }
 .armory .segments { border-color: var(--border-strong); }
 .armory .segment { background: var(--surface-card); color: var(--text-primary); }
 .armory .segment + .segment { border-left-color: var(--border-strong); }
@@ -616,11 +617,11 @@ p, h1, h2 { margin: 0; }
 .card__description { font-size: 2.1rem; }
 .card__stars { align-self: center; margin-top: 1rem; }
 .card__star { min-width: 9rem; padding: .5rem 1.4rem; font-size: 2.6rem; color: var(--star-off); text-shadow: .15rem 0 var(--cell-edge), -.15rem 0 var(--cell-edge), 0 .15rem var(--cell-edge), 0 -.15rem var(--cell-edge); }
-.card__star[aria-pressed="true"] { background: #fff4cc; }
+.card__star[aria-pressed="true"] { background: var(--surface-selected); }
 .card__rules { display: grid; gap: .3rem; padding: 0 1.6rem; font-size: 1.8rem; }
 .card__star[aria-pressed="true"] { color: var(--star-on); }
 .card__rules p:first-child { color: var(--text-secondary); }
-.card__copies { margin-top: auto; padding: .8rem 1.6rem 0; border-top: .25rem dashed var(--slot-line); font-size: 1.7rem; }
+.card__copies { margin-top: auto; padding: .8rem 1.6rem 0; border-top: .25rem dashed var(--border-subtle); color: var(--text-secondary); font-size: 1.7rem; }
 
 .armory__browser { position: absolute; left: 57rem; right: 2.4rem; top: 10rem; bottom: 2rem; display: flex; flex-direction: column; gap: 1rem; }
 .armory__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
@@ -634,17 +635,18 @@ p, h1, h2 { margin: 0; }
 .armory__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
 .armory__empty { padding: 4rem; color: var(--text-secondary); font-size: 2.4rem; text-align: center; }
 .armory__count { display: flex; align-items: center; gap: 1.6rem; font-size: 2rem; }
-.armory__count small { margin-left: auto; font-size: 1.7rem; }
+.armory__count small { margin-left: auto; color: var(--text-secondary); font-size: 1.7rem; }
 .armory__pill { font-size: 2.8rem; padding: .1rem 1.8rem; }
 .armory__ready { padding: .2rem 1rem; border: .25rem solid var(--border-subtle); border-radius: 99rem; background: var(--surface-card); color: var(--text-secondary); }
 
 .tile {
   display: grid; grid-template-columns: auto 1fr; grid-template-areas: "square side" "name name"; gap: .4rem .8rem;
-  padding: 1.4rem 1rem 1rem; border: .3rem solid var(--ink); border-radius: 1.2rem; background: var(--paper); text-align: left; cursor: pointer;
-  box-shadow: 0 .4rem 0 var(--ink);
+  padding: 1.4rem 1rem 1rem; border: .3rem solid var(--border-subtle); border-radius: 1.2rem; background: var(--surface-card);
+  color: var(--text-primary); text-align: left; cursor: pointer; box-shadow: 0 .4rem 0 var(--cell-edge);
 }
+.tile:hover { background: var(--surface-card-hover); }
 .tile[aria-pressed="true"] { outline: .5rem solid var(--border-selected); outline-offset: .2rem; background: var(--surface-selected); }
-.tile.is-unowned { background: #eef2f4; }
+.tile.is-unowned { background: var(--surface-panel); color: var(--text-disabled); }
 .tile.is-unowned .tile__square { filter: saturate(.5) brightness(1.05); }
 .tile__square { grid-area: square; width: 8.4rem; height: 8.4rem; }
 .tile__side { grid-area: side; display: grid; align-content: space-between; justify-items: end; }
