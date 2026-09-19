@@ -101,30 +101,42 @@ function cellKey(cells: readonly GridPoint[]): string {
   return cells.map(({ x, y }) => `${x},${y}`).join(";");
 }
 
+interface OrientationData {
+  readonly distinct: readonly ShapeOrientation[];
+  readonly rotation: Readonly<Record<Rotation, Rotation>>;
+  readonly cells: Readonly<Record<Rotation, readonly GridPoint[]>>;
+}
+
+function orientationData(shape: ModShape): OrientationData {
+  const all = ROTATIONS.map((rotation) => ({ rotation, cells: rawCellsAt(shape, rotation) }));
+  const seen = new Map<string, ShapeOrientation>();
+  for (const entry of all) {
+    const key = cellKey(entry.cells);
+    if (!seen.has(key)) seen.set(key, Object.freeze(entry));
+  }
+  const distinct = Object.freeze([...seen.values()]);
+  const rotation = Object.fromEntries(all.map((entry) => [entry.rotation, seen.get(cellKey(entry.cells))!.rotation])) as Record<Rotation, Rotation>;
+  const cells = Object.fromEntries(all.map((entry) => [entry.rotation, seen.get(cellKey(entry.cells))!.cells])) as Record<Rotation, readonly GridPoint[]>;
+  return Object.freeze({ distinct, rotation: Object.freeze(rotation), cells: Object.freeze(cells) });
+}
+
+const ORIENTATION_DATA: Readonly<Record<ShapeId, OrientationData>> = Object.freeze(
+  Object.fromEntries(SHAPE_IDS.map((shapeId) => [shapeId, orientationData(SHAPES[shapeId])])) as Record<ShapeId, OrientationData>,
+);
+
 /** Distinct orientations in 0/90/180/270 order, keeping the first rotation that makes each cell set. */
 export function orientations(shape: ModShape): readonly ShapeOrientation[] {
-  const seen = new Set<string>();
-  const distinct: ShapeOrientation[] = [];
-  for (const rotation of ROTATIONS) {
-    const cells = rawCellsAt(shape, rotation);
-    const key = cellKey(cells);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    distinct.push(Object.freeze({ rotation, cells }));
-  }
-  return Object.freeze(distinct);
+  return ORIENTATION_DATA[shape.id].distinct;
 }
 
 /** Collapse a degree rotation to the first rotation that produces the same canonical footprint. */
 export function normaliseRotation(shape: ModShape, rotation: Rotation): Rotation {
-  const key = cellKey(rawCellsAt(shape, rotation));
-  return orientations(shape).find((orientation) => cellKey(orientation.cells) === key)!.rotation;
+  return ORIENTATION_DATA[shape.id].rotation[rotation];
 }
 
 /** Canonical cells for a degree rotation, with symmetrical duplicates collapsed to their first orientation. */
 export function cellsAt(shape: ModShape, rotation: Rotation): readonly GridPoint[] {
-  const canonical = normaliseRotation(shape, rotation);
-  return orientations(shape).find((orientation) => orientation.rotation === canonical)!.cells;
+  return ORIENTATION_DATA[shape.id].cells[rotation];
 }
 
 export function isRotation(value: unknown): value is Rotation {
