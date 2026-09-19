@@ -313,7 +313,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     closePicker();
     const spot = placementFor(held, found);
     carry = { held, mod: found.mod, rotation: spot.rotation, x: spot.x, y: spot.y, pivot: pivot ?? pivotFor(spot) };
-    toast("Arrows move · R turns · Enter places · B banks · S sells");
+    toast("Click to place · right-click or R to turn · Esc to cancel");
     render();
   }
 
@@ -341,6 +341,16 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     carry.pivot = { x: carry.pivot.x + nextX - carry.x, y: carry.pivot.y + nextY - carry.y };
     carry.x = nextX;
     carry.y = nextY;
+    drawCarry();
+  }
+
+  function followCarry(x: number, y: number): void {
+    if (carry === null) return;
+    const point = boardPointAt(x, y);
+    if (point === null || (point.x === carry.pivot.x && point.y === carry.pivot.y)) return;
+    carry.x += point.x - carry.pivot.x;
+    carry.y += point.y - carry.pivot.y;
+    carry.pivot = point;
     drawCarry();
   }
 
@@ -493,9 +503,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const { held, moved, target, placement, pivot, origin } = finished;
     endDrag();
     if (!moved) {
-      // A tap: buy an offer into the bank, or pick up an owned mod to place it by tapping or keys.
-      if (held.kind === "offer") apply(buy(run, held.offer), origin);
-      else startCarry(held, pivot);
+      startCarry(held, pivot);
       return;
     }
     if (target === null) return;
@@ -544,7 +552,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return false;
   }
 
-  // Turning: R, right-click or the wheel while a piece is in hand; right-click on a placed piece turns it in place.
+  // Turning: right-click or R while a piece is in hand; right-click on a placed piece turns it in place.
 
   function turnHeld(): void {
     if (drag?.moved) {
@@ -563,7 +571,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
   function onContextMenu(event: MouseEvent): void {
     event.preventDefault();
-    if (drag?.moved) {
+    if (drag?.moved || carry !== null) {
       turnHeld();
       return;
     }
@@ -578,12 +586,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       return;
     }
     apply(rotate(run, sourceOf(found.held)), found.origin);
-  }
-
-  function onWheel(event: WheelEvent): void {
-    if (!drag?.moved) return;
-    event.preventDefault();
-    turnHeld();
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -629,13 +631,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const found = heldAt(document.activeElement);
       if (found === null) return;
       event.preventDefault();
-      if (found.held.kind === "offer") apply(buy(run, found.held.offer), found.origin);
-      else {
-        const mod = heldMod(found.held);
-        if (mod !== null) {
-          const spot = placementFor(found.held, mod);
-          startCarry(found.held, pivotFor(spot, found.cell));
-        }
+      const mod = heldMod(found.held);
+      if (mod !== null) {
+        const spot = placementFor(found.held, mod);
+        startCarry(found.held, pivotFor(spot, found.cell));
       }
     }
   }
@@ -687,8 +686,9 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
         h("small", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
-        h("small", {}, found.held.kind === "offer" ? `$${priceOf(mod.mod)} · tap to bank it, drag to place it`
-          : `Sells for $${sellValue(mod)} · drag to move, right-click or R to turn`),
+        h("small", {}, found.held.kind === "offer" ? `${priceOf(mod.mod)} · click to carry, drag to place`
+          : `Sells for ${sellValue(mod)} · click to carry, drag to move`),
+        h("small", {}, "While carried: click to place · right-click or R to turn · Esc to cancel"),
       ];
     }
     const lane = target.closest<HTMLElement>("[data-lane]");
@@ -734,11 +734,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   }
 
   screen.addEventListener("pointerdown", onPointerDown);
+  screen.addEventListener("pointermove", (event) => {
+    if (drag === null && carry !== null) followCarry(event.clientX, event.clientY);
+  });
   screen.addEventListener("pointerover", onPointerOver);
   screen.addEventListener("pointerleave", hideTip);
   screen.addEventListener("focusin", onFocusIn);
   screen.addEventListener("contextmenu", onContextMenu);
-  screen.addEventListener("wheel", onWheel, { passive: false });
   window.addEventListener("keydown", onKeyDown);
 
   render();
