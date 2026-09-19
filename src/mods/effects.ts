@@ -1,4 +1,3 @@
-import type { Port, Resource, Side } from "./ports.ts";
 import type { Scaled } from "./stars.ts";
 
 /**
@@ -6,6 +5,9 @@ import type { Scaled } from "./stars.ts";
  * id, so a new mod is a new registry entry, never a new branch of code. Every amount is a `Scaled`
  * triple — its value at ★, ★★ and ★★★.
  */
+
+export const RESOURCES = ["heat", "charge", "void"] as const;
+export type Resource = (typeof RESOURCES)[number];
 
 export const DEBUFFS = ["burn", "shock", "poison"] as const;
 export type Debuff = (typeof DEBUFFS)[number];
@@ -22,8 +24,8 @@ export type Payoff =
   | { readonly kind: "cleanse"; readonly debuff: Debuff; readonly amount: Scaled };
 
 export type Effect =
-  /** Step 1. Makes Heat or Charge; `perLink` more for every link the mod is part of. */
-  | { readonly kind: "generate"; readonly resource: "heat" | "charge"; readonly amount: Scaled; readonly perLink?: Scaled }
+  /** Step 1. Makes Heat or Charge; `perAdjacent` more for every neighbouring mod. */
+  | { readonly kind: "generate"; readonly resource: "heat" | "charge"; readonly amount: Scaled; readonly perAdjacent?: Scaled }
   /** Step 2. Drains the opponent's Heat or Charge (`either`: whichever it holds more of) into Void. */
   | { readonly kind: "leech"; readonly from: "heat" | "charge" | "either"; readonly amount: Scaled }
   /** Step 2. Moves up to `amount` of its own fighter's resource into another. */
@@ -32,7 +34,7 @@ export type Effect =
   | { readonly kind: "spend"; readonly resource: Resource; readonly cost: Scaled; readonly payoff: readonly Payoff[] }
   /** Step 3. Removes up to `upTo` and pays each payoff once per unit removed. */
   | { readonly kind: "sink"; readonly resource: Resource; readonly upTo: Scaled; readonly per: readonly Payoff[] }
-  /** Step 3. Gives Charge back for every Charge spend by a mod linked to this one. */
+  /** Step 3. Gives Charge back for every Charge spend by a neighbouring mod. */
   | { readonly kind: "refund"; readonly amount: Scaled }
   /** Step 6. Grows its fighter's Void when the round ends. */
   | { readonly kind: "accrue"; readonly amount: Scaled }
@@ -48,8 +50,8 @@ export type EffectKind = Effect["kind"];
 /** The kinds that fire during an exchange, in the order they fire. */
 export const FIRING: readonly EffectKind[] = ["generate", "leech", "convert", "spend", "sink", "refund"];
 
-export const generate = (resource: "heat" | "charge", amount: Scaled, perLink?: Scaled): Effect =>
-  (perLink ? { kind: "generate", resource, amount, perLink } : { kind: "generate", resource, amount });
+export const generate = (resource: "heat" | "charge", amount: Scaled, perAdjacent?: Scaled): Effect =>
+  (perAdjacent ? { kind: "generate", resource, amount, perAdjacent } : { kind: "generate", resource, amount });
 export const leech = (from: "heat" | "charge" | "either", amount: Scaled): Effect => ({ kind: "leech", from, amount });
 export const convert = (from: Resource, to: Resource, amount: Scaled): Effect => ({ kind: "convert", from, to, amount });
 export const spend = (resource: Resource, cost: Scaled, ...payoff: Payoff[]): Effect => ({ kind: "spend", resource, cost, payoff });
@@ -67,14 +69,11 @@ export const shock = (amount: Scaled): Payoff => ({ kind: "debuff", debuff: "sho
 export const poison = (amount: Scaled): Payoff => ({ kind: "debuff", debuff: "poison", amount });
 export const cleanse = (debuff: Debuff, amount: Scaled): Payoff => ({ kind: "cleanse", debuff, amount });
 
-export const out = (cell: number, side: Side, resource: Resource): Port => ({ cell, side, flow: "out", resource });
-export const into = (cell: number, side: Side, resource: Resource): Port => ({ cell, side, flow: "in", resource });
-
 /** Every `Scaled` triple an effect carries, for validation and the Armory's tables. */
 export function scaledOf(effect: Effect): Scaled[] {
   const payoffs = (list: readonly Payoff[]) => list.map((payoff) => payoff.amount);
   switch (effect.kind) {
-    case "generate": return effect.perLink ? [effect.amount, effect.perLink] : [effect.amount];
+    case "generate": return effect.perAdjacent ? [effect.amount, effect.perAdjacent] : [effect.amount];
     case "spend": return [effect.cost, ...payoffs(effect.payoff)];
     case "sink": return [effect.upTo, ...payoffs(effect.per)];
     default: return [effect.amount];
