@@ -8,7 +8,7 @@ import { profileOf, scaleRows } from "../../src/mods/describe.ts";
 import { place } from "../../src/mods/grid.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
-import { ELEMENTS } from "../../src/mods/tags.ts";
+import { MOD_TYPES } from "../../src/mods/tags.ts";
 import { DEV_MAX_COPIES, seededCollection } from "../../src/run/collection.ts";
 
 const NONE: Owned = () => 0;
@@ -24,18 +24,19 @@ describe("the Armory's catalogue", () => {
     expect(build.program.mods[0].definition).toBe(listed.find((definition) => definition.id === "cinder-edge"));
   });
 
-  it("filters by element, hybrids included, and by action", () => {
-    for (const element of ELEMENTS) {
-      const listed = armoryList({ ...EVERYTHING, element }, NONE);
-      expect(listed.length, element).toBeGreaterThan(0);
-      expect(listed.every((definition) => definition.tags.includes(element)), element).toBe(true);
+  it("filters by type and affinity", () => {
+    for (const type of MOD_TYPES) {
+      const listed = armoryList({ ...EVERYTHING, type }, NONE);
+      expect(listed.length, type).toBeGreaterThan(0);
+      expect(listed.every((definition) => definition.type === type), type).toBe(true);
     }
-    expect(names(armoryList({ ...EVERYTHING, element: "solar" }, NONE))).toContain("Heat Death");
-    expect(names(armoryList({ ...EVERYTHING, element: "neutral" }, NONE))).toEqual(["Piggy Bank", "Coupon", "Crowd Pleaser", "Amplifier"]);
-    for (const action of ACTION_TYPES) {
-      expect(armoryList({ ...EVERYTHING, action }, NONE).every((definition) => definition.tags.includes(action)), action).toBe(true);
+    expect(names(armoryList({ ...EVERYTHING, type: "solar" }, NONE))).not.toContain("Heat Death");
+    expect(names(armoryList({ ...EVERYTHING, type: "void" }, NONE))).toContain("Heat Death");
+    expect(names(armoryList({ ...EVERYTHING, type: "neutral" }, NONE))).toEqual(["Piggy Bank", "Coupon", "Crowd Pleaser", "Amplifier"]);
+    for (const affinity of ACTION_TYPES) {
+      expect(armoryList({ ...EVERYTHING, affinity }, NONE).every((definition) => definition.affinity === affinity), affinity).toBe(true);
     }
-    expect(names(armoryList({ ...EVERYTHING, element: "solar", action: "strike" }, NONE))).toEqual(["Cinder Edge", "Afterburner", "Solar Flare"]);
+    expect(names(armoryList({ ...EVERYTHING, type: "solar", affinity: "strike" }, NONE))).toEqual(["Cinder Edge", "Afterburner", "Solar Flare"]);
   });
 
   it("filters by rarity, by ownership and by text", () => {
