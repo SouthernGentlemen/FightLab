@@ -132,15 +132,15 @@ await waitFor(
   "updated control tooltip",
 );
 
-await clickPointer('.slot[data-bank="0"] .mod__cell[data-index="0"]');
+await clickPointer('.slot[data-bank="0"] .mod__cell[data-index="1"]');
 await waitFor('document.querySelector(".carried")?.hidden === false', "click carry");
 const toast = await evaluate('document.querySelector(".toast:not([hidden])")?.textContent ?? ""');
 if (toast !== "Click to place · right-click or R to turn · Esc to cancel") {
   throw new Error(`Unexpected carry toast: ${toast}`);
 }
 
-await moveToCell(0, 0);
-await rightClick('.cell[data-x="0"][data-y="0"]');
+await moveToCell(1, 1);
+await rightClick('.cell[data-x="1"][data-y="1"]');
 let dimensions = await evaluate(`(() => {
   const art = document.querySelector(".carried .mod");
   return art ? { width: art.getBoundingClientRect().width, height: art.getBoundingClientRect().height } : null;
@@ -161,7 +161,7 @@ const valid = await evaluate('document.querySelectorAll(".cell.is-ok").length');
 if (valid !== 3) throw new Error(`Expected 3 valid carry cells, got ${valid}`);
 await shot("controls-valid-carry");
 
-await clickPointer('.cell[data-x="0"][data-y="0"]');
+await clickPointer('.cell[data-x="1"][data-y="1"]');
 await waitFor(`Boolean(document.querySelector(\'.piece[data-uid="1"]\')) && document.querySelector(".carried")?.hidden === true`, "valid placement");
 
 await clickPointer('.piece[data-uid="1"] .mod__cell[data-index="0"]');
@@ -180,7 +180,7 @@ await waitFor('document.querySelector(".carried")?.hidden === true', "Escape can
 const restored = await evaluate(`(() => {
   const piece = document.querySelector('.piece[data-uid="1"]');
   if (!piece) return false;
-  return !piece.classList.contains("is-carried") && piece.style.left.includes("* 0") && piece.style.top.includes("* 0");
+  return !piece.classList.contains("is-carried") && piece.style.left.includes("* 1") && piece.style.top.includes("* 0");
 })()`);
 if (!restored) throw new Error("Escape did not restore the carried piece");
 
