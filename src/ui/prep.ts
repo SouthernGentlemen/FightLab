@@ -252,8 +252,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     setText(stats, `♥ ${side.fighter.maxHealth} health`);
 
     const rank = shopRank(run.day);
-    odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => chance === 0 ? []
-      : [h("span", { class: "odds__rarity", title: RARITY[RARITIES[index]].label }, h("i", { class: "rarity-dot", "data-rarity": RARITIES[index] }), `${chance}%`)]));
+    odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => {
+      if (chance === 0) return [];
+      const rarity = RARITIES[index];
+      return [h("span", { class: "odds__rarity", "data-rarity": rarity }, `${RARITY[rarity].label} ${chance}%`)];
+    }));
     setText(money, `$${run.money}`);
     lock.setAttribute("aria-pressed", String(run.shop.locked));
     setText(lock.firstElementChild!, run.shop.locked ? "Locked" : "Lock");
@@ -266,12 +269,16 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const mod = run.shop.offers[index];
       node.replaceChildren();
       node.dataset.sold = mod === null ? "true" : "false";
+      node.classList.remove("is-poor");
+      delete node.dataset.type;
+      delete node.dataset.rarity;
       if (mod === null) {
         node.setAttribute("aria-label", "Sold");
         return;
       }
       const definition = REGISTRY[mod];
       node.dataset.type = definition.type;
+      node.dataset.rarity = definition.rarity;
       node.classList.toggle("is-poor", priceOf(mod) > run.money);
       node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
         h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
@@ -698,6 +705,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (drag?.moved) return;
     const lines = describe(target);
     if (lines === null) return;
+    const found = heldAt(target);
+    const mod = found === null ? null : heldMod(found.held);
+    if (mod === null) delete tip.dataset.rarity;
+    else tip.dataset.rarity = REGISTRY[mod.mod].rarity;
     tip.replaceChildren(...lines);
     tip.hidden = false;
     const bounds = screen.getBoundingClientRect();
