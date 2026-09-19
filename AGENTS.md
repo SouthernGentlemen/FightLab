@@ -70,8 +70,10 @@ order. `boneyard.pin.json` records the Boneyard commit FightLab was last verifie
 digest of every Boneyard file FightLab reads. `check:boneyard` fails when the installed Boneyard
 differs from that digest, and `dev`, `build`, `test` and `verify` all see it, so an upstream
 change cannot silently alter the game. Accepting one is `npm run pin:boneyard`, which puts the new
-digest in a diff where someone has to look at it. Boneyard has no remote, which is why the pin is
-a digest rather than a git URL. The consumed surface is listed in
+digest in a diff where someone has to look at it. Boneyard's remote source is
+`SouthernGentlemen/Boneyard`, but FightLab still consumes it as the sibling checkout; the commit
+plus digest pin makes both remote CI and local development verify the exact consumed files instead
+of trusting a mutable branch. The consumed surface is listed in
 [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md#boneyard-dependency-contract); a new import
 from Boneyard belongs in that list and in the digest.
 
