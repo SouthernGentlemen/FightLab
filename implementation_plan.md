@@ -1005,7 +1005,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-014 | The adjacency primitive | 5 | — | done |
 | tasks-015 | Adjacency replaces ports | 5 | — | done |
 | tasks-016 | The token set | 6 | D5 ✓, D6 ✓ | done |
-| tasks-017 | Choose the palette as one system | 6 | — | todo |
+| tasks-017 | Choose the palette as one system | 6 | — | done |
 | tasks-018 | The palette test | 6 | — | todo |
 | tasks-019 | Icons in tokens, and the icon treatment | 6 | — | todo |
 | tasks-020 | States | 6 | — | todo |
