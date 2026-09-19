@@ -69,7 +69,7 @@ describe("C9 — mods never decide an exchange", () => {
     const placed = GRIDS.flat();
     for (const stars of STARS) expect(placed.some((piece) => piece.stars === stars), `★${stars}`).toBe(true);
     expect(new Set(placed.map((piece) => piece.mod)).size).toBe(MOD_IDS.length);
-    expect(BUILT.some((build) => build.program.mods.some((mod) => mod.links > 0))).toBe(true);
+    expect(BUILT.some((build) => build.program.mods.some((mod) => mod.adjacent.length > 0))).toBe(true);
   });
 
   it("fights on the authored frame data, untouched, whatever the build", () => {
