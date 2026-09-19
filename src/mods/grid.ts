@@ -5,11 +5,13 @@ import { ROTATIONS, nextRotation, shapeCells } from "./shapes.ts";
 import type { GridPoint, Rotation } from "./shapes.ts";
 import type { Stars } from "./stars.ts";
 
-export const GRID_SIZE = 3;
+export const BOARD_WIDTH = 3;
+export const BOARD_HEIGHT = 3;
 export const BANK_SIZE = 4;
 
 /** Row y of the grid is the lane of `LANES[y]`: a cell powers the action of the row it sits in. */
 export const LANES: readonly ActionType[] = Object.freeze(["strike", "tech", "block"]);
+if (BOARD_HEIGHT !== LANES.length) throw new Error("BOARD_HEIGHT must match LANES until tasks-031 retires row lanes.");
 
 /** A mod the player owns, at its star level. `uid` tells two of the same mod apart. */
 export interface OwnedMod {
@@ -41,7 +43,7 @@ export function cellsOf(placement: Placement): GridPoint[] {
 }
 
 function onBoard({ x, y }: GridPoint): boolean {
-  return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GRID_SIZE && y < GRID_SIZE;
+  return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < BOARD_WIDTH && y < BOARD_HEIGHT;
 }
 
 /** Which placed mod covers each cell, by `"x,y"`, ignoring the mod `except` so it can move over itself. */
@@ -89,8 +91,8 @@ export function rotateInPlace(grid: Grid, uid: number): Grid | null {
 /** The first legal placement in reading order, trying the given rotation first and then the rest. */
 export function firstFit(grid: Grid, mod: ModId, preferred: Rotation = 0): Placement | null {
   for (const rotation of [preferred, ...ROTATIONS.filter((other) => other !== preferred)]) {
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+      for (let x = 0; x < BOARD_WIDTH; x++) {
         const placement = { mod, rotation, x, y };
         if (canPlace(grid, placement)) return placement;
       }

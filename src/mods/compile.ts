@@ -1,6 +1,6 @@
 import type { ActionType } from "../battle/actions.ts";
 import { ATTUNED_LANE_POWER, LANE_POWER } from "./balance.ts";
-import { GRID_SIZE, LANES, cellsOf, occupancy } from "./grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, LANES, cellsOf, occupancy } from "./grid.ts";
 import type { Grid, PlacedMod } from "./grid.ts";
 import { programOf } from "./program.ts";
 import type { ModProgram } from "./program.ts";
@@ -58,9 +58,9 @@ export function compileBuild(grid: Grid): Build {
   const owners = occupancy(grid);
   const lanes: Record<ActionType, number> = { strike: 0, tech: 0, block: 0 };
   const attuned: Record<ActionType, Elemental | null> = { strike: null, tech: null, block: null };
-  for (let y = 0; y < GRID_SIZE; y++) {
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
     const lane = LANES[y];
-    const row = Array.from({ length: GRID_SIZE }, (_, x) => owners.get(`${x},${y}`) ?? null);
+    const row = Array.from({ length: BOARD_WIDTH }, (_, x) => owners.get(`${x},${y}`) ?? null);
     attuned[lane] = ELEMENTAL.find((element) => row.every((placed) => placed !== null && elementalOf(placed).includes(element))) ?? null;
     for (const placed of row) {
       if (placed === null || elementalOf(placed).length === 0) continue;

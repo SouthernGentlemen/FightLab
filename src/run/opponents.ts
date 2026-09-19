@@ -7,7 +7,7 @@ import { opponentPlan } from "../battle/mixup.ts";
 import type { MixupPlan, OpponentPlan } from "../battle/mixup.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { GRID_SIZE, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
 import type { Grid, Placement } from "../mods/grid.ts";
 import { ROTATIONS } from "../mods/shapes.ts";
 import { stream } from "./random.ts";
@@ -115,15 +115,15 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
   let best: Placement | null = null;
   let bestScore = -Infinity;
   for (const rotation of ROTATIONS) {
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+      for (let x = 0; x < BOARD_WIDTH; x++) {
         const placement = { mod, rotation, x, y };
         if (!fits(owners, placement)) continue;
         let score = 0;
         for (const { y: row } of cellsOf(placement)) {
           if (type === null) continue;
           score += weights[LANES[row]];
-          for (let column = 0; column < GRID_SIZE; column++) {
+          for (let column = 0; column < BOARD_WIDTH; column++) {
             const neighbour = owners.get(`${column},${row}`);
             if (neighbour && REGISTRY[neighbour.mod].type === type) score += 1;
           }

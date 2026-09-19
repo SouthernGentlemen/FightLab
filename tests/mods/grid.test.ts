@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import type { ModId } from "../../src/mods/registry.ts";
 import {
-  BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
+  BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
   setBankSlot,
 } from "../../src/mods/grid.ts";
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
@@ -20,8 +20,8 @@ function blockers(cells: readonly GridPoint[], firstUid = 100): PlacedMod[] {
 }
 
 const ALL_CELLS: GridPoint[] = Array.from(
-  { length: GRID_SIZE * GRID_SIZE },
-  (_, index) => point(index % GRID_SIZE, Math.floor(index / GRID_SIZE)),
+  { length: BOARD_WIDTH * BOARD_HEIGHT },
+  (_, index) => point(index % BOARD_WIDTH, Math.floor(index / BOARD_WIDTH)),
 );
 
 const FOOTPRINTS: Readonly<Record<ShapeId, { readonly cells: readonly GridPoint[]; readonly size: number }>> = {
@@ -61,8 +61,8 @@ describe("shapes", () => {
         expect(Math.min(...cells.map(({ x }) => x))).toBe(0);
         expect(Math.min(...cells.map(({ y }) => y))).toBe(0);
         const [width, height] = shapeSize(cells);
-        expect(width).toBeLessThanOrEqual(GRID_SIZE);
-        expect(height).toBeLessThanOrEqual(GRID_SIZE);
+        expect(width).toBeLessThanOrEqual(BOARD_WIDTH);
+        expect(height).toBeLessThanOrEqual(BOARD_HEIGHT);
       }
     }
   });
@@ -134,7 +134,7 @@ describe("rotating a placed mod", () => {
         for (const { x, y } of ALL_CELLS) {
           const piece: PlacedMod = { uid: 1, mod, stars: 1, rotation, x, y };
           const own = cellsOf(piece);
-          if (!own.every(({ x: cx, y: cy }) => cx < GRID_SIZE && cy < GRID_SIZE)) continue;
+          if (!own.every(({ x: cx, y: cy }) => cx < BOARD_WIDTH && cy < BOARD_HEIGHT)) continue;
           const free = ALL_CELLS.filter((cell) => !own.some((mine) => key(mine) === key(cell)));
           // Every subset of the other cells, each filled by a neighbour.
           for (let mask = 0; mask < 1 << free.length; mask++) {
@@ -142,7 +142,7 @@ describe("rotating a placed mod", () => {
             const grid: Grid = Object.freeze([piece, ...neighbours]);
             const turned = cellsOf({ mod, rotation: nextRotation(rotation), x, y });
             const taken = new Set(neighbours.map((neighbour) => key(neighbour)));
-            const legal = turned.every(({ x: cx, y: cy }) => cx >= 0 && cy >= 0 && cx < GRID_SIZE && cy < GRID_SIZE && !taken.has(key(point(cx, cy))));
+            const legal = turned.every(({ x: cx, y: cy }) => cx >= 0 && cy >= 0 && cx < BOARD_WIDTH && cy < BOARD_HEIGHT && !taken.has(key(point(cx, cy))));
             const result = rotateInPlace(grid, 1);
             const where = `${mod} r${rotation} at ${x},${y} with ${neighbours.map((neighbour) => `${neighbour.x},${neighbour.y}`).join(" ")}`;
             if (legal) {

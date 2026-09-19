@@ -10,7 +10,7 @@ import { ModdedArena } from "../../src/game/modded.ts";
 import { combatSide } from "../../src/game/sides.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
 import type { Build } from "../../src/mods/compile.ts";
-import { GRID_SIZE, canPlace, place } from "../../src/mods/grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, canPlace, place } from "../../src/mods/grid.ts";
 import type { Grid, Placement } from "../../src/mods/grid.ts";
 import { MOD_IDS } from "../../src/mods/registry.ts";
 import type { ModState } from "../../src/mods/resolve.ts";
@@ -27,8 +27,8 @@ function randomGrid(index: number): Grid {
   const pieces = random.int(8);
   for (let piece = 0; piece < pieces; piece++) {
     const mod = random.pick(MOD_IDS);
-    const legal: Placement[] = ROTATIONS.flatMap((rotation) => Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, cell) =>
-      ({ mod, rotation, x: cell % GRID_SIZE, y: Math.floor(cell / GRID_SIZE) }))).filter((placement) => canPlace(grid, placement));
+    const legal: Placement[] = ROTATIONS.flatMap((rotation) => Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, cell) =>
+      ({ mod, rotation, x: cell % BOARD_WIDTH, y: Math.floor(cell / BOARD_WIDTH) }))).filter((placement) => canPlace(grid, placement));
     if (legal.length > 0) grid = place(grid, { uid: piece + 1, stars: random.pick(STARS), ...random.pick(legal) })!;
   }
   return grid;
