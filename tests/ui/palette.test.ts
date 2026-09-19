@@ -89,9 +89,7 @@ function expectSeparated(first: string, second: string, tokens: ReadonlyMap<stri
 }
 
 const MOD_PREFIXES = ["catalog", "detail", "filter", "mod", "piece", "cell", "slot", "offer", "tip"];
-const LITERAL_ALLOWLIST = new Set([
-  ".slot.is-target|#fff7d6",
-]);
+const LITERAL_ALLOWLIST = new Set<string>();
 
 function withoutRoot(css: string): string {
   const block = rootBlock(css);
