@@ -123,6 +123,21 @@ describe("vocabulary", () => {
   });
 });
 
+describe("mod presentation", () => {
+  it("uses one type fill and one optional action icon, with no split-colour bridge", () => {
+    const css = readFileSync(join(ROOT, "src/ui/styles.css"), "utf8");
+    const kit = readFileSync(join(ROOT, "src/ui/kit.ts"), "utf8");
+    const tile = readFileSync(join(ROOT, "src/ui/modtile.ts"), "utf8");
+
+    expect(css).not.toMatch(/--c[12]\b|135deg|data-c[12]/);
+    expect(kit).not.toMatch(/\bpaintTags\b|\bmodIcon\b/);
+    expect(kit).toContain('"data-type": definition.type');
+    expect(kit).toContain('"data-affinity": definition.affinity ?? undefined');
+    expect(tile).toContain('"data-type": definition.type');
+    expect(tile).toContain('"data-affinity": definition.affinity ?? undefined');
+  });
+});
+
 describe("the dependency direction", () => {
   it("has Boneyard know nothing about FightLab", () => {
     const upstream = [...filesUnder(join(BONEYARD_ROOT, "src")), ...filesUnder(join(BONEYARD_ROOT, "pipelines")), join(BONEYARD_ROOT, "package.json")];
