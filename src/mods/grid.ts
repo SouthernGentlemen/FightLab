@@ -1,7 +1,7 @@
 import type { ActionType } from "../battle/actions.ts";
 import { REGISTRY } from "./registry.ts";
 import type { ModId } from "./registry.ts";
-import { ROTATIONS, nextRotation, shapeCells } from "./shapes.ts";
+import { SHAPES, cellsAt, nextRotation, normaliseRotation, orientations } from "./shapes.ts";
 import type { GridPoint, Rotation } from "./shapes.ts";
 import type { Stars } from "./stars.ts";
 
@@ -37,8 +37,12 @@ export interface Placement {
   readonly y: number;
 }
 
+function canonicalRotation(mod: ModId, rotation: Rotation): Rotation {
+  return normaliseRotation(SHAPES[REGISTRY[mod].shape], rotation);
+}
+
 export function cellsOf(placement: Placement): GridPoint[] {
-  return shapeCells(REGISTRY[placement.mod].shape, placement.rotation)
+  return cellsAt(SHAPES[REGISTRY[placement.mod].shape], placement.rotation)
     .map(({ x, y }) => ({ x: placement.x + x, y: placement.y + y }));
 }
 
@@ -68,8 +72,10 @@ export function canPlace(grid: Grid, placement: Placement, except: number | null
 
 /** The grid with `placed` added, or null when the placement is not legal. */
 export function place(grid: Grid, placed: PlacedMod): Grid | null {
-  if (grid.some((other) => other.uid === placed.uid) || !canPlace(grid, placed)) return null;
-  return Object.freeze([...grid, Object.freeze({ ...placed })]);
+  if (grid.some((other) => other.uid === placed.uid)) return null;
+  const normalised = { ...placed, rotation: canonicalRotation(placed.mod, placed.rotation) };
+  if (!canPlace(grid, normalised)) return null;
+  return Object.freeze([...grid, Object.freeze(normalised)]);
 }
 
 export function removeFromGrid(grid: Grid, uid: number): Grid {
@@ -83,14 +89,16 @@ export function removeFromGrid(grid: Grid, uid: number): Grid {
 export function rotateInPlace(grid: Grid, uid: number): Grid | null {
   const placed = grid.find((candidate) => candidate.uid === uid);
   if (!placed) return null;
-  const turned: PlacedMod = { ...placed, rotation: nextRotation(placed.rotation) };
+  const turned: PlacedMod = { ...placed, rotation: canonicalRotation(placed.mod, nextRotation(placed.rotation)) };
   if (!canPlace(grid, turned, uid)) return null;
   return Object.freeze(grid.map((candidate) => (candidate.uid === uid ? Object.freeze(turned) : candidate)));
 }
 
 /** The first legal placement in reading order, trying the given rotation first and then the rest. */
 export function firstFit(grid: Grid, mod: ModId, preferred: Rotation = 0): Placement | null {
-  for (const rotation of [preferred, ...ROTATIONS.filter((other) => other !== preferred)]) {
+  const shape = SHAPES[REGISTRY[mod].shape];
+  const first = normaliseRotation(shape, preferred);
+  for (const rotation of [first, ...orientations(shape).map(({ rotation }) => rotation).filter((other) => other !== first)]) {
     for (let y = 0; y < BOARD_HEIGHT; y++) {
       for (let x = 0; x < BOARD_WIDTH; x++) {
         const placement = { mod, rotation, x, y };
@@ -112,6 +120,11 @@ export function firstFreeBankSlot(bank: Bank): number | null {
 
 export function setBankSlot(bank: Bank, slot: number, owned: OwnedMod | null): Bank {
   const next = [...bank];
-  next[slot] = owned && Object.freeze({ uid: owned.uid, mod: owned.mod, stars: owned.stars, rotation: owned.rotation });
+  next[slot] = owned && Object.freeze({
+    uid: owned.uid,
+    mod: owned.mod,
+    stars: owned.stars,
+    rotation: canonicalRotation(owned.mod, owned.rotation),
+  });
   return Object.freeze(next);
 }

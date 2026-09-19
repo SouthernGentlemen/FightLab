@@ -29,11 +29,11 @@ export interface Port {
 export const STEP: Readonly<Record<Side, GridPoint>> = { n: { x: 0, y: -1 }, e: { x: 1, y: 0 }, s: { x: 0, y: 1 }, w: { x: -1, y: 0 } };
 
 export function turnSide(side: Side, rotation: Rotation): Side {
-  return SIDES[(SIDES.indexOf(side) + rotation) % SIDES.length];
+  return SIDES[(SIDES.indexOf(side) + rotation / 90) % SIDES.length];
 }
 
 export function opposite(side: Side): Side {
-  return turnSide(side, 2);
+  return turnSide(side, 180);
 }
 
 /** What `links` needs to know about a placed piece. */

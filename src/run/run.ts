@@ -7,9 +7,9 @@ import { compileBuild } from "../mods/compile.ts";
 import type { Build } from "../mods/compile.ts";
 import { BANK_SIZE, canPlace, emptyBank, firstFreeBankSlot, place, removeFromGrid, rotateInPlace, setBankSlot } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
-import { MOD_IDS, priceOf } from "../mods/registry.ts";
+import { MOD_IDS, REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { nextRotation } from "../mods/shapes.ts";
+import { SHAPES, nextRotation, normaliseRotation } from "../mods/shapes.ts";
 import { RECIPES } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import type { Rotation } from "../mods/shapes.ts";
@@ -240,7 +240,9 @@ export function move(run: RunState, from: Source, to: Destination): Refusal | nu
   const owned = ownedAt(run, from);
   if (owned === null) return "missing";
   if ("bank" in from && "bank" in to && from.bank === to.bank) return null;
-  const rotated = "grid" in to ? { ...owned, rotation: to.grid.rotation } : owned;
+  const rotated = "grid" in to
+    ? { ...owned, rotation: normaliseRotation(SHAPES[REGISTRY[owned.mod].shape], to.grid.rotation) }
+    : owned;
   const before = { grid: run.grid, bank: run.bank };
   take(run, from);
   const refused = put(run, rotated, to, null);
@@ -261,7 +263,8 @@ export function rotate(run: RunState, source: Source): Refusal | null {
   const owned = ownedAt(run, source);
   if (owned === null) return "missing";
   if ("bank" in source) {
-    run.bank = setBankSlot(run.bank, source.bank, { ...owned, rotation: nextRotation(owned.rotation) });
+    const shape = SHAPES[REGISTRY[owned.mod].shape];
+    run.bank = setBankSlot(run.bank, source.bank, { ...owned, rotation: normaliseRotation(shape, nextRotation(owned.rotation)) });
     return null;
   }
   const turned = rotateInPlace(run.grid, source.piece);

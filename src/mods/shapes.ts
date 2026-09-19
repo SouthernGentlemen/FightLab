@@ -64,12 +64,12 @@ export function sizeOf(shape: ModShape): number {
   return shape.cells.length;
 }
 
-/** Degree rotations used by the canonical orientation API. The placed-mod model moves to these in tasks-011. */
-export type DegreeRotation = 0 | 90 | 180 | 270;
-export const DEGREE_ROTATIONS: readonly DegreeRotation[] = Object.freeze([0, 90, 180, 270]);
+/** Rotation is stored in degrees; symmetrical shapes normalise to their first distinct orientation. */
+export type Rotation = 0 | 90 | 180 | 270;
+export const ROTATIONS: readonly Rotation[] = Object.freeze([0, 90, 180, 270]);
 
 export interface ShapeOrientation {
-  readonly rotation: DegreeRotation;
+  readonly rotation: Rotation;
   readonly cells: readonly GridPoint[];
 }
 
@@ -91,7 +91,7 @@ export function turnClockwise(cells: readonly GridPoint[]): readonly GridPoint[]
   return normalise(cells.map(({ x, y }) => ({ x: -y, y: x })));
 }
 
-function rawCellsAt(shape: ModShape, rotation: DegreeRotation): readonly GridPoint[] {
+function rawCellsAt(shape: ModShape, rotation: Rotation): readonly GridPoint[] {
   let cells = normalise(shape.cells);
   for (let turn = 0; turn < rotation / 90; turn++) cells = turnClockwise(cells);
   return cells;
@@ -105,7 +105,7 @@ function cellKey(cells: readonly GridPoint[]): string {
 export function orientations(shape: ModShape): readonly ShapeOrientation[] {
   const seen = new Set<string>();
   const distinct: ShapeOrientation[] = [];
-  for (const rotation of DEGREE_ROTATIONS) {
+  for (const rotation of ROTATIONS) {
     const cells = rawCellsAt(shape, rotation);
     const key = cellKey(cells);
     if (seen.has(key)) continue;
@@ -116,33 +116,30 @@ export function orientations(shape: ModShape): readonly ShapeOrientation[] {
 }
 
 /** Collapse a degree rotation to the first rotation that produces the same canonical footprint. */
-export function normaliseRotation(shape: ModShape, rotation: DegreeRotation): DegreeRotation {
+export function normaliseRotation(shape: ModShape, rotation: Rotation): Rotation {
   const key = cellKey(rawCellsAt(shape, rotation));
   return orientations(shape).find((orientation) => cellKey(orientation.cells) === key)!.rotation;
 }
 
 /** Canonical cells for a degree rotation, with symmetrical duplicates collapsed to their first orientation. */
-export function cellsAt(shape: ModShape, rotation: DegreeRotation): readonly GridPoint[] {
+export function cellsAt(shape: ModShape, rotation: Rotation): readonly GridPoint[] {
   const canonical = normaliseRotation(shape, rotation);
   return orientations(shape).find((orientation) => orientation.rotation === canonical)!.cells;
 }
 
-/** Quarter turns clockwise. There is no flipping: an L and a J are different pieces. */
-export type Rotation = 0 | 1 | 2 | 3;
-export const ROTATIONS: readonly Rotation[] = [0, 1, 2, 3];
-
 export function isRotation(value: unknown): value is Rotation {
-  return value === 0 || value === 1 || value === 2 || value === 3;
+  return value === 0 || value === 90 || value === 180 || value === 270;
 }
 
 export function nextRotation(rotation: Rotation): Rotation {
-  return ((rotation + 1) % 4) as Rotation;
+  return ((rotation + 90) % 360) as Rotation;
 }
 
+/** Order-preserving cells remain for Prep's anchor until tasks-012 moves rotation about the pointer cell. */
 function turned(shapeId: ShapeId, rotation: Rotation): readonly GridPoint[] {
   let cells: GridPoint[] = SHAPES[shapeId].cells.map(({ x, y }) => ({ x, y }));
   // On a grid whose y points down, a clockwise quarter turn takes (x, y) to (-y, x).
-  for (let turn = 0; turn < rotation; turn++) cells = cells.map(({ x, y }) => ({ x: -y, y: x }));
+  for (let turn = 0; turn < rotation / 90; turn++) cells = cells.map(({ x, y }) => ({ x: -y, y: x }));
   const minX = Math.min(...cells.map(({ x }) => x));
   const minY = Math.min(...cells.map(({ y }) => y));
   return Object.freeze(cells.map(({ x, y }) => Object.freeze({ x: x - minX, y: y - minY })));
@@ -155,7 +152,7 @@ const TURNED = Object.fromEntries(
 
 /** The shape turned clockwise `rotation` times, shifted so its bounding box starts at (0, 0). */
 export function shapeCells(shapeId: ShapeId, rotation: Rotation): readonly GridPoint[] {
-  return TURNED[shapeId][rotation];
+  return TURNED[shapeId][rotation / 90];
 }
 
 /** Bounding width and height of an oriented footprint. */
