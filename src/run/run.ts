@@ -9,7 +9,7 @@ import { BANK_SIZE, canPlace, cellsOf, emptyBank, firstFreeBankSlot, place, remo
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
 import { MOD_IDS, REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { SHAPES, nextRotation, normaliseRotation } from "../mods/shapes.ts";
+import { SHAPES, normaliseRotation } from "../mods/shapes.ts";
 import { RECIPES } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import type { GridPoint, Rotation } from "../mods/shapes.ts";
