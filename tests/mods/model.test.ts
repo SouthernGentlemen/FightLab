@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { RARITIES, RARITY, rarityLine } from "../../src/mods/rarity.ts";
+import { RARITIES, RARITY } from "../../src/mods/rarity.ts";
 import { RECIPES, STARS, bestStars, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
 import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL, isModType } from "../../src/mods/tags.ts";
 
@@ -19,11 +19,9 @@ describe("mod type and affinity", () => {
 });
 
 describe("rarity", () => {
-  it("is five materials from Iron to Diamond, each dearer than the last", () => {
-    expect(RARITIES.map((rarity) => RARITY[rarity].material)).toEqual(["iron", "bronze", "silver", "gold", "diamond"]);
+  it("defines five rarity labels with ascending prices", () => {
+    expect(RARITIES.map((rarity) => RARITY[rarity].label)).toEqual(["Common", "Uncommon", "Rare", "Super Rare", "Legendary"]);
     expect(RARITIES.map((rarity) => RARITY[rarity].price)).toEqual([3, 4, 5, 7, 8]);
-    expect(rarityLine("rare")).toBe("RARE · SILVER");
-    expect(rarityLine("super-rare")).toBe("SUPER RARE · GOLD");
   });
 });
 
