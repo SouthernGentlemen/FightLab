@@ -133,6 +133,78 @@ the power budget, and it is the **material the stars are cast in**:
 A Common ★ is one iron star; a Rare ★★ two silver stars; a Legendary ★★★ three diamond stars. Selling
 returns half of every copy inside a mod, rounded down, at least $1.
 
+
+## Colour
+
+The mod UI uses one dark-surface palette. Type is the dominant fill, action is the secondary accent,
+and rarity is reserved for names and filter/odds marks. The palette is intentionally saturated
+without glow: orange / red, green / lime, purple / magenta, yellow / gold and blue / cyan stay
+visibly separate instead of relying on labels.
+
+| Group | Token | Swatch |
+| --- | --- | --- |
+| Type | `--mod-solar` | `#ff7a1a` |
+| Type | `--mod-arc` | `#18c978` |
+| Type | `--mod-void` | `#8b5cf6` |
+| Type | `--mod-neutral` | `#b7c3d0` |
+| Action | `--action-strike` | `#f43f5e` |
+| Action | `--action-tech` | `#eaff5a` |
+| Action | `--action-block` | `#3f83f8` |
+| Rarity | `--rarity-common` | `#f8fafc` |
+| Rarity | `--rarity-uncommon` | `#b8ef72` |
+| Rarity | `--rarity-rare` | `#45d6ff` |
+| Rarity | `--rarity-super-rare` | `#f27cff` |
+| Rarity | `--rarity-legendary` | `#ffc247` |
+| Surface | `--surface-root` / `--surface-panel` / `--surface-card` | `#080c12` / `#101722` / `#18212d` |
+| Surface | `--surface-card-hover` / `--surface-selected` | `#223041` / `#2d4054` |
+| Border | `--border-subtle` / `--border-strong` | `#344657` / `#5a7087` |
+| Border | `--border-selected` / `--focus-ring` | `#ffcf4a` / `#5ac8ff` |
+| Text | `--text-primary` / `--text-secondary` / `--text-disabled` | `#f8fbff` / `#c0ccda` / `#8998a8` |
+| Placement | `--placement-valid` / `--placement-invalid` | `#2de38c` / `#ff4f6d` |
+| Piece | `--cell-edge` / `--icon-backing` / `--icon-outline` | `#080c12` / `#09111b` / `#f8fbff` |
+| Piece | `--cell-bevel-light` / `--cell-bevel-dark` | `#ffffff40` / `#00000040` |
+| Piece | `--star-on` / `--star-off` | `#f8fbff` / `#6b7b8e` |
+
+Contrast is measured with WCAG relative luminance. The three numbers for rarity and text are against
+card / hover / selected surfaces respectively.
+
+| Check | Ratios |
+| --- | --- |
+| Common | 15.51 / 12.81 / 10.17 |
+| Uncommon | 12.07 / 9.97 / 7.92 |
+| Rare | 9.52 / 7.86 / 6.24 |
+| Super Rare | 7.03 / 5.81 / **4.61** |
+| Legendary | 10.09 / 8.33 / 6.62 |
+| Primary text | 15.63 / 12.91 / **10.26** |
+| Secondary text | 9.96 / 8.23 / **6.53** |
+| Disabled text | 5.50 / 4.54 / **3.61** |
+| Solar / Arc / Void / Neutral vs card | 6.22 / 7.47 / **3.83** / 9.06 |
+| Strike / Tech / Block vs icon backing | **5.16** / 17.11 / 5.25 |
+| Selected border vs card | **11.03** |
+
+OKLab separation uses **ΔE ≥ 0.13** for the named confusion pairs. This is the threshold tasks-018
+must encode. The closest required pair is Solar / Strike at 0.140.
+
+| Pair | OKLab ΔE |
+| --- | ---: |
+| Solar / Strike | 0.140 |
+| Arc / Uncommon | 0.171 |
+| Void / Super Rare | 0.198 |
+| Tech / Legendary | 0.150 |
+| Solar / Legendary | 0.160 |
+| Block / Rare | 0.224 |
+| Neutral / card surface | 0.567 |
+| Solar / Arc | 0.291 |
+| Solar / Void | 0.364 |
+| Solar / Neutral | 0.226 |
+| Arc / Void | 0.390 |
+| Arc / Neutral | 0.194 |
+| Void / Neutral | 0.289 |
+
+The selected border is also 0.391 ΔE from the strong border, and secondary / disabled text are 0.167
+ΔE apart. With the planned constant `--icon-backing`, the 12 type × action icon combinations share
+the same direct icon contrast; the minimum action contrast is Strike at 5.16 : 1.
+
 ## Architecture
 
 - `src/mods/registry.ts` — **the one registry**: 29 frozen records (id, name, description, rarity,
