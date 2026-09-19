@@ -53,7 +53,8 @@ hierarchy, filtering, the selected-item pane and readability — not something t
 ## 3. Decisions — confirm or veto before the tasks they gate
 
 The spec settles most questions. These are the ones the code raised, each with the recommendation
-the tasks are written against. `tasks-002` is Jacob confirming or changing them.
+the tasks are written against. D1 is done, and Jacob has confirmed D2 and D11. `tasks-002` is him
+confirming or changing the rest.
 
 **D1 — done: the run's plan moved to [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md).** This Mac's filesystem
 is case-insensitive, so `implementation_plan.md` *is* `IMPLEMENTATION_PLAN.md`. Writing this file in
@@ -61,14 +62,14 @@ place would have overwritten the record that `AGENTS.md` links to (C1's Boneyard
 animation mapping). It was moved with `git mv`, and every link was repointed. *To undo:* move it
 back and fold this plan into it as a section.
 
-**D2 — the board grows to 4 × 4 and the row lanes retire.** *Gates tasks-031, tasks-032.* A 3 × 3
-board cannot hold an I-tetromino in either orientation, and the spec needs four. On any board of
-three rows only a flat I fits. The lanes — row = Strike / Tech / Block, the row tints, attunement,
-+1 lane power per elemental cell, Amplifier's lane boost — are a second action system beside the new
-affinity icon, and a fourth use of the action colours on screen. On a square board every orientation
-of every piece has a place. Per-cell power moves into the mods themselves: the spec's *occupied cell
-count*. *Instead:* 5 × 3 keeps the lanes, but I-tetrominoes only ever lie flat and the rows stay
-tinted.
+**D2 — confirmed: the board is 4 × 4, and the row lanes retire.** *Jacob, 2026-09-18. Unblocks
+tasks-031 and tasks-032.* A 3 × 3 board cannot hold an I-tetromino in either orientation; a square
+board has a place for every orientation of every piece.
+- Four rows cannot carry three action lanes. Those are: row = Strike / Tech / Block, the row tints,
+  attunement, +1 lane power per elemental cell, and Amplifier's lane boost.
+- The lanes were also a second action system beside the new affinity icon, and a fourth use of the
+  action colours on screen.
+- Per-cell power moves into the mods themselves: the spec's *occupied cell count*.
 
 **D3 — the Heat / Charge / Void economy retires now.** *Gates tasks-040.* That means the pools,
 Charge capacity and the `generate`, `leech`, `convert`, `spend`, `sink`, `refund`, `accrue` and
@@ -113,8 +114,22 @@ the wheel turns too. *Instead:* keep quarter turns internally.
 
 **D10 — catalogue UI tests run in happy-dom.** *Gates tasks-042.* `happy-dom` becomes a dev-only
 dependency, used per file through `// @vitest-environment happy-dom`. The spec asks for render,
-selection and filter tests (spec §41), and Vitest runs in Node with no DOM today. *Instead:* test pure view
-models only, and leave the rest to screenshots.
+selection and filter tests (spec §41), and Vitest runs in Node with no DOM today. *Instead:* test pure
+view models only, and leave the rest to screenshots.
+
+**D11 — confirmed: more weight on the tetrominoes.** *Jacob, 2026-09-18, alongside the 4 × 4 board.
+Applies to tasks-033 to tasks-037.* The size split moves from the brief's 24 / 14 / 19 / 7 to
+**28 / 12 / 16 / 8**.
+- On a 4 × 4 board a tetromino covers a quarter of the board, not almost half as on 3 × 3, so the
+  catalogue can carry more of them.
+- 28 gives every type exactly one of each of the seven tetrominoes, so each tetromino appears four
+  times.
+- The triominoes stay an even split, 6 straight and 6 L.
+- Singles go to 8, the number the brief first asked for.
+
+"Weight" here means how many there are — how often tetrominoes turn up in the shop — not how strong
+they are. Power per shape stays with §6.4's budget. The extra tetrominoes sit at Super Rare, so they
+show up from day 5: see §6.1.
 
 ## 4. Audit — what is authoritative today, and every consumer of the old model (tasks-001)
 
@@ -290,6 +305,8 @@ type ModEffect =
 The firing and landing rules stay as they are:
 
 - A mod with an affinity fires when its fighter plays that action; one without fires every exchange.
+- `boost` follows the same rule. In the exchanges where its own mod fires, it adds its amount to each
+  adjacent (or adjacent same-type) mod's amounts. For a mod with no affinity, that is every exchange.
 - A Strike or Tech mod's statuses land if the move hurt the opponent. A Block mod's land if the guard
   held. An affinity-less mod's land regardless.
 - Burn, Shock and Poison keep their rules and numbers (`balance.ts`) and reach the kernel as today,
@@ -309,33 +326,43 @@ single.
 
 | Solar | Common | Uncommon | Rare | Top | | Arc | Common | Uncommon | Rare | Top |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| None | D2 | M1 | I3 | T4 · SR | | None | D2 | J4 | I3 | I4 · Leg |
-| Strike | D2 | D2 | M1 | S4 · Leg | | Strike | D2 | D2 | M1 | L4 · SR |
-| Tech | I3 | L3 | L4 | L3 · SR | | Tech | I3 | L3 | T4 | Z4 · Leg |
-| Block | O4 | J4 | D2 | I4 · Leg | | Block | O4 | D2 | D2 | L3 · SR |
+| None | D2 | M1 | I3 | I4 · SR | | None | D2 | M1 | L3 | I4 · Leg |
+| Strike | D2 | D2 | M1 | S4 · Leg | | Strike | D2 | D2 | M1 | Z4 · SR |
+| Tech | I3 | L3 | L4 | Z4 · Leg | | Tech | I3 | L3 | J4 | S4 · Leg |
+| Block | O4 | J4 | D2 | T4 · SR | | Block | O4 | T4 | D2 | L4 · SR |
 
 | Void | Common | Uncommon | Rare | Top | | Neutral | Common | Uncommon | Rare | Top |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| None | D2 | M1 | I3 | S4 · Leg | | None | D2 | D2 | M1 | I4 · SR |
-| Strike | D2 | D2 | M1 | Z4 · Leg | | Strike | D2 | M1 | L3 | D2 · SR |
-| Tech | I3 | L3 | J4 | I4 · SR | | Tech | I3 | L3 | L4 | Z4 · Leg |
-| Block | T4 | L4 | D2 | D2 · SR | | Block | O4 | T4 | D2 | S4 · Leg |
+| None | D2 | M1 | I3 | S4 · SR | | None | D2 | M1 | L3 | I4 · Leg |
+| Strike | D2 | D2 | M1 | Z4 · Leg | | Strike | D2 | D2 | M1 | L4 · SR |
+| Tech | I3 | L3 | T4 | J4 · SR | | Tech | I3 | L3 | J4 | Z4 · SR |
+| Block | O4 | L4 | D2 | I4 · Leg | | Block | O4 | T4 | D2 | S4 · Leg |
 
 What the arrangement satisfies:
 
 - **Counts.** 64 mods. 16 per type, per affinity (None included) and per tier. 4 in every type ×
   affinity pair.
-- **Sizes and shapes.** 24 / 14 / 19 / 7 by size. The tetrominoes split I 4, O 3, T 4, S 3, Z 3, J 3,
-  L 4; the triominoes are 7 straight and 7 L.
+- **Sizes and shapes.** 28 / 12 / 16 / 8 by size (D11).
+  - Every type holds exactly one each of I, O, T, S, Z, J and L, so each tetromino appears four times.
+  - Every type has the same size profile: 7 tetrominoes, 3 triominoes, 4 dominoes and 2 singles.
+  - The triominoes are 6 straight and 6 L.
 - **Rarity.** Common 16, Uncommon 16, Rare 16, Super Rare 8, Legendary 8, with every type holding
   2 SR and 2 Leg.
 
 It also carries some intent, which tuning may reshuffle inside the counts:
 
-- Strike leans small (35 cells across its 16 mods), Block leans big (51) and Tech leans twisty (55).
-- Every Legendary is a tetromino.
-- Singles appear only at Uncommon and Rare, never Common: they are geometrically strong and should
-  feel it.
+- **Top tier.** Every Super Rare and every Legendary is a tetromino, and every Legendary is one of the
+  three most awkward: I, S or Z.
+- **Lower tiers.** Each type's Common tetromino is its O, and it has one more tetromino at Uncommon and
+  one at Rare.
+- **Shop.** Tetrominoes are about a quarter of offers on days 1–4, as before. On days 5–7 they are 36%
+  (was 30%), and from day 8 51% (was 39%).
+- **Leans.** Strike leans small (36 cells across its 16 mods) and None light (40). Tech and Block
+  carry the big pieces (56 each).
+- **Singles.** They appear only at Uncommon and Rare, never Common: they are geometrically strong and
+  should feel it.
+- **Neutral / None / Legendary.** This is the I-tetromino slot: Amplifier's successor, a `boost` aura
+  running along a whole row or column. Its three lower slots (D2, M1, L3) hold the run perks.
 
 ### 6.2 Order
 
@@ -373,7 +400,8 @@ Legendary 8 — times a shape factor. A point is one damage, one heal or one sta
 | S, Z, I | 1.3 |
 
 Awkward footprints earn more, and convenience is part of the price. A single is never the biggest
-number at its rarity. Every mod grows at ★ → ★★ → ★★★. All of these are first guesses for
+number at its rarity. On the 4 × 4 board a tetromino costs less room than it did on 3 × 3, so these
+factors may compress once measured. Every mod grows at ★ → ★★ → ★★★. All of these are first guesses for
 authoring; `npm run tune` measures them (tasks-046), per `AGENTS.md`'s rule against encoded guesses.
 
 ### 6.5 Names
@@ -464,9 +492,9 @@ is done. Every task ends green under `npm run verify`.
 size, colour, tag, lane and energy model, and the spec terms with no counterpart in the code.
 
 #### tasks-002 — Confirm the decisions
-*Owner: Jacob.* Confirm, change or veto D2–D10 in §3. Any change is written back into §3, and into the
-tasks it gates, before those tasks start. Pass 2 through Pass 5 do not depend on the gated
-decisions, apart from D4, D5 and D9.
+*Owner: Jacob.* D2 (the 4 × 4 board) and D11 (more tetrominoes) are confirmed. Confirm, change or veto
+D3–D10 in §3. Any change is written back into §3, and into the tasks it gates, before those tasks
+start. Pass 2 through Pass 5 depend only on D4, D5 and D9.
 
 ### Pass 2 — Remove visual clutter
 
@@ -763,7 +791,7 @@ decisions, apart from D4, D5 and D9.
   60 characters.
 
 #### tasks-031 — Retire the row lanes
-*D2.*
+*D2, confirmed.*
 - `compile.ts` loses `lanes`, `attuned`, `boostOn` and `LANE_POWER`. `Build.preview` gives the bars
   their damage, and the static per-action bonus goes from `sides.ts` (and from `combat/adapter.ts` if
   nothing else reads it).
@@ -776,7 +804,7 @@ decisions, apart from D4, D5 and D9.
   become an adjacency score.
 
 #### tasks-032 — The 4 × 4 board
-*D2.*
+*D2, confirmed.*
 - Set `BOARD_WIDTH = BOARD_HEIGHT = 4`.
 - Re-lay Prep's mods panel for the largest cell that fits beside the bank and the bars, and update
   Run end and the C9 generator.
@@ -784,11 +812,11 @@ decisions, apart from D4, D5 and D9.
   screenshot is checked.
 
 #### tasks-033 — The catalogue validator
-*Spec §6, §8–§12, §38.*
+*Spec §6, §8–§12, §38 · D11, confirmed.*
 - `catalogueProblems(definitions)` checks:
   - exactly 64; 16 of each type; 16 of each affinity, None included; 4 of every type × affinity pair;
-  - 24 / 14 / 19 / 7 by size, with all 11 shapes (I 4, O 3, T 4, S 3, Z 3, J 3, L 4, and 7 of each
-    triomino);
+  - 28 / 12 / 16 / 8 by size, with all 11 shapes;
+  - one of each of the seven tetrominoes in every type (so 4 of each), and 6 of each triomino;
   - 16 / 16 / 16 / 8 / 8 by rarity;
   - unique ids, and unique names of at most 16 characters;
   - only vocabulary kinds; a status only on its own type, and none on Neutral; the rarity ladder
@@ -800,11 +828,11 @@ decisions, apart from D4, D5 and D9.
 #### tasks-035 — Author Arc (16)
 #### tasks-036 — Author Void (16)
 #### tasks-037 — Author Neutral (16)
-*Spec §6–§12, §36, §37.*
+*Spec §6–§12, §36, §37 · D11, confirmed.*
 - Each task fills one type's slots in §6.1 in `src/mods/catalogue.ts`, with names and effects written
   under §6.3–§6.5.
-- Neutral holds the run's perks (the successors of Piggy Bank, Coupon and Crowd Pleaser) and the
-  `boost` aura that replaces Amplifier.
+- Neutral / None holds the run's perks in its D2, M1 and L3 slots (the successors of Piggy Bank,
+  Coupon and Crowd Pleaser). Its Legendary I4 is the `boost` aura that replaces Amplifier.
 - Each is done when the validator passes on that type, and all 16 rules texts read cleanly.
 
 #### tasks-038 — Tests stop naming mods
@@ -893,7 +921,7 @@ decisions, apart from D4, D5 and D9.
 
 #### tasks-048 — Docs and the contract
 - Rewrite `docs/MODS.md` for this model and palette.
-- Give `docs/RUN_DESIGN.md` decision rows for D2–D10.
+- Give `docs/RUN_DESIGN.md` decision rows for D2–D11.
 - Update `AGENTS.md`: layer 2's list, C4's type and affinity, C9's property test, C11's version 4, and
   Layout.
 - Update the pitch in `README.md`.
@@ -938,6 +966,8 @@ them. There are no directories for them (`AGENTS.md`).
 
 ## 11. Task index
 
+✓ marks a decision Jacob has confirmed.
+
 | Task | Title | Pass | Gated by | Status |
 | --- | --- | --- | --- | --- |
 | tasks-001 | Audit the mod system | 1 | — | done |
@@ -970,13 +1000,13 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-028 | The filter modal | 9 | — | todo |
 | tasks-029 | The effect vocabulary | 10 | D4 | todo |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
-| tasks-031 | Retire the row lanes | 10 | D2 | todo |
-| tasks-032 | The 4 × 4 board | 10 | D2 | todo |
-| tasks-033 | The catalogue validator | 10 | — | todo |
-| tasks-034 | Author Solar (16) | 10 | — | todo |
-| tasks-035 | Author Arc (16) | 10 | — | todo |
-| tasks-036 | Author Void (16) | 10 | — | todo |
-| tasks-037 | Author Neutral (16) | 10 | — | todo |
+| tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
+| tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
+| tasks-033 | The catalogue validator | 10 | D11 ✓ | todo |
+| tasks-034 | Author Solar (16) | 10 | D11 ✓ | todo |
+| tasks-035 | Author Arc (16) | 10 | D11 ✓ | todo |
+| tasks-036 | Author Void (16) | 10 | D11 ✓ | todo |
+| tasks-037 | Author Neutral (16) | 10 | D11 ✓ | todo |
 | tasks-038 | Tests stop naming mods | 10 | — | todo |
 | tasks-039 | Swap to the 64 | 10 | D7 | todo |
 | tasks-040 | Delete the energy model | 10 | D3, D7 | todo |
