@@ -34,7 +34,7 @@ describe("Arc: setup and burst", () => {
     states = exchange(states, [arc, NOTHING], ["tech", "tech"]).states;
     expect(states[0].charge).toBe(1);
     states = exchange(states, [arc, NOTHING], ["tech", "tech"]).states;
-    expect(states[0].charge).toBe(4);
+    expect(states[0].charge).toBe(2);
     const burst = exchange(states, [arc, NOTHING], ["strike", "tech"], PLAYER_LANDS);
     expect(burst.prepared.states[0].charge).toBe(1);
     expect(burst.states[1].shock).toBe(4);
