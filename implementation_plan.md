@@ -559,7 +559,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Done when a test shows `modLabel` names the type, affinity, shape, rarity and stars, and the visible
   tile text is the name alone.
 
-#### tasks-007 — Remove the energy UI and the stat blocks
+#### tasks-007 — Remove the energy UI and the stat blocks · **done**
 *Spec §3, §19, §21.*
 - In Prep, delete the element counters and their identity text (`prep.ts:76-80,108,238-239,650-654`)
   and "Charge holds N" (`249`).
@@ -994,7 +994,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-004 | One type colour per piece, one action icon | 2 | — | done |
 | tasks-005 | Remove port drawing and port text | 2 | — | done |
 | tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | done |
-| tasks-007 | Remove the energy UI and the stat blocks | 2 | — | todo |
+| tasks-007 | Remove the energy UI and the stat blocks | 2 | — | done |
 | tasks-008 | The eleven shapes | 3 | — | todo |
 | tasks-009 | Board width and height | 3 | — | todo |
 | tasks-010 | Orientation math, and its tests | 4 | — | todo |
