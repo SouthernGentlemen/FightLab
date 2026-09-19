@@ -532,18 +532,6 @@ p, h1, h2 { margin: 0; }
 .slot__stars { position: absolute; right: .8rem; bottom: .4rem; font-size: 2rem; }
 .slot { position: relative; }
 
-/* Ports: a solid pill feeds out, a hollow one takes in, on the side the piece's rotation points it. */
-.port { position: absolute; z-index: 1; width: 36%; height: 13%; border: .2rem solid var(--ink); border-radius: 99rem; background: var(--r); }
-.port[data-flow="in"] { background: var(--paper); box-shadow: inset 0 0 0 .3rem var(--r); }
-.port[data-resource="heat"] { --r: var(--solar); }
-.port[data-resource="charge"] { --r: var(--arc); }
-.port[data-resource="void"] { --r: var(--void); }
-.port[data-side="n"] { top: -7%; left: 32%; }
-.port[data-side="s"] { bottom: -7%; left: 32%; }
-.port[data-side="e"] { right: -7%; top: 32%; width: 13%; height: 36%; }
-.port[data-side="w"] { left: -7%; top: 32%; width: 13%; height: 36%; }
-.mod--mini .port { display: none; }
-
 /* Burn, Shock and Poison under each fighter's hearts; nothing shows while a count is zero. */
 .debuffs { display: flex; gap: .8rem; min-height: 3.6rem; }
 .hud__health--opponent .debuffs { justify-content: flex-end; }
@@ -602,13 +590,6 @@ p, h1, h2 { margin: 0; }
 .card__table th .stars { font-size: 2rem; }
 .card__table .is-on { background: #fff4cc; }
 .card__profile { padding: 0 1.6rem; color: var(--muted); font-size: 1.7rem; }
-.card__ports { display: flex; align-items: center; gap: 1.6rem; padding: 0 1.6rem; }
-.card__piece {
-  --cell: 4.2rem; flex: none; display: grid; place-items: center; width: calc(var(--cell) * 3 + 1.6rem); height: calc(var(--cell) * 3 + 1.6rem);
-  border: .25rem dashed var(--slot-line); border-radius: 1rem; background: var(--slot);
-}
-.card__portinfo { display: grid; justify-items: start; gap: .6rem; font-size: 1.8rem; }
-.card__porttext { color: var(--muted); font-size: 1.6rem; }
 .card__copies { margin-top: auto; padding: .8rem 1.6rem 0; border-top: .25rem dashed var(--slot-line); font-size: 1.7rem; }
 
 .armory__browser { position: absolute; left: 57rem; right: 2.4rem; top: 10rem; bottom: 2rem; display: flex; flex-direction: column; gap: 1rem; }
@@ -652,4 +633,3 @@ p, h1, h2 { margin: 0; }
 .card__big { width: 12rem; height: 12rem; }
 .card__bigstars { font-size: 3rem; }
 .card__rules { font-size: 1.7rem; }
-.card__piece { --cell: 3.8rem; }
