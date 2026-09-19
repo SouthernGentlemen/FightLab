@@ -5,7 +5,6 @@ import type { Resource } from "./ports.ts";
 import type { ActiveMod, ModProgram } from "./program.ts";
 import { scaled } from "./stars.ts";
 import type { Scaled } from "./stars.ts";
-import { actionOf } from "./tags.ts";
 
 /**
  * The resource and debuff engine: what every fighter's mods do in an exchange and when a round ends.
@@ -87,12 +86,12 @@ export function freshState(program: ModProgram): ModState {
 
 /** A mod with an action tag fires when its fighter plays that action; one without fires every exchange. */
 export function fires(mod: ActiveMod, action: ActionType): boolean {
-  const on = actionOf(mod.definition.tags);
+  const on = mod.definition.affinity;
   return on === null || on === action;
 }
 
 function needsOf(mod: ActiveMod): Needs {
-  const on = actionOf(mod.definition.tags);
+  const on = mod.definition.affinity;
   return on === null ? null : on === "block" ? "guard" : "landed";
 }
 
