@@ -6,6 +6,7 @@ on:
       - "src/ui/**"
       - "src/mods/**"
       - ".github/workflows/visual.yml"
+      - "pipelines/capture-turn-evidence.mjs"
   workflow_dispatch:
 
 permissions:
@@ -237,6 +238,10 @@ jobs:
 
           socket.close();
           NODE
+
+      - name: Capture straight-I turn evidence at 1920x1080
+        working-directory: FightLab
+        run: node pipelines/capture-turn-evidence.mjs
 
       - name: Upload visual evidence
         uses: actions/upload-artifact@v4
