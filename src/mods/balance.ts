@@ -16,9 +16,6 @@ export const POISON_DIVISOR = 2;
 /** Charge a fighter can hold before any Battery. Charge above capacity is lost as it is made. */
 export const BASE_CHARGE_CAPACITY = 3;
 
-/** What a producer adds when one of its out-ports feeds a matching in-port. */
-export const LINK_BONUS = 1;
-
 /** Lane power: what each elemental-tagged cell adds to its row's action, and in an attuned row. */
 export const LANE_POWER = 1;
 export const ATTUNED_LANE_POWER = 2;
