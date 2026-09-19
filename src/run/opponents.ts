@@ -5,6 +5,7 @@ import type { ActionBar } from "../battle/bars.ts";
 import { BEATS } from "../battle/matchup.ts";
 import { opponentPlan } from "../battle/mixup.ts";
 import type { MixupPlan, OpponentPlan } from "../battle/mixup.ts";
+import { adjacencyGraph } from "../mods/adjacency.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { BOARD_HEIGHT, BOARD_WIDTH, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
@@ -106,11 +107,12 @@ function laneWeights(plan: OpponentPlan): Record<ActionType, number> {
 
 /**
  * Where a mod does the plan the most good: element cells in the lanes its bars use most, with a
- * nudge towards rows already holding the same element. The first best placement in reading order
+ * nudge towards neighbouring mods of the same type. The first best placement in reading order
  * wins a tie, so packing is deterministic.
  */
 function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionType, number>>): Placement | null {
   const owners = occupancy(grid);
+  const byUid = new Map(grid.map((placed) => [placed.uid, placed] as const));
   const type = REGISTRY[mod].type === "neutral" ? null : REGISTRY[mod].type;
   let best: Placement | null = null;
   let bestScore = -Infinity;
@@ -121,10 +123,13 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
         if (!fits(owners, placement)) continue;
         let score = 0;
         for (const { y: row } of cellsOf(placement)) {
-          if (type === null) continue;
-          score += weights[LANES[row]];
-          for (let column = 0; column < BOARD_WIDTH; column++) {
-            const neighbour = owners.get(`${column},${row}`);
+          if (type !== null) score += weights[LANES[row]];
+        }
+        if (type !== null) {
+          const candidate = { uid: -1, stars: 1 as const, ...placement };
+          const graph = adjacencyGraph([...grid, candidate]);
+          for (const uid of graph.neighbours(candidate.uid)) {
+            const neighbour = byUid.get(uid);
             if (neighbour && REGISTRY[neighbour.mod].type === type) score += 1;
           }
         }
