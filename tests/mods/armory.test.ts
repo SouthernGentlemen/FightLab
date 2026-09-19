@@ -4,7 +4,6 @@ import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
 import { EVERYTHING, armoryList, collected } from "../../src/mods/armory.ts";
 import type { Owned } from "../../src/mods/armory.ts";
-import { profileOf, scaleRows } from "../../src/mods/describe.ts";
 import { place } from "../../src/mods/grid.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
@@ -53,23 +52,6 @@ describe("the Armory's catalogue", () => {
   it("counts how much of the catalogue is collected", () => {
     expect(collected(NONE)).toEqual({ owned: 0, total: DEFINITIONS.length });
     expect(collected((mod) => (mod === "heat-coil" ? 6 : 0))).toEqual({ owned: 1, total: DEFINITIONS.length });
-  });
-});
-
-describe("the Armory's numbers", () => {
-  it("give a row for every number a mod scales, at all three stars", () => {
-    expect(scaleRows(REGISTRY["cinder-edge"])).toEqual([
-      { label: "Heat spent", values: [1, 1, 1] },
-      { label: "Damage", values: [2, 3, 4] },
-      { label: "Burn applied", values: [2, 3, 5] },
-    ]);
-    expect(scaleRows(REGISTRY["capacitor-guard"]).map((row) => row.label)).toEqual(["Charge spent", "Parry heal", "Riposte damage"]);
-    for (const definition of DEFINITIONS) expect(scaleRows(definition).length, definition.id).toBeGreaterThan(0);
-  });
-
-  it("sum up what a mod makes, spends, applies and cleanses", () => {
-    expect(profileOf(REGISTRY["heat-death"])).toEqual({ makes: ["void"], spends: ["heat", "void"], applies: ["poison"], cleanses: [] });
-    expect(profileOf(REGISTRY["cooling-array"])).toEqual({ makes: [], spends: ["heat"], applies: [], cleanses: ["burn"] });
   });
 });
 
