@@ -1008,7 +1008,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-017 | Choose the palette as one system | 6 | — | done |
 | tasks-018 | The palette test | 6 | — | done |
 | tasks-019 | Icons in tokens, and the icon treatment | 6 | — | done |
-| tasks-020 | States | 6 | — | todo |
+| tasks-020 | States | 6 | — | done |
 | tasks-021 | The palette on Prep's mod surfaces | 6 | D6 ✓ | todo |
 | tasks-022 | The card's view model | 7 | — | todo |
 | tasks-023 | The card | 7 | — | todo |
