@@ -141,14 +141,33 @@ jobs:
           await waitFor(".title");
           await clickText("Armory");
           await waitFor(".armory");
+          const selected = await evaluate(`(() => {
+            const node = document.querySelector('[data-mod="cinder-edge"]');
+            if (!node) return false;
+            node.click();
+            return true;
+          })()`);
+          if (!selected) throw new Error("Could not select Cinder Edge in the Armory");
           await sleep(250);
           await shot("armory");
 
-          await evaluate("localStorage.clear()");
-          await send("Page.navigate", { url: "http://127.0.0.1:5192/?seed=4" });
-          await waitFor(".title");
-          await clickText("Play");
-          await waitFor(".prep");
+          let prepSeed = null;
+          for (let seed = 1; seed <= 40; seed++) {
+            await evaluate("localStorage.clear()");
+            await send("Page.navigate", { url: `http://127.0.0.1:5192/?seed=${seed}` });
+            await sleep(100);
+            await waitFor(".title");
+            await clickText("Play");
+            await waitFor(".prep");
+            const hasSolarStrike = await evaluate(
+              'Boolean(document.querySelector(".shop .mod[data-type=solar][data-affinity=strike]"))'
+            );
+            if (hasSolarStrike) {
+              prepSeed = seed;
+              break;
+            }
+          }
+          if (prepSeed === null) throw new Error("No Solar Strike offer found in seeds 1-40");
           await sleep(250);
           await shot("prep");
 
