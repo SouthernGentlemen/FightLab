@@ -7,8 +7,10 @@ import type { ModProgram } from "./program.ts";
 import { REGISTRY } from "./registry.ts";
 import { freshState, staticTotal } from "./resolve.ts";
 import { scaled } from "./stars.ts";
-import { ELEMENTAL, elementsOf, isElemental } from "./tags.ts";
-import type { Elemental } from "./tags.ts";
+import type { ModType } from "./tags.ts";
+
+type Elemental = Exclude<ModType, "neutral">;
+const ELEMENTAL: readonly Elemental[] = ["solar", "arc", "void"];
 
 /**
  * A grid as what the rest of the game needs: the lane power each action's row gives it, the
@@ -32,7 +34,8 @@ export interface Build {
 }
 
 function elementalOf(placed: PlacedMod): Elemental[] {
-  return elementsOf(REGISTRY[placed.mod].tags).filter(isElemental);
+  const type = REGISTRY[placed.mod].type;
+  return type === "neutral" ? [] : [type];
 }
 
 /** What the Amplifiers touching `placed` add to each of its elemental cells. */
