@@ -4,7 +4,7 @@ import type { Resource } from "./ports.ts";
 import type { ModDefinition } from "./registry.ts";
 import { scaled } from "./stars.ts";
 import type { Scaled, Stars } from "./stars.ts";
-import { TAG_LABEL, actionOf } from "./tags.ts";
+import { AFFINITY_LABEL } from "./tags.ts";
 
 /**
  * A mod's rules in words, written from its effects at one star level, so what the shop, the grid
@@ -47,16 +47,16 @@ function effectText(effect: Effect, stars: Stars, blocks: boolean): string {
 
 /** When the mod fires, and what its debuffs wait for. */
 export function firingLine(definition: ModDefinition): string {
-  const action = actionOf(definition.tags);
+  const action = definition.affinity;
   if (definition.effects.every((effect) => ["capacity", "lane-boost", "income", "free-reroll", "style"].includes(effect.kind))) return "Always on.";
   if (action === null) return "Fires in every exchange.";
   const waits = action === "block" ? "its payoffs land if your guard holds" : "its debuffs land if the hit does";
-  return `Fires when you ${TAG_LABEL[action]}; ${waits}.`;
+  return `Fires when you ${AFFINITY_LABEL[action]}; ${waits}.`;
 }
 
 /** Every rule of the mod at `stars`, one sentence each, firing line first. */
 export function effectLines(definition: ModDefinition, stars: Stars): string[] {
-  const blocks = actionOf(definition.tags) === "block";
+  const blocks = definition.affinity === "block";
   return [firingLine(definition), ...definition.effects.map((effect) => effectText(effect, stars, blocks))];
 }
 
@@ -86,7 +86,7 @@ function payoffLabel(payoff: Payoff, blocks: boolean, per: string): string {
 
 /** Every number the mod has, in the order its effects list them. */
 export function scaleRows(definition: ModDefinition): ScaleRow[] {
-  const blocks = actionOf(definition.tags) === "block";
+  const blocks = definition.affinity === "block";
   return definition.effects.flatMap((effect): ScaleRow[] => {
     switch (effect.kind) {
       case "generate": return [{ label: `${RESOURCE[effect.resource]} made`, values: effect.amount }, ...(effect.perLink ? [{ label: "More per link", values: effect.perLink }] : [])];
