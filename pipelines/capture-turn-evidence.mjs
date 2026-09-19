@@ -124,3 +124,5 @@ if (Math.abs(after.pivotX - before.pivotX) > 0.5 || Math.abs(after.pivotY - befo
 await shot("prep-i-after");
 
 socket.close();
+
+await import("./capture-control-evidence.mjs");
