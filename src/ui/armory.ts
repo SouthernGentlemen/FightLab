@@ -6,14 +6,15 @@ import { RARITIES, RARITY } from "../mods/rarity.ts";
 import type { Rarity } from "../mods/rarity.ts";
 import { MOD_IDS } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { bestStars, copiesIn } from "../mods/stars.ts";
+import { copiesIn } from "../mods/stars.ts";
 import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
 import type { ModType } from "../mods/tags.ts";
 import type { CollectionRepository } from "../run/collection.ts";
 import { armoryCard } from "./armorycard.ts";
+import { catalogCard } from "./catalogcard.ts";
+import { catalogCardView } from "./catalogcardview.ts";
 import { button, h, icon } from "./dom.ts";
 import { iconButton, tagIcon } from "./kit.ts";
-import { modTile } from "./modtile.ts";
 import { paletteDebugSheet } from "./palette-debug.ts";
 
 export interface ArmoryOptions {
@@ -81,7 +82,7 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
 
   function select(mod: ModId): void {
     selected = mod;
-    for (const tile of grid.children) tile.setAttribute("aria-pressed", String((tile as HTMLElement).dataset.mod === mod));
+    for (const card of grid.children) card.setAttribute("aria-pressed", String((card as HTMLElement).dataset.mod === mod));
     card.show(mod);
   }
 
@@ -91,9 +92,9 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
     const listed = armoryList(filter, owned);
     grid.replaceChildren(...listed.map((definition) => {
       const id = definition.id as ModId;
-      const tile = modTile(definition, bestStars(owned(id)), owned(id));
-      tile.addEventListener("click", () => select(id));
-      return tile;
+      const card = catalogCardView(catalogCard(definition, owned(id)));
+      card.addEventListener("click", () => select(id));
+      return card;
     }));
     empty.hidden = listed.length > 0;
     select(selected);
