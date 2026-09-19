@@ -4,45 +4,20 @@ import { boardPorts, links, turnSide } from "../../src/mods/ports.ts";
 import type { Port, PortedPiece } from "../../src/mods/ports.ts";
 import { RARITIES, RARITY, rarityLine } from "../../src/mods/rarity.ts";
 import { RECIPES, STARS, bestStars, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
-import { ELEMENTS, MAX_TAGS, actionOf, elementsOf, tagLine, tagProblem, tileFill } from "../../src/mods/tags.ts";
+import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL, isModType } from "../../src/mods/tags.ts";
 import { ROTATIONS } from "../../src/mods/shapes.ts";
 
-describe("tags", () => {
-  it("allow one or two tags and never more", () => {
-    expect(MAX_TAGS).toBe(2);
-    expect(tagProblem([])).toMatch(/one or two/);
-    expect(tagProblem(["solar", "strike", "arc"])).toMatch(/one or two/);
+describe("mod type and affinity", () => {
+  it("defines the four mod types and their labels", () => {
+    expect(MOD_TYPES).toEqual(["solar", "arc", "void", "neutral"]);
+    for (const type of MOD_TYPES) expect(isModType(type), type).toBe(true);
+    expect(isModType("strike")).toBe(false);
+    expect(isModType("fire")).toBe(false);
+    expect(TYPE_LABEL).toEqual({ solar: "Solar", arc: "Arc", void: "Void", neutral: "Neutral" });
   });
 
-  it("accept an element alone, an element with one action, or two different elements", () => {
-    for (const element of ELEMENTS) expect(tagProblem([element]), element).toBeNull();
-    expect(tagProblem(["solar", "strike"])).toBeNull();
-    expect(tagProblem(["arc", "block"])).toBeNull();
-    expect(tagProblem(["void", "tech"])).toBeNull();
-    expect(tagProblem(["neutral", "strike"])).toBeNull();
-    expect(tagProblem(["void", "arc"])).toBeNull();
-    expect(tagProblem(["void", "solar"])).toBeNull();
-  });
-
-  it("refuse an action alone, two actions, a repeat, Neutral with an element, and unknown tags", () => {
-    expect(tagProblem(["strike"])).toMatch(/needs an element/);
-    expect(tagProblem(["strike", "tech"])).toMatch(/needs an element/);
-    expect(tagProblem(["solar", "solar"])).toMatch(/twice/);
-    expect(tagProblem(["neutral", "solar"])).toMatch(/Neutral/);
-    expect(tagProblem(["fire"])).toMatch(/not a tag/);
-  });
-
-  it("say which elements a mod has, which action it fires on, and how its type is written", () => {
-    expect(elementsOf(["void", "arc"])).toEqual(["void", "arc"]);
-    expect(actionOf(["solar", "strike"])).toBe("strike");
-    expect(actionOf(["solar"])).toBeNull();
-    expect(tagLine(["solar", "strike"])).toBe("SOLAR / STRIKE");
-  });
-
-  it("split a dual-typed tile between both colours, element first, and fill a single-typed one", () => {
-    expect(tileFill(["solar", "strike"])).toEqual({ split: true, colors: ["solar", "strike"] });
-    expect(tileFill(["void", "arc"])).toEqual({ split: true, colors: ["void", "arc"] });
-    expect(tileFill(["arc"])).toEqual({ split: false, colors: ["arc"] });
+  it("labels the optional action affinity independently of type", () => {
+    expect(AFFINITY_LABEL).toEqual({ strike: "Strike", tech: "Tech", block: "Block" });
   });
 });
 
