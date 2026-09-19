@@ -570,7 +570,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const found = heldAt(event.target);
     if (found === null || found.held.kind === "offer") return;
     if (found.held.kind === "piece") {
-      const piece = run.grid.find((candidate) => candidate.uid === found.held.uid);
+      const uid = found.held.uid;
+      const piece = run.grid.find((candidate) => candidate.uid === uid);
       const pivot = boardPointAt(event.clientX, event.clientY);
       if (piece === undefined || pivot === null || !cellsOf(piece).some(({ x, y }) => x === pivot.x && y === pivot.y)) return;
       apply(rotate(run, sourceOf(found.held), pivot), found.origin);
