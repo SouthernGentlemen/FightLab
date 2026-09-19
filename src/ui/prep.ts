@@ -220,7 +220,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
         starRow(owned.stars, "stars slot__stars")] : []));
       slot.dataset.filled = owned ? "true" : "false";
       slot.setAttribute("aria-label", owned ? modLabel(REGISTRY[owned.mod], owned.stars) : `Empty bank slot ${index + 1}`);
-      slot.classList.toggle("is-carried", carry?.held.kind === "bank" && carry.held.slot === index);
+      slot.classList.toggle("is-source", carry?.held.kind === "bank" && carry.held.slot === index);
     });
 
     pieces.replaceChildren(...run.grid.map((piece) => {
@@ -231,7 +231,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       art.tabIndex = 0;
       art.setAttribute("role", "button");
       art.setAttribute("aria-label", modLabel(REGISTRY[piece.mod], piece.stars));
-      art.classList.toggle("is-carried", carry?.held.kind === "piece" && carry.held.uid === piece.uid);
+      art.classList.toggle("is-source", carry?.held.kind === "piece" && carry.held.uid === piece.uid);
       return art;
     }));
 
@@ -280,31 +280,21 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     drawCarry();
   }
 
-  // The carried piece: shown snapped onto the grid, green where it would fit and red where not.
-
-  function markCells(placement: { mod: ModId; rotation: Rotation; x: number; y: number } | null, legal: boolean): void {
-    const covered = new Set(placement ? cellsOf(placement).map(({ x, y }) => `${x},${y}`) : []);
-    for (const cell of cells) {
-      const hit = covered.has(`${cell.dataset.x},${cell.dataset.y}`);
-      cell.classList.toggle("is-ok", hit && legal);
-      cell.classList.toggle("is-bad", hit && !legal);
-    }
-  }
+  // The carried piece keeps its type colour; the piece itself carries valid/invalid placement state.
 
   function drawCarry(): void {
     if (carry === null) {
       carried.hidden = true;
-      if (drag?.target?.kind !== "grid") markCells(null, false);
       return;
     }
     const placement = { mod: carry.mod, rotation: carry.rotation, x: carry.x, y: carry.y };
     const legal = canPlace(run.grid, placement, carry.held.kind === "piece" ? carry.held.uid : null);
     const art = modArt(carry.mod, carry.rotation, "piece piece--ghost");
+    art.dataset.placement = legal ? "valid" : "invalid";
     art.style.left = `calc(var(--cell) * ${carry.x})`;
     art.style.top = `calc(var(--cell) * ${carry.y})`;
     carried.replaceChildren(art);
     carried.hidden = false;
-    markCells(placement, legal);
   }
 
   function startCarry(held: Held, pivot?: GridPoint): void {
@@ -430,7 +420,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     current.ghost.style.left = `${current.x - bounds.left - (anchor.x + 0.5) * cellWidth}px`;
     current.ghost.style.top = `${current.y - bounds.top - (anchor.y + 0.5) * cellHeight}px`;
     const target = current.target;
-    markCells(target?.kind === "grid" ? current.placement : null, target?.kind === "grid" && target.legal);
+    if (target?.kind === "grid") current.ghost.dataset.placement = target.legal ? "valid" : "invalid";
+    else delete current.ghost.dataset.placement;
     bankSlots.forEach((slot, index) => slot.classList.toggle("is-target", target?.kind === "bank" && target.slot === index));
     shop.classList.toggle("is-sell", target?.kind === "sell");
     if (current.held.kind !== "offer") {
@@ -442,7 +433,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function endDrag(): void {
     if (drag === null) return;
     drag.ghost?.remove();
-    drag.origin.classList.remove("is-lifted");
+    drag.origin.classList.remove("is-source");
     bankSlots.forEach((slot) => slot.classList.remove("is-target"));
     shop.classList.remove("is-sell", "is-selling");
     drag = null;
@@ -491,7 +482,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (!drag.moved && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) > 6) {
       drag.moved = true;
       carry = null;
-      drag.origin.classList.add("is-lifted");
+      drag.origin.classList.add("is-source");
       drawGhost(drag);
     }
     if (drag.moved) placeGhost(drag);
