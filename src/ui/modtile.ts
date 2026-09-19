@@ -1,18 +1,23 @@
 import { RARITY, rarityLine } from "../mods/rarity.ts";
 import type { ModDefinition } from "../mods/registry.ts";
-import type { ModId } from "../mods/registry.ts";
 import type { Stars } from "../mods/stars.ts";
 import { AFFINITY_LABEL, TYPE_LABEL } from "../mods/tags.ts";
 import { h, icon } from "./dom.ts";
-import { modIcon, paintTags, starRow } from "./kit.ts";
+import { starRow } from "./kit.ts";
 
 /**
- * A mod as a square: filled with its tag colour, or split half and half on the diagonal between
- * its two, with its glyph on top. Colour is never all it says: wherever a square is shown, its type
- * is written beside it.
+ * A catalogue square: solid in the mod type, with one action disc only when it has an affinity.
  */
 export function modSquare(definition: ModDefinition, className = "square"): HTMLElement {
-  return paintTags(h("span", { class: className, "aria-hidden": "true" }, icon(modIcon(definition.id as ModId), "icon square__glyph")), definition.type, definition.affinity);
+  const action = definition.affinity === null ? [] : [
+    h("span", { class: "square__action", "data-action": definition.affinity }, icon(definition.affinity)),
+  ];
+  return h("span", {
+    class: className,
+    "aria-hidden": "true",
+    "data-type": definition.type,
+    "data-affinity": definition.affinity ?? undefined,
+  }, ...action);
 }
 
 /**
