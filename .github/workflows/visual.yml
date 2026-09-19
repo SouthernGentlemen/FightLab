@@ -1,0 +1,171 @@
+name: visual
+
+on:
+  pull_request:
+    paths:
+      - "src/ui/**"
+      - "src/mods/**"
+      - ".github/workflows/visual.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out FightLab
+        uses: actions/checkout@v4
+        with:
+          path: FightLab
+
+      - name: Read pinned Boneyard commit
+        id: boneyard
+        shell: bash
+        run: echo "commit=$(node -p "require('./FightLab/boneyard.pin.json').commit")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Boneyard
+        uses: actions/checkout@v4
+        with:
+          repository: SouthernGentlemen/Boneyard
+          ref: ${{ steps.boneyard.outputs.commit }}
+          path: Boneyard
+          token: ${{ secrets.BONEYARD_READ_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: FightLab/package-lock.json
+
+      - name: Install FightLab
+        working-directory: FightLab
+        run: npm ci
+
+      - name: Start FightLab preview
+        shell: bash
+        run: |
+          cd FightLab
+          npm run dev -- --port 5192 > "$RUNNER_TEMP/fightlab-5192.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/fightlab-5192.pid"
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:5192/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/fightlab-5192.log"
+          exit 1
+
+      - name: Capture Armory and Prep at 1920x1080
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+            --remote-debugging-port=9222 --window-size=1920,1080 about:blank \
+            > "$RUNNER_TEMP/chrome.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/chrome.pid"
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:9222/json > /dev/null; then break; fi
+            sleep 1
+          done
+          mkdir -p FightLab/screenshots
+          node <<'NODE'
+          const { writeFileSync } = require("node:fs");
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const pages = await fetch("http://127.0.0.1:9222/json").then((response) => response.json());
+          const page = pages.find((entry) => entry.type === "page");
+          if (!page) throw new Error("Chrome exposed no page target");
+
+          const socket = new WebSocket(page.webSocketDebuggerUrl);
+          await new Promise((resolve, reject) => {
+            socket.onopen = resolve;
+            socket.onerror = reject;
+          });
+
+          let nextId = 1;
+          const pending = new Map();
+          socket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (!message.id) return;
+            const entry = pending.get(message.id);
+            if (!entry) return;
+            pending.delete(message.id);
+            if (message.error) entry.reject(new Error(JSON.stringify(message.error)));
+            else entry.resolve(message.result);
+          };
+
+          const send = (method, params = {}) => new Promise((resolve, reject) => {
+            const id = nextId++;
+            pending.set(id, { resolve, reject });
+            socket.send(JSON.stringify({ id, method, params }));
+          });
+          const evaluate = async (expression) => {
+            const result = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
+            if (result.exceptionDetails) throw new Error(result.exceptionDetails.text);
+            return result.result.value;
+          };
+          const waitFor = async (selector) => {
+            for (let attempt = 0; attempt < 80; attempt++) {
+              if (await evaluate(`Boolean(document.querySelector(${JSON.stringify(selector)}))`)) return;
+              await sleep(100);
+            }
+            throw new Error(`Timed out waiting for ${selector}`);
+          };
+          const clickText = async (label) => {
+            const clicked = await evaluate(`(() => {
+              const node = [...document.querySelectorAll("button")].find((button) => button.textContent.trim().startsWith(${JSON.stringify(label)}));
+              if (!node) return false;
+              node.click();
+              return true;
+            })()`);
+            if (!clicked) throw new Error(`Could not find ${label} button`);
+          };
+          const shot = async (name) => {
+            const viewport = await evaluate("({ width: innerWidth, height: innerHeight })");
+            if (viewport.width !== 1920 || viewport.height !== 1080) {
+              throw new Error(`Expected 1920x1080 viewport, got ${viewport.width}x${viewport.height}`);
+            }
+            const image = await send("Page.captureScreenshot", { format: "png", fromSurface: true, captureBeyondViewport: false });
+            writeFileSync(`FightLab/screenshots/${name}.png`, Buffer.from(image.data, "base64"));
+          };
+
+          await send("Page.enable");
+          await send("Runtime.enable");
+          await send("Emulation.setDeviceMetricsOverride", { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });
+
+          await send("Page.navigate", { url: "http://127.0.0.1:5192/" });
+          await waitFor(".title");
+          await clickText("Armory");
+          await waitFor(".armory");
+          await sleep(250);
+          await shot("armory");
+
+          await evaluate("localStorage.clear()");
+          await send("Page.navigate", { url: "http://127.0.0.1:5192/?seed=4" });
+          await waitFor(".title");
+          await clickText("Play");
+          await waitFor(".prep");
+          await sleep(250);
+          await shot("prep");
+
+          socket.close();
+          NODE
+
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: fightlab-visual-1920x1080
+          path: FightLab/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop FightLab preview
+        if: always()
+        shell: bash
+        run: |
+          if test -f "$RUNNER_TEMP/chrome.pid"; then kill "$(cat "$RUNNER_TEMP/chrome.pid")" 2>/dev/null || true; fi
+          if test -f "$RUNNER_TEMP/fightlab-5192.pid"; then kill "$(cat "$RUNNER_TEMP/fightlab-5192.pid")" 2>/dev/null || true; fi
