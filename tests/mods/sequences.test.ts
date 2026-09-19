@@ -75,7 +75,7 @@ describe("stars, rotation and tags", () => {
 
   it("feed a neighbour only while the port faces it", () => {
     const facing = program(["heat-coil", 0, 0, 1, 0], ["cinder-edge", 1, 0]);
-    const turned = program(["heat-coil", 0, 0, 1, 2], ["cinder-edge", 1, 0]);
+    const turned = program(["heat-coil", 0, 0, 1, 180], ["cinder-edge", 1, 0]);
     const heat = (built: ModProgram) => prepareExchange([state(), state()], [built, NOTHING], ["tech", "tech"]).states[0].heat;
     expect(heat(facing)).toBe(1 + LINK_BONUS);
     expect(heat(turned)).toBe(1);
@@ -84,7 +84,7 @@ describe("stars, rotation and tags", () => {
   it("let Chain Circuit make more Charge for every link", () => {
     // The dynamo turned to face down feeds the circuit's first cell from above.
     const alone = program(["chain-circuit", 0, 1]);
-    const chained = program(["arc-dynamo", 0, 0, 1, 1], ["chain-circuit", 0, 1]);
+    const chained = program(["arc-dynamo", 0, 0, 1, 90], ["chain-circuit", 0, 1]);
     const circuit = chained.mods.find((mod) => mod.definition.id === "chain-circuit")!;
     expect(circuit.links).toBe(1);
     const charge = (built: ModProgram) => prepareExchange([state({ capacity: 99 }), state()], [built, NOTHING], ["tech", "tech"]).states[0].charge;

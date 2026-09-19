@@ -13,7 +13,7 @@ function armed(seed: number): RunState {
   run.money = 40;
   run.shop = { ...run.shop, offers: ["solar-flare", "null-reservoir", "thunderhead", "venom-tap", "void-tap"] };
   // Solar Flare along the top and down the middle, Null Reservoir in the bottom-left corner, Venom Tap upright on the right.
-  for (const [offer, x, y, rotation] of [[0, 0, 0, 0], [1, 0, 1, 0], [3, 2, 1, 1]] as const) {
+  for (const [offer, x, y, rotation] of [[0, 0, 0, 0], [1, 0, 1, 0], [3, 2, 1, 90]] as const) {
     if (buy(run, offer, { grid: { x, y, rotation } }) !== null) throw new Error(`offer ${offer} did not fit`);
   }
   setAction(run, "secondary", 0, "tech");
