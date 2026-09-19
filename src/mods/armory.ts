@@ -1,5 +1,5 @@
 import type { ActionType } from "../battle/actions.ts";
-import { RARITY, MATERIAL_LABEL } from "./rarity.ts";
+import { RARITY } from "./rarity.ts";
 import type { Rarity } from "./rarity.ts";
 import { DEFINITIONS } from "./registry.ts";
 import type { ModDefinition, ModId } from "./registry.ts";
@@ -26,9 +26,9 @@ export const EVERYTHING: ArmoryFilter = Object.freeze({ type: "all", affinity: "
 export type Owned = (mod: ModId) => number;
 
 function searchable(definition: ModDefinition): string {
-  const { label, material } = RARITY[definition.rarity];
+  const { label } = RARITY[definition.rarity];
   const affinity = definition.affinity === null ? "" : ` / ${AFFINITY_LABEL[definition.affinity]}`;
-  return `${definition.name} ${definition.description} ${TYPE_LABEL[definition.type]}${affinity} ${label} ${MATERIAL_LABEL[material]}`.toLowerCase();
+  return `${definition.name} ${definition.description} ${TYPE_LABEL[definition.type]}${affinity} ${label}`.toLowerCase();
 }
 
 export function matches(definition: ModDefinition, filter: ArmoryFilter, owned: Owned): boolean {
