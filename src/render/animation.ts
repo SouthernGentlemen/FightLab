@@ -4,7 +4,7 @@ import type { ClipName } from "./clips.ts";
 
 /**
  * The clip for every state that is not a move. A move names its own clip in its frame data.
- * Several of these are stand-ins; IMPLEMENTATION_PLAN.md lists the motion each one is missing.
+ * Several of these are stand-ins; docs/RUN_PLAN.md lists the motion each one is missing.
  */
 export const STATE_CLIPS = {
   idle: "bnrIdleNormal",

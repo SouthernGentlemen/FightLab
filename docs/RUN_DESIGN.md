@@ -3,7 +3,7 @@
 **Status: accepted, being built.** This is the design the run phase implements. It supersedes the
 first design pass — the five-action loop, the lane colours, scouting and the interactive mockup that
 went with them — and records every decision taken since. [`AGENTS.md`](../AGENTS.md) is the contract
-the code is held to and [`IMPLEMENTATION_PLAN.md`](../IMPLEMENTATION_PLAN.md) tracks what exists and
+the code is held to and [`RUN_PLAN.md`](RUN_PLAN.md) tracks what exists and
 what has been measured; this document says what the game is and why. Numbers marked *measured* come
 from the simulation; every other number is a starting value to tune.
 

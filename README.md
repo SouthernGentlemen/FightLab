@@ -18,11 +18,12 @@ combine into ★★, two ★★ into ★★★; rarity — Iron to Diamond — i
 **Armory** on the title screen shows every mod at every star. [`docs/MODS.md`](docs/MODS.md) has it
 all.
 
-**[`AGENTS.md`](AGENTS.md) is the contract.** [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) is the
+**[`AGENTS.md`](AGENTS.md) is the contract.** [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) is the
 source of truth for the slice: the rules, the state machines, what is consumed from Boneyard, what is a
 placeholder, what has been measured and what is out of scope. [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md)
 is the design and the record of the decisions behind it; [`docs/MODS.md`](docs/MODS.md) is the mod
-system.
+system. [`implementation_plan.md`](implementation_plan.md) is the pass being built now, task by task
+(`tasks-001` onwards): the mod catalogue simplification, the 64-mod rebuild and the colour pass.
 
 ## Run it
 

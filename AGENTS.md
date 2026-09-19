@@ -9,9 +9,10 @@ repository exists to answer one question: is building two plans, packing a grid 
 mix up — then watching two properly animated fighters resolve it — actually fun?
 
 This file is the contract. When code and this file disagree, one of them is a bug — say which.
-[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) is the source of truth for what the slice is, what
-exists and what has been measured; [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and the
-record of every decision behind it.
+[`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) is the source of truth for what the slice is, what exists
+and what has been measured; [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and the record
+of every decision behind it; [`implementation_plan.md`](implementation_plan.md) is the pass being built
+now, as numbered tasks (`tasks-NNN`).
 
 ## Ownership
 
@@ -71,7 +72,7 @@ differs from that digest, and `dev`, `build`, `test` and `verify` all see it, so
 change cannot silently alter the game. Accepting one is `npm run pin:boneyard`, which puts the new
 digest in a diff where someone has to look at it. Boneyard has no remote, which is why the pin is
 a digest rather than a git URL. The consumed surface is listed in
-[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md#boneyard-dependency-contract); a new import
+[`docs/RUN_PLAN.md`](docs/RUN_PLAN.md#boneyard-dependency-contract); a new import
 from Boneyard belongs in that list and in the digest.
 
 **C2 — The battle layer decides; the combat layer resolves.** `resolveMatchup` is the only
@@ -100,7 +101,7 @@ that the next landed hit adds and clears, and an affliction between ticks — kn
 `src/mods/`, `src/run/`, `src/combat/adapter.ts`, `src/game/` and `src/ui/`, and nowhere else. The
 kernel and the frame data speak moves (`jab`, `overhead`, `parry`, `riposte`); rendering speaks clips.
 A move names the clip that presents it, and every placeholder is listed beside the motion it stands in
-for (`IMPLEMENTATION_PLAN.md`, *Animation mapping*), so replacing one is a content change no battle
+for (`docs/RUN_PLAN.md`, *Animation mapping*), so replacing one is a content change no battle
 rule can notice. A mod has one or two tags from two families: elements — `solar`, `arc`, `void`,
 `neutral` — which are mod properties and never name an action, and actions, which say when a mod
 fires (in an exchange where its fighter plays that action).
@@ -173,7 +174,8 @@ autobattler, not a fork kept in sync.
 ## Layout
 
 ```
-AGENTS.md, IMPLEMENTATION_PLAN.md, README.md, LICENSE.md
+AGENTS.md, implementation_plan.md, README.md, LICENSE.md
+docs/RUN_PLAN.md    the run slice as built: rules, state machines, tests, what has been measured
 docs/RUN_DESIGN.md  the design and the record of its decisions
 docs/MODS.md        the mod system: elements, resources, debuffs, stars, rarity, ports, the Armory
 boneyard.pin.json   the Boneyard commit and digest FightLab is verified against

@@ -1,8 +1,12 @@
 # FightLab — implementation plan: the run
 
+> Moved here from the repository root on 2026-09-18 so that [`implementation_plan.md`](../implementation_plan.md)
+> could hold the mod catalogue pass: macOS does not tell `IMPLEMENTATION_PLAN.md` and
+> `implementation_plan.md` apart. This file is still the record of the run slice as built.
+
 This is the source of truth for the slice being built: a seeded run of days, each a prep → fight →
-payday → next-day loop, fought with two three-action bars in discrete rounds. [`AGENTS.md`](AGENTS.md)
-is the contract every path is held to; [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and
+payday → next-day loop, fought with two three-action bars in discrete rounds. [`AGENTS.md`](../AGENTS.md)
+is the contract every path is held to; [`RUN_DESIGN.md`](RUN_DESIGN.md) is the design and
 the record of every decision behind it. This file says what is built, in what shape, how it is tested,
 what has been measured and what is deliberately left out.
 
@@ -223,7 +227,7 @@ raises the rank one step (C → B → A → S, capped); a loss or trade resets t
 
 ## Mods and compile
 
-The mod system is designed in [`docs/MODS.md`](docs/MODS.md): tags, the three resource loops, the
+The mod system is designed in [`MODS.md`](MODS.md): tags, the three resource loops, the
 three debuffs, ports and rotation, ★ upgrades, rarity, the registry and the Armory.
 
 ```ts
