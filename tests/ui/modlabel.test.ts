@@ -17,5 +17,7 @@ describe("modLabel", () => {
   it("can omit star level when the surface does not have one", () => {
     expect(modLabel(REGISTRY["heat-coil"]))
       .toBe("Heat Coil, Solar, no affinity, single, Common");
+    expect(modLabel(REGISTRY["thunderhead"]))
+      .toContain("J tetromino");
   });
 });

@@ -59,15 +59,15 @@ describe("stars", () => {
 });
 
 describe("ports", () => {
-  const piece = (uid: number, ports: readonly Port[], x: number, y: number, rotation: 0 | 1 | 2 | 3 = 0, shape: PortedPiece["shape"] = "mono"): PortedPiece =>
+  const piece = (uid: number, ports: readonly Port[], x: number, y: number, rotation: 0 | 1 | 2 | 3 = 0, shape: PortedPiece["shape"] = "single"): PortedPiece =>
     ({ uid, shape, rotation, x, y, ports });
   const heatOut: Port = { cell: 0, side: "e", flow: "out", resource: "heat" };
   const heatIn: Port = { cell: 0, side: "w", flow: "in", resource: "heat" };
 
   it("turn clockwise with the piece and come back after four turns", () => {
     expect(ROTATIONS.map((rotation) => turnSide("n", rotation))).toEqual(["n", "e", "s", "w"]);
-    // A duo standing up carries its right-hand cell underneath, facing down.
-    expect(boardPorts(piece(1, [{ ...heatOut, cell: 1 }], 0, 0, 1, "duo"))).toEqual([{ uid: 1, at: [0, 1], side: "s", flow: "out", resource: "heat" }]);
+    // A domino standing up carries its right-hand cell underneath, facing down.
+    expect(boardPorts(piece(1, [{ ...heatOut, cell: 1 }], 0, 0, 1, "domino"))).toEqual([{ uid: 1, at: { x: 0, y: 1 }, side: "s", flow: "out", resource: "heat" }]);
     expect(boardPorts(piece(1, [heatOut], 1, 1, 0))).toEqual(boardPorts(piece(1, [heatOut], 1, 1, 0)));
   });
 
