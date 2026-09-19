@@ -70,14 +70,28 @@ const evidence = await evaluate(`(() => ({
   cardActions: document.querySelectorAll(".palette-sheet__sample--card .mod__action").length,
   boardActions: document.querySelectorAll(".palette-sheet__sample--board .mod__action").length,
   rarities: document.querySelectorAll(".palette-sheet__rarity").length,
+  states: [...document.querySelectorAll(".palette-sheet__state > small")].map((node) => node.textContent?.trim() ?? ""),
+  selectedCorners: Boolean(document.querySelector('.palette-sheet__state .tile[aria-pressed="true"]')),
+  poor: Boolean(document.querySelector(".palette-sheet__state .offer.is-poor")),
+  sold: Boolean(document.querySelector('.palette-sheet__state .offer[data-sold="true"]')),
+  valid: Boolean(document.querySelector('.palette-sheet__state .mod[data-placement="valid"]')),
+  invalid: Boolean(document.querySelector('.palette-sheet__state .mod[data-placement="invalid"]')),
+  source: Boolean(document.querySelector(".palette-sheet__state .mod.is-source")),
   visible: document.querySelector(".palette-sheet")?.getBoundingClientRect().height ?? 0,
 }))()`);
 
 if (evidence.viewport[0] !== 1920 || evidence.viewport[1] !== 1080) {
   throw new Error(`Expected 1920x1080 viewport, got ${evidence.viewport.join("x")}`);
 }
+const expectedStates = ["Hover", "Selected", "Focus", "Unaffordable", "Sold", "Valid carry", "Invalid carry", "Source"];
 if (evidence.pairs !== 16 || evidence.cardActions !== 12 || evidence.boardActions !== 12 || evidence.rarities !== 5) {
   throw new Error(`Palette sheet incomplete: ${JSON.stringify(evidence)}`);
+}
+if (JSON.stringify(evidence.states) !== JSON.stringify(expectedStates)) {
+  throw new Error(`Palette state sheet incomplete: ${JSON.stringify(evidence.states)}`);
+}
+if (!evidence.selectedCorners || !evidence.poor || !evidence.sold || !evidence.valid || !evidence.invalid || !evidence.source) {
+  throw new Error(`Palette state hooks are missing: ${JSON.stringify(evidence)}`);
 }
 if (evidence.visible <= 0) throw new Error("Palette sheet is not visible");
 
