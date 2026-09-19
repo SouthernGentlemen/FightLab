@@ -4,8 +4,7 @@ import type { ModId } from "../mods/registry.ts";
 import { RECIPES, STARS, bestStars, copiesIn, starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import { button, h, setText } from "./dom.ts";
-import { starRow } from "./kit.ts";
-import { modSquare } from "./modtile.ts";
+import { modArt } from "./kit.ts";
 
 export interface ArmoryCard {
   readonly node: HTMLElement;
@@ -41,7 +40,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
     const definition = REGISTRY[mod];
     node.dataset.rarity = definition.rarity;
     setText(name, definition.name);
-    square.replaceChildren(modSquare(definition, "square card__big"), starRow(stars, "stars card__bigstars"));
+    square.replaceChildren(modArt(definition, 0, "card__big", stars));
     setText(description, definition.description);
     starButtons.forEach((node, index) => node.setAttribute("aria-pressed", String(STARS[index] === stars)));
     rules.replaceChildren(...effectLines(definition, stars).map((line) => h("p", {}, line)));
