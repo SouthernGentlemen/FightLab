@@ -517,7 +517,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 
 ### Pass 2 — Remove visual clutter
 
-#### tasks-003 — Split tags into type and affinity
+#### tasks-003 — Split tags into type and affinity · **done**
 *Spec §4–§6, §33 · D4.*
 - Rewrite `src/mods/tags.ts` down to `MOD_TYPES`, `ModType`, `TYPE_LABEL`, `AFFINITY_LABEL` and
   `isModType`.
@@ -990,7 +990,7 @@ them. There are no directories for them (`AGENTS.md`).
 | --- | --- | --- | --- | --- |
 | tasks-001 | Audit the mod system | 1 | — | done |
 | tasks-002 | Confirm the decisions | 1 | — | done |
-| tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | todo |
+| tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | done |
 | tasks-004 | One type colour per piece, one action icon | 2 | — | todo |
 | tasks-005 | Remove port drawing and port text | 2 | — | todo |
 | tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | todo |
