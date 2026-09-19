@@ -127,14 +127,15 @@ describe("mod presentation", () => {
   it("uses one type fill and one optional action icon, with no split-colour bridge", () => {
     const css = readFileSync(join(ROOT, "src/ui/styles.css"), "utf8");
     const kit = readFileSync(join(ROOT, "src/ui/kit.ts"), "utf8");
-    const tile = readFileSync(join(ROOT, "src/ui/modtile.ts"), "utf8");
+    const catalog = readFileSync(join(ROOT, "src/ui/catalogcardview.ts"), "utf8");
 
     expect(css).not.toMatch(/--c[12]\b|135deg|data-c[12]/);
     expect(kit).not.toMatch(/\bpaintTags\b|\bmodIcon\b/);
     expect(kit).toContain('"data-type": definition.type');
     expect(kit).toContain('"data-affinity": definition.affinity ?? undefined');
-    expect(tile).toContain('"data-type": definition.type');
-    expect(tile).toContain('"data-affinity": definition.affinity ?? undefined');
+    expect(catalog).toContain('"data-type": model.type');
+    expect(catalog).toContain('"data-affinity": model.affinity ?? undefined');
+    expect(catalog).toContain("model.affinity !== null");
   });
 });
 
