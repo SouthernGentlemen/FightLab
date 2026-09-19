@@ -161,12 +161,15 @@ describe("mod palette", () => {
     expect(CSS).toContain(".icon__outline { stroke: var(--icon-outline); }");
 
     for (const name of ["strike", "tech", "block", "burn", "shock", "poison"]) {
-      const match = ICON_SOURCE.match(new RegExp(`\\b${name}: glyph\\(\\\`([\\s\\S]*?)\\\`\\),`));
-      expect(match, `missing ${name} glyph`).not.toBeNull();
-      const body = match![1];
+      const marker = `  ${name}: glyph(\``;
+      const start = ICON_SOURCE.indexOf(marker);
+      const end = start < 0 ? -1 : ICON_SOURCE.indexOf("\`),", start + marker.length);
+      expect(start, `missing ${name} glyph`).toBeGreaterThanOrEqual(0);
+      expect(end, `unterminated ${name} glyph`).toBeGreaterThan(start);
+      const body = ICON_SOURCE.slice(start + marker.length, end);
       expect(body, `${name} fill`).toContain('fill="currentColor"');
       expect(body, `${name} outline`).toContain('class="icon__outline"');
-      expect(body, `${name} literal colour`).not.toMatch(/#[0-9a-f]{3,8}\\b|rgb\\([^)]*\\)|hsl\\([^)]*\\)/i);
+      expect(body, `${name} literal colour`).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\([^)]*\)|hsl\([^)]*\)/i);
       expect(body, `${name} legacy ink outline`).not.toContain("${INK}");
     }
   });
