@@ -528,7 +528,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
   `tileFill`.
 - Done when no mod code reads `tags`, and the model tests cover `type` and `affinity`.
 
-#### tasks-004 — One type colour per piece, one action icon
+#### tasks-004 — One type colour per piece, one action icon · **done**
 *Spec §5, §20, §30.*
 - `modArt` (`kit.ts`) and the Armory square set `data-type` and `data-affinity`, and every cell takes
   the type colour.
@@ -991,7 +991,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-001 | Audit the mod system | 1 | — | done |
 | tasks-002 | Confirm the decisions | 1 | — | done |
 | tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | done |
-| tasks-004 | One type colour per piece, one action icon | 2 | — | todo |
+| tasks-004 | One type colour per piece, one action icon | 2 | — | done |
 | tasks-005 | Remove port drawing and port text | 2 | — | todo |
 | tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | todo |
 | tasks-007 | Remove the energy UI and the stat blocks | 2 | — | todo |
