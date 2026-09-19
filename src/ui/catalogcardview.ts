@@ -33,7 +33,7 @@ export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
 
   return h("button", {
     type: "button",
-    class: "catalog-card",
+    class: `catalog-card${model.pips[0].filled ? "" : " is-unowned"}`,
     "data-mod": model.id,
     "data-rarity": model.rarity,
     "aria-label": model.label,
