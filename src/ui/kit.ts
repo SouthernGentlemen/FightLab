@@ -4,7 +4,7 @@ import type { BarId } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import type { StyleMeter } from "../battle/style.ts";
 import { REGISTRY } from "../mods/registry.ts";
-import type { ModId } from "../mods/registry.ts";
+import type { ModDefinition, ModId } from "../mods/registry.ts";
 import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { starText } from "../mods/stars.ts";
@@ -36,8 +36,10 @@ export function starRow(stars: Stars, className = "stars"): HTMLElement {
  * Stars sit at the piece corner. The same markup draws full size on the grid and in miniature in the
  * bank and shop.
  */
-export function modArt(mod: ModId, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
-  const definition = REGISTRY[mod];
+export type ModArtDefinition = Pick<ModDefinition, "type" | "affinity" | "shape">;
+
+export function modArt(mod: ModId | ModArtDefinition, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
+  const definition = typeof mod === "string" ? REGISTRY[mod] : mod;
   const cells = shapeCells(definition.shape, rotation);
   const [width, height] = shapeSize(cells);
   const node = h("div", {
