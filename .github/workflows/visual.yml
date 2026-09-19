@@ -74,7 +74,7 @@ jobs:
           done
           mkdir -p FightLab/screenshots
           node <<'NODE'
-          const { writeFileSync } = require("node:fs");
+          const { writeFileSync } = await import("node:fs");
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           const pages = await fetch("http://127.0.0.1:9222/json").then((response) => response.json());
           const page = pages.find((entry) => entry.type === "page");
