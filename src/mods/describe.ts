@@ -2,7 +2,7 @@ import type { Effect, Payoff } from "./effects.ts";
 import type { Resource } from "./ports.ts";
 import type { ModDefinition } from "./registry.ts";
 import { scaled } from "./stars.ts";
-import type { Scaled, Stars } from "./stars.ts";
+import type { Stars } from "./stars.ts";
 import { AFFINITY_LABEL } from "./tags.ts";
 
 /**
@@ -57,72 +57,4 @@ export function firingLine(definition: ModDefinition): string {
 export function effectLines(definition: ModDefinition, stars: Stars): string[] {
   const blocks = definition.affinity === "block";
   return [firingLine(definition), ...definition.effects.map((effect) => effectText(effect, stars, blocks))];
-}
-
-/** One number a mod scales, labelled, at ★, ★★ and ★★★: a row of the Armory's table. */
-export interface ScaleRow {
-  readonly label: string;
-  readonly values: Scaled;
-}
-
-function payoffLabel(payoff: Payoff, blocks: boolean, per: string): string {
-  switch (payoff.kind) {
-    case "damage": return `${blocks ? "Riposte damage" : "Damage"}${per}`;
-    case "heal": return `Parry heal${per}`;
-    case "debuff": return `${TAG_DEBUFF[payoff.debuff]} applied${per}`;
-    case "cleanse": return `${TAG_DEBUFF[payoff.debuff]} removed${per}`;
-  }
-}
-
-/** Every number the mod has, in the order its effects list them. */
-export function scaleRows(definition: ModDefinition): ScaleRow[] {
-  const blocks = definition.affinity === "block";
-  return definition.effects.flatMap((effect): ScaleRow[] => {
-    switch (effect.kind) {
-      case "generate": return [{ label: `${RESOURCE[effect.resource]} made`, values: effect.amount }, ...(effect.perLink ? [{ label: "More per link", values: effect.perLink }] : [])];
-      case "leech": return [{ label: "Drained into Void", values: effect.amount }];
-      case "convert": return [{ label: `${RESOURCE[effect.from]} into ${RESOURCE[effect.to]}`, values: effect.amount }];
-      case "spend": return [{ label: `${RESOURCE[effect.resource]} spent`, values: effect.cost }, ...effect.payoff.map((payoff) => ({ label: payoffLabel(payoff, blocks, ""), values: payoff.amount }))];
-      case "sink": return [{ label: `${RESOURCE[effect.resource]} sunk, at most`, values: effect.upTo }, ...effect.per.map((payoff) => ({ label: payoffLabel(payoff, blocks, " per unit"), values: payoff.amount }))];
-      case "refund": return [{ label: "Charge given back", values: effect.amount }];
-      case "accrue": return [{ label: "Void each round", values: effect.amount }];
-      case "capacity": return [{ label: "Charge capacity", values: effect.amount }];
-      case "lane-boost": return [{ label: "Lane power per cell", values: effect.amount }];
-      case "income": return [{ label: "Dollars each payday", values: effect.amount }];
-      case "free-reroll": return [{ label: "Free rerolls each day", values: effect.amount }];
-      case "style": return [{ label: "Extra style payouts", values: effect.amount }];
-    }
-  });
-}
-
-/** What a mod does with the three resources and the three debuffs, for the Armory's summary. */
-export interface Profile {
-  readonly makes: readonly Resource[];
-  readonly spends: readonly Resource[];
-  readonly applies: readonly (keyof typeof TAG_DEBUFF)[];
-  readonly cleanses: readonly (keyof typeof TAG_DEBUFF)[];
-}
-
-export function profileOf(definition: ModDefinition): Profile {
-  const makes = new Set<Resource>();
-  const spends = new Set<Resource>();
-  const applies = new Set<keyof typeof TAG_DEBUFF>();
-  const cleanses = new Set<keyof typeof TAG_DEBUFF>();
-  for (const effect of definition.effects) {
-    if (effect.kind === "generate") makes.add(effect.resource);
-    if (effect.kind === "leech" || effect.kind === "accrue") makes.add("void");
-    if (effect.kind === "refund") makes.add("charge");
-    if (effect.kind === "convert") {
-      spends.add(effect.from);
-      makes.add(effect.to);
-    }
-    if (effect.kind === "spend" || effect.kind === "sink") {
-      spends.add(effect.resource);
-      for (const payoff of effect.kind === "spend" ? effect.payoff : effect.per) {
-        if (payoff.kind === "debuff") applies.add(payoff.debuff);
-        if (payoff.kind === "cleanse") cleanses.add(payoff.debuff);
-      }
-    }
-  }
-  return { makes: [...makes], spends: [...spends], applies: [...applies], cleanses: [...cleanses] };
 }
