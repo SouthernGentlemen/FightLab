@@ -217,7 +217,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     bankSlots.forEach((slot, index) => {
       const owned = run.bank[index];
       slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars),
-        starRow(owned.stars, RARITY[REGISTRY[owned.mod].rarity].material, "stars slot__stars")] : []));
+        starRow(owned.stars, "stars slot__stars")] : []));
       slot.dataset.filled = owned ? "true" : "false";
       slot.setAttribute("aria-label", owned ? modLabel(REGISTRY[owned.mod], owned.stars) : `Empty bank slot ${index + 1}`);
       slot.classList.toggle("is-carried", carry?.held.kind === "bank" && carry.held.slot === index);
@@ -253,7 +253,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
     const rank = shopRank(run.day);
     odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => chance === 0 ? []
-      : [h("span", { class: "odds__rarity", title: RARITY[RARITIES[index]].label }, h("i", { class: "gem", "data-material": RARITY[RARITIES[index]].material }), `${chance}%`)]));
+      : [h("span", { class: "odds__rarity", title: RARITY[RARITIES[index]].label }, h("i", { class: "rarity-dot", "data-rarity": RARITIES[index] }), `${chance}%`)]));
     setText(money, `$${run.money}`);
     lock.setAttribute("aria-pressed", String(run.shop.locked));
     setText(lock.firstElementChild!, run.shop.locked ? "Locked" : "Lock");
