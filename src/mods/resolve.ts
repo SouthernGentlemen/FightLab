@@ -1,7 +1,6 @@
 import type { ActionType } from "../battle/actions.ts";
-import { BASE_CHARGE_CAPACITY, LINK_BONUS, burnAfterRound, burnDamage, heatAfterRound, poisonDamage, shockBonus } from "./balance.ts";
-import type { Debuff, Effect, Payoff } from "./effects.ts";
-import type { Resource } from "./ports.ts";
+import { BASE_CHARGE_CAPACITY, burnAfterRound, burnDamage, heatAfterRound, poisonDamage, shockBonus } from "./balance.ts";
+import type { Debuff, Effect, Payoff, Resource } from "./effects.ts";
 import type { ActiveMod, ModProgram } from "./program.ts";
 import { scaled } from "./stars.ts";
 import type { Scaled } from "./stars.ts";
@@ -72,9 +71,6 @@ type Working = { -readonly [K in keyof ModState]: number } & { bonus: number; he
 
 const at = (mod: ActiveMod, values: Scaled): number => scaled(values, mod.stars);
 
-/** A linked producer makes a little more of what it feeds. */
-const linkBonus = (mod: ActiveMod, resource: Resource): number => (mod.feeds.includes(resource) ? LINK_BONUS : 0);
-
 export function staticTotal(program: ModProgram, kind: "capacity" | "lane-boost" | "income" | "free-reroll" | "style"): number {
   return program.mods.reduce((sum, mod) => sum + mod.definition.effects.reduce((inner, effect) =>
     inner + (effect.kind === kind ? at(mod, effect.amount) : 0), 0), 0);
@@ -122,14 +118,14 @@ export function prepareExchange(states: Pair<ModState>, programs: Pair<ModProgra
   const firing = programs.map((program, side) => program.mods.filter((mod) => fires(mod, actions[side])));
 
   firing.forEach((mods, side) => each(mods, "generate", (mod, effect) =>
-    add(work[side], effect.resource, at(mod, effect.amount) + linkBonus(mod, effect.resource) + (effect.perLink ? at(mod, effect.perLink) * mod.links : 0))));
+    add(work[side], effect.resource, at(mod, effect.amount) + (effect.perAdjacent ? at(mod, effect.perAdjacent) * mod.adjacent.length : 0))));
 
   const held = work.map((side) => ({ heat: side.heat, charge: side.charge }));
   const drained = firing.map((mods, side) => {
     const pools = { ...held[1 - side] };
     const taken = { heat: 0, charge: 0 };
     each(mods, "leech", (mod, effect) => {
-      let wanted = at(mod, effect.amount) + linkBonus(mod, "void");
+      let wanted = at(mod, effect.amount);
       const order = effect.from !== "either" ? [effect.from] : pools.charge > pools.heat ? ["charge", "heat"] as const : ["heat", "charge"] as const;
       for (const source of order) {
         const take = Math.min(wanted, pools[source]);
@@ -146,7 +142,7 @@ export function prepareExchange(states: Pair<ModState>, programs: Pair<ModProgra
     work[side].voidCharge += taken.heat + taken.charge;
   });
   firing.forEach((mods, side) => each(mods, "convert", (mod, effect) => {
-    const moved = Math.min(at(mod, effect.amount) + linkBonus(mod, effect.to), work[side][FIELD[effect.from]], room(work[side], effect.to));
+    const moved = Math.min(at(mod, effect.amount), work[side][FIELD[effect.from]], room(work[side], effect.to));
     work[side][FIELD[effect.from]] -= moved;
     add(work[side], effect.to, moved);
   }));
@@ -169,7 +165,7 @@ export function prepareExchange(states: Pair<ModState>, programs: Pair<ModProgra
       }
     }
     each(mods, "refund", (mod, effect) =>
-      add(own, "charge", at(mod, effect.amount) * own.chargeSpenders.filter((uid) => mod.linked.includes(uid)).length));
+      add(own, "charge", at(mod, effect.amount) * own.chargeSpenders.filter((uid) => mod.adjacent.includes(uid)).length));
   });
 
   const state = ({ heat, charge, capacity, voidCharge, burn, shock, poison }: Working): ModState => ({ heat, charge, capacity, voidCharge, burn, shock, poison });
