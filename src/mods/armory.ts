@@ -3,8 +3,8 @@ import { RARITY, MATERIAL_LABEL } from "./rarity.ts";
 import type { Rarity } from "./rarity.ts";
 import { DEFINITIONS } from "./registry.ts";
 import type { ModDefinition, ModId } from "./registry.ts";
-import { tagLine } from "./tags.ts";
-import type { Element } from "./tags.ts";
+import { AFFINITY_LABEL, TYPE_LABEL } from "./tags.ts";
+import type { ModType } from "./tags.ts";
 
 /**
  * The Armory's catalogue: the registry itself, filtered. It lists the very records combat runs on,
@@ -12,28 +12,29 @@ import type { Element } from "./tags.ts";
  */
 
 export interface ArmoryFilter {
-  readonly element: Element | "all";
-  readonly action: ActionType | "all";
+  readonly type: ModType | "all";
+  readonly affinity: ActionType | "all";
   readonly rarity: Rarity | "all";
   readonly ownedOnly: boolean;
   /** Matched, ignoring case, against the name, the description, the type and the rarity. */
   readonly text: string;
 }
 
-export const EVERYTHING: ArmoryFilter = Object.freeze({ element: "all", action: "all", rarity: "all", ownedOnly: false, text: "" });
+export const EVERYTHING: ArmoryFilter = Object.freeze({ type: "all", affinity: "all", rarity: "all", ownedOnly: false, text: "" });
 
 /** How many copies of a mod the player owns; the Armory never knows where that number lives. */
 export type Owned = (mod: ModId) => number;
 
 function searchable(definition: ModDefinition): string {
   const { label, material } = RARITY[definition.rarity];
-  return `${definition.name} ${definition.description} ${tagLine(definition.tags)} ${label} ${MATERIAL_LABEL[material]}`.toLowerCase();
+  const affinity = definition.affinity === null ? "" : ` / ${AFFINITY_LABEL[definition.affinity]}`;
+  return `${definition.name} ${definition.description} ${TYPE_LABEL[definition.type]}${affinity} ${label} ${MATERIAL_LABEL[material]}`.toLowerCase();
 }
 
 export function matches(definition: ModDefinition, filter: ArmoryFilter, owned: Owned): boolean {
   const text = filter.text.trim().toLowerCase();
-  return (filter.element === "all" || definition.tags.includes(filter.element))
-    && (filter.action === "all" || definition.tags.includes(filter.action))
+  return (filter.type === "all" || definition.type === filter.type)
+    && (filter.affinity === "all" || definition.affinity === filter.affinity)
     && (filter.rarity === "all" || definition.rarity === filter.rarity)
     && (!filter.ownedOnly || owned(definition.id as ModId) > 0)
     && (text === "" || searchable(definition).includes(text));
