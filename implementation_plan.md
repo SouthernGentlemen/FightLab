@@ -501,7 +501,8 @@ None of these states is shown by opacity alone.
 ## 8. Tasks
 
 Each task gives the spec sections it answers, the decision that gates it (§3), the work, and when it
-is done. Every task ends green under `npm run verify`.
+is done. Every implementation task ends green under the **remote** `npm run verify` gate defined in
+§1; planning- and documentation-only changes use §1's source-review exception.
 
 ### Pass 1 — Audit
 
