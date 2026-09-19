@@ -1,11 +1,11 @@
 import { effectLines, profileOf, scaleRows } from "../mods/describe.ts";
-import { RARITY, rarityLine } from "../mods/rarity.ts";
+import { RARITY } from "../mods/rarity.ts";
 import { REGISTRY } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { RECIPES, STARS, bestStars, copiesIn, starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import { button, h, setText } from "./dom.ts";
-import { starRow, tagChips } from "./kit.ts";
+import { starRow } from "./kit.ts";
 import { modSquare } from "./modtile.ts";
 
 export interface ArmoryCard {
@@ -28,9 +28,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   let stars: Stars = 1;
 
   const name = h("h2", { class: "card__name" });
-  const rarity = h("span", { class: "card__rarity" });
   const square = h("div", { class: "card__square" });
-  const chips = h("div", { class: "card__chips" });
   const description = h("p", { class: "card__description" });
   const starButtons = STARS.map((level) => button(starText(level), "segment card__star", () => {
     stars = level;
@@ -42,8 +40,8 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   const copies = h("p", { class: "card__copies" });
 
   const node = h("section", { class: "card", "aria-label": "Mod details" },
-    h("header", { class: "card__head" }, name, rarity),
-    h("div", { class: "card__hero" }, square, h("div", { class: "card__about" }, chips, description)),
+    h("header", { class: "card__head" }, name),
+    h("div", { class: "card__hero" }, square, h("div", { class: "card__about" }, description)),
     h("div", { class: "segments card__stars", role: "group", "aria-label": "Star level" }, ...starButtons),
     rules, table, profile, copies);
 
@@ -64,9 +62,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
     const material = RARITY[definition.rarity].material;
     node.dataset.material = material;
     setText(name, definition.name);
-    setText(rarity, rarityLine(definition.rarity));
     square.replaceChildren(modSquare(definition, "square card__big"), starRow(stars, material, "stars card__bigstars"));
-    chips.replaceChildren(tagChips(definition.type, definition.affinity));
     setText(description, definition.description);
     starButtons.forEach((node, index) => node.setAttribute("aria-pressed", String(STARS[index] === stars)));
     rules.replaceChildren(...effectLines(definition, stars).map((line) => h("p", {}, line)));
