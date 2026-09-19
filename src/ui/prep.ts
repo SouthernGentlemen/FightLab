@@ -3,12 +3,12 @@ import type { ActionType } from "../battle/actions.ts";
 import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
-import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
+import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, firstFit, turnAbout } from "../mods/grid.ts";
 import { RARITIES, RARITY } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
-import type { Rotation } from "../mods/shapes.ts";
+import { shapeCells, shapeSize } from "../mods/shapes.ts";
+import type { GridPoint, Rotation } from "../mods/shapes.ts";
 import { effectLines } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
@@ -16,6 +16,7 @@ import { TYPE_LABEL } from "../mods/tags.ts";
 import { sellValue } from "../run/economy.ts";
 import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggleLock } from "../run/run.ts";
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
+import type { Placement } from "../mods/grid.ts";
 import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
 import { modLabel } from "./modlabel.ts";
@@ -50,9 +51,9 @@ type Target =
 interface Drag {
   readonly held: Held;
   readonly mod: ModId;
-  rotation: Rotation;
-  /** Which of the mod's cells is under the pointer. */
-  readonly anchor: number;
+  placement: Placement;
+  /** The occupied board cell held under the pointer. */
+  pivot: GridPoint;
   readonly startX: number;
   readonly startY: number;
   x: number;
@@ -70,6 +71,8 @@ interface Carry {
   rotation: Rotation;
   x: number;
   y: number;
+  /** The occupied board cell the carry turns around. */
+  pivot: GridPoint;
 }
 
 /**
@@ -183,6 +186,17 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return held.kind === "bank" ? { bank: held.slot } : { piece: (held as { uid: number }).uid };
   }
 
+  function placementFor(held: Held, mod: { mod: ModId; rotation: Rotation }): Placement {
+    const piece = held.kind === "piece" ? run.grid.find((candidate) => candidate.uid === held.uid) : undefined;
+    return piece ?? firstFit(run.grid, mod.mod, mod.rotation) ?? { mod: mod.mod, rotation: mod.rotation, x: 0, y: 0 };
+  }
+
+  function pivotFor(placement: Placement, cellIndex = 0): GridPoint {
+    const local = shapeCells(REGISTRY[placement.mod].shape, placement.rotation)[cellIndex]
+      ?? shapeCells(REGISTRY[placement.mod].shape, placement.rotation)[0];
+    return { x: placement.x + local.x, y: placement.y + local.y };
+  }
+
   /** Puts what is held where it was dropped: buys an offer, moves an owned mod, or sells it. */
   function drop(held: Held, target: Target, rotation: Rotation): Refusal | null {
     if (target.kind === "sell") return held.kind === "offer" ? null : sell(run, sourceOf(held));
@@ -293,13 +307,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     markCells(placement, legal);
   }
 
-  function startCarry(held: Held): void {
+  function startCarry(held: Held, pivot?: GridPoint): void {
     const found = heldMod(held);
     if (found === null) return;
     closePicker();
-    const piece = held.kind === "piece" ? run.grid.find((candidate) => candidate.uid === held.uid) : undefined;
-    const spot = piece ?? firstFit(run.grid, found.mod, found.rotation) ?? { x: 0, y: 0, rotation: found.rotation };
-    carry = { held, mod: found.mod, rotation: spot.rotation, x: spot.x, y: spot.y };
+    const spot = placementFor(held, found);
+    carry = { held, mod: found.mod, rotation: spot.rotation, x: spot.x, y: spot.y, pivot: pivot ?? pivotFor(spot) };
     toast("Arrows move · R turns · Enter places · B banks · S sells");
     render();
   }
@@ -323,23 +336,26 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function moveCarry(dx: number, dy: number): void {
     if (carry === null) return;
     const [width, height] = shapeSize(shapeCells(REGISTRY[carry.mod].shape, carry.rotation));
-    carry.x = Math.min(BOARD_WIDTH - width, Math.max(0, carry.x + dx));
-    carry.y = Math.min(BOARD_HEIGHT - height, Math.max(0, carry.y + dy));
+    const nextX = Math.min(BOARD_WIDTH - width, Math.max(0, carry.x + dx));
+    const nextY = Math.min(BOARD_HEIGHT - height, Math.max(0, carry.y + dy));
+    carry.pivot = { x: carry.pivot.x + nextX - carry.x, y: carry.pivot.y + nextY - carry.y };
+    carry.x = nextX;
+    carry.y = nextY;
     drawCarry();
   }
 
   // Dragging.
 
-  function heldAt(target: EventTarget | null): { held: Held; origin: HTMLElement; anchor: number } | null {
+  function heldAt(target: EventTarget | null): { held: Held; origin: HTMLElement; cell: number } | null {
     if (!(target instanceof Element)) return null;
     const offer = target.closest<HTMLElement>(".offer[data-offer]");
-    if (offer && offer.dataset.sold !== "true") return { held: { kind: "offer", offer: Number(offer.dataset.offer) }, origin: offer, anchor: 0 };
+    if (offer && offer.dataset.sold !== "true") return { held: { kind: "offer", offer: Number(offer.dataset.offer) }, origin: offer, cell: Number(target.closest<HTMLElement>(".mod__cell")?.dataset.index ?? 0) };
     const slot = target.closest<HTMLElement>(".slot[data-bank]");
-    if (slot && slot.dataset.filled === "true") return { held: { kind: "bank", slot: Number(slot.dataset.bank) }, origin: slot, anchor: 0 };
+    if (slot && slot.dataset.filled === "true") return { held: { kind: "bank", slot: Number(slot.dataset.bank) }, origin: slot, cell: Number(target.closest<HTMLElement>(".mod__cell")?.dataset.index ?? 0) };
     const piece = target.closest<HTMLElement>(".piece[data-uid]");
     if (piece && !piece.classList.contains("piece--ghost")) {
       const cell = target.closest<HTMLElement>(".mod__cell");
-      return { held: { kind: "piece", uid: Number(piece.dataset.uid) }, origin: piece, anchor: Number(cell?.dataset.index ?? 0) };
+      return { held: { kind: "piece", uid: Number(piece.dataset.uid) }, origin: piece, cell: Number(cell?.dataset.index ?? 0) };
     }
     return null;
   }
@@ -348,15 +364,29 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
   }
 
-  function targetAt(x: number, y: number, current: Drag): Target | null {
+  function boardPointAt(x: number, y: number): GridPoint | null {
     const grid = gridBox.getBoundingClientRect();
-    if (inside(grid, x, y)) {
-      const cellWidth = grid.width / BOARD_WIDTH;
-      const cellHeight = grid.height / BOARD_HEIGHT;
-      const anchor = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-      const origin = { x: Math.floor((x - grid.left) / cellWidth) - anchor.x, y: Math.floor((y - grid.top) / cellHeight) - anchor.y };
+    if (!inside(grid, x, y)) return null;
+    return {
+      x: Math.floor((x - grid.left) / (grid.width / BOARD_WIDTH)),
+      y: Math.floor((y - grid.top) / (grid.height / BOARD_HEIGHT)),
+    };
+  }
+
+  function targetAt(x: number, y: number, current: Drag): Target | null {
+    const boardPoint = boardPointAt(x, y);
+    if (boardPoint !== null) {
+      const dx = boardPoint.x - current.pivot.x;
+      const dy = boardPoint.y - current.pivot.y;
+      current.placement = { ...current.placement, x: current.placement.x + dx, y: current.placement.y + dy };
+      current.pivot = boardPoint;
       const except = current.held.kind === "piece" ? current.held.uid : null;
-      return { kind: "grid", ...origin, legal: canPlace(run.grid, { mod: current.mod, rotation: current.rotation, ...origin }, except) };
+      return {
+        kind: "grid",
+        x: current.placement.x,
+        y: current.placement.y,
+        legal: canPlace(run.grid, current.placement, except),
+      };
     }
     for (const [slot, node] of bankSlots.entries()) {
       if (inside(node.getBoundingClientRect(), x, y)) {
@@ -371,7 +401,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function drawGhost(current: Drag): void {
     const grid = gridBox.getBoundingClientRect();
     const cellWidth = grid.width / BOARD_WIDTH;
-    const ghost = modArt(current.mod, current.rotation, "ghost");
+    const ghost = modArt(current.mod, current.placement.rotation, "ghost");
     ghost.style.setProperty("--cell", `${cellWidth}px`);
     current.ghost?.remove();
     current.ghost = ghost;
@@ -385,12 +415,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const grid = gridBox.getBoundingClientRect();
     const cellWidth = grid.width / BOARD_WIDTH;
     const cellHeight = grid.height / BOARD_HEIGHT;
-    const anchor = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
+    current.target = targetAt(current.x, current.y, current);
+    const anchor = { x: current.pivot.x - current.placement.x, y: current.pivot.y - current.placement.y };
     current.ghost.style.left = `${current.x - bounds.left - (anchor.x + 0.5) * cellWidth}px`;
     current.ghost.style.top = `${current.y - bounds.top - (anchor.y + 0.5) * cellHeight}px`;
-    current.target = targetAt(current.x, current.y, current);
     const target = current.target;
-    markCells(target?.kind === "grid" ? { mod: current.mod, rotation: current.rotation, x: target.x, y: target.y } : null, target?.kind === "grid" && target.legal);
+    markCells(target?.kind === "grid" ? current.placement : null, target?.kind === "grid" && target.legal);
     bankSlots.forEach((slot, index) => slot.classList.toggle("is-target", target?.kind === "bank" && target.slot === index));
     shop.classList.toggle("is-sell", target?.kind === "sell");
     if (current.held.kind !== "offer") {
@@ -423,7 +453,21 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (mod === null) return;
     event.preventDefault();
     hideTip();
-    drag = { held: found.held, mod: mod.mod, rotation: mod.rotation, anchor: found.anchor, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, moved: false, ghost: null, target: null, origin: found.origin };
+    const placement = placementFor(found.held, mod);
+    drag = {
+      held: found.held,
+      mod: mod.mod,
+      placement,
+      pivot: pivotFor(placement, found.cell),
+      startX: event.clientX,
+      startY: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+      ghost: null,
+      target: null,
+      origin: found.origin,
+    };
     if (found.held.kind !== "offer") shop.classList.add("is-selling");
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
@@ -446,12 +490,12 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function onPointerUp(): void {
     const finished = drag;
     if (finished === null) return;
-    const { held, moved, target, rotation, origin } = finished;
+    const { held, moved, target, placement, pivot, origin } = finished;
     endDrag();
     if (!moved) {
       // A tap: buy an offer into the bank, or pick up an owned mod to place it by tapping or keys.
       if (held.kind === "offer") apply(buy(run, held.offer), origin);
-      else startCarry(held);
+      else startCarry(held, pivot);
       return;
     }
     if (target === null) return;
@@ -459,7 +503,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       apply("blocked", origin);
       return;
     }
-    apply(drop(held, target, rotation), origin);
+    apply(drop(held, target, placement.rotation), origin);
   }
 
   function onPointerCancel(): void {
@@ -472,12 +516,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const held = carry.held;
     const cell = event.target.closest<HTMLElement>(".cell, .grid");
     if (cell && gridBox.contains(cell)) {
-      const grid = gridBox.getBoundingClientRect();
-      const cellWidth = grid.width / BOARD_WIDTH;
-      const cellHeight = grid.height / BOARD_HEIGHT;
-      const anchor = shapeCells(REGISTRY[carry.mod].shape, carry.rotation)[0];
-      carry.x = Math.floor((event.clientX - grid.left) / cellWidth) - anchor.x;
-      carry.y = Math.floor((event.clientY - grid.top) / cellHeight) - anchor.y;
+      const boardPoint = boardPointAt(event.clientX, event.clientY);
+      if (boardPoint === null) return false;
+      carry.x += boardPoint.x - carry.pivot.x;
+      carry.y += boardPoint.y - carry.pivot.y;
+      carry.pivot = boardPoint;
       event.preventDefault();
       placeCarry();
       return true;
@@ -505,11 +548,16 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
   function turnHeld(): void {
     if (drag?.moved) {
-      drag.rotation = nextRotation(drag.rotation);
+      const turned = turnAbout(drag.placement, drag.pivot);
+      if (turned !== null) drag.placement = turned;
       drawGhost(drag);
     } else if (carry !== null) {
-      carry.rotation = nextRotation(carry.rotation);
-      moveCarry(0, 0);
+      const turned = turnAbout({ mod: carry.mod, rotation: carry.rotation, x: carry.x, y: carry.y }, carry.pivot);
+      if (turned === null) return;
+      carry.rotation = turned.rotation;
+      carry.x = turned.x;
+      carry.y = turned.y;
+      drawCarry();
     }
   }
 
@@ -521,6 +569,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     }
     const found = heldAt(event.target);
     if (found === null || found.held.kind === "offer") return;
+    if (found.held.kind === "piece") {
+      const piece = run.grid.find((candidate) => candidate.uid === found.held.uid);
+      const pivot = boardPointAt(event.clientX, event.clientY);
+      if (piece === undefined || pivot === null || !cellsOf(piece).some(({ x, y }) => x === pivot.x && y === pivot.y)) return;
+      apply(rotate(run, sourceOf(found.held), pivot), found.origin);
+      return;
+    }
     apply(rotate(run, sourceOf(found.held)), found.origin);
   }
 
@@ -574,7 +629,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       if (found === null) return;
       event.preventDefault();
       if (found.held.kind === "offer") apply(buy(run, found.held.offer), found.origin);
-      else startCarry(found.held);
+      else {
+        const mod = heldMod(found.held);
+        if (mod !== null) {
+          const spot = placementFor(found.held, mod);
+          startCarry(found.held, pivotFor(spot, found.cell));
+        }
+      }
     }
   }
 
