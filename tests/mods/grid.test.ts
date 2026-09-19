@@ -91,6 +91,7 @@ describe("shapes", () => {
 describe("the grid", () => {
   it("is three lanes: Strike, Tech and Block from the top", () => {
     expect(LANES).toEqual(["strike", "tech", "block"]);
+    expect(BOARD_HEIGHT).toBe(LANES.length);
   });
 
   it("accepts a placement only when every cell is on the board and empty", () => {
