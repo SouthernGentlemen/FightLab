@@ -86,9 +86,10 @@ Arc → Shock, Void → Poison. Neutral applies none. The two hybrids (`black-ba
 *Instead:* any status on any type.
 
 **D5 — rarity materials retire.** *Gates tasks-006, tasks-016.* Iron, Bronze, Silver, Gold and
-Diamond — the star colours, the gem badge on every piece and the tile's colour band — go. Rarity is
-the colour of the name, plus labelled chips in the filter and the accessible label. Stars become
-neutral pips. Prices by rarity are unchanged. *Instead:* keep materials on the stars only.
+Diamond — the star colours, the tile's colour band, and the gem markers in the rarity filter and the
+shop's odds strip — go. Rarity is the colour of the name, plus labelled chips in the filter and the
+accessible label. Stars become neutral pips. Prices by rarity are unchanged. *Instead:* keep materials
+on the stars only.
 
 **D6 — mod surfaces go dark.** *Gates tasks-016, tasks-021.* That covers the whole catalogue, and in
 Prep the shop offers and the mod tooltip. The board and bank are decided by screenshot in
@@ -232,8 +233,8 @@ running right and y running down. There is no flipping, so J and L stay differen
 ```text
 tetromino-i  ####     tetromino-o  ##    tetromino-t  ###    tetromino-s  .##    tetromino-z  ##.
                                    ##                 .#.                 ##.                 .##
-tetromino-j  #..      tetromino-l  ..#   triomino-i   ###    triomino-l   ##     domino  ##   single  #
-             ###                   ###                                    #.
+tetromino-j  #..      tetromino-l  ..#   triomino-i   ###    triomino-l   #.     domino  ##   single  #
+             ###                   ###                                    ##
 ```
 
 ```ts
@@ -534,7 +535,7 @@ start. Pass 2 through Pass 5 depend only on D4, D5 and D9.
 - On the Armory tile, delete the `×N` owned count, `tile__type`, `tile__rarity` and the material band
   (`modtile.ts:32-35`).
 - On the card and in the tooltip, delete `rarityLine` and `tagChips` (`armorycard.ts:79-81`,
-  `prep.ts:632`), and delete the `.gem` badge (`styles.css:168-175`).
+  `prep.ts:632`). The gem markers go with the materials in tasks-016.
 - Add one accessible label, `modLabel(definition, stars?)`, for example "Cinder Edge, Solar, Strike
   affinity, domino, Uncommon, 2 stars". Every tile, piece, offer and bank slot uses it.
 - Done when a test shows `modLabel` names the type, affinity, shape, rarity and stars, and the visible
@@ -562,6 +563,10 @@ start. Pass 2 through Pass 5 depend only on D4, D5 and D9.
 - Remap the registry: mono → `single`, duo → `domino`, i3 → `triomino-i`, l3 → `triomino-l`,
   o4 → `tetromino-o`, t4 → `tetromino-t`, and **l4 → `tetromino-j`**, because Thunderhead's footprint
   is a J.
+- Every footprint the registry already uses keeps its orientation and cell order (the old `l3` is
+  `#. / ##`), so no placement, save or port index moves before tasks-015.
+- The grid test that says every library shape fits a 3 × 3 board (`tests/mods/grid.test.ts:24-35`)
+  narrows to the shapes the registry uses, until tasks-032 restores it on 4 × 4.
 - Done when a test pins each footprint's cell set and size. I, S, Z and L exist before any mod uses
   them.
 
