@@ -110,9 +110,11 @@ Diamond — the star colours, the gem badge on every piece and the tile's colour
 the colour of the name, plus labelled chips in the filter and the accessible label. Stars become
 neutral pips. Prices by rarity are unchanged. *Instead:* keep materials on the stars only.
 
-**D6 — confirmed: mod surfaces go dark.** *Jacob, 2026-09-18. Gates tasks-016 and tasks-021.* That covers the whole catalogue, and in
-Prep the shop offers and the mod tooltip. The board and bank are decided by screenshot in
-`tasks-021`. Title, Fight and Payday keep their look. The rarity colours the spec asks for
+**D6 — confirmed: mod surfaces go dark, including the board and bank.** *Jacob, 2026-09-18; board/bank settled by the tasks-021
+1920 × 1080 screenshots on 2026-09-19. Gates tasks-016 and tasks-021.* That covers the whole catalogue,
+and in Prep the bank slots, board, shop offers and mod tooltip. The screenshot keeps the board and bank
+dark too: the saturated piece colours stay dominant and the empty placement surfaces recede instead of
+competing with them. Title, Fight and Payday keep their look. The rarity colours the spec asks for
 (near-white, mint, cyan, gold) cannot reach 4.5 : 1 on today's white paper. *Instead:* keep paper
 and darken the rarity colours, which then read as muddy and crowd the type colours.
 
@@ -1009,7 +1011,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-018 | The palette test | 6 | — | done |
 | tasks-019 | Icons in tokens, and the icon treatment | 6 | — | done |
 | tasks-020 | States | 6 | — | done |
-| tasks-021 | The palette on Prep's mod surfaces | 6 | D6 ✓ | todo |
+| tasks-021 | The palette on Prep's mod surfaces | 6 | D6 ✓ | done |
 | tasks-022 | The card's view model | 7 | — | todo |
 | tasks-023 | The card | 7 | — | todo |
 | tasks-024 | Icon placement: centre or anchor | 7 | — | todo |
