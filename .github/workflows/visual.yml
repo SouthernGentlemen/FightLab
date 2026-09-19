@@ -161,6 +161,7 @@ jobs:
               repeatedTileLabels: tile.querySelectorAll(".tile__owned, .tile__type, .tile__rarity").length,
               tileMaterial: tile.hasAttribute("data-material"),
               repeatedCardLabels: card.querySelectorAll(".card__rarity, .tagchips").length,
+              statBlocks: card.querySelectorAll(".card__table, .card__profile").length,
               cardText: card.textContent ?? "",
             };
           })()`);
@@ -173,6 +174,7 @@ jobs:
             throw new Error("Armory tile still exposes repeated labels or a material-band hook");
           }
           if (armoryState.repeatedCardLabels !== 0) throw new Error("Armory card still repeats rarity/type labels");
+          if (armoryState.statBlocks !== 0) throw new Error("Armory card still renders energy/number stat blocks");
           if (/\bports?\b|Orientation/i.test(armoryState.cardText)) {
             throw new Error(`Armory card still exposes port/orientation text: ${armoryState.cardText}`);
           }
@@ -210,9 +212,12 @@ jobs:
             const art = document.querySelector(".shop .mod[data-type=solar][data-affinity=strike]");
             const offer = art?.closest(".offer");
             if (!tip || !offer) return null;
+            const stats = document.querySelector(".bars__stats");
             return {
               tipText: tip.textContent ?? "",
               repeatedMeta: tip.querySelectorAll(".tip__meta").length,
+              energyCounters: document.querySelectorAll(".levels, .level, [data-element]").length,
+              statsText: stats?.textContent ?? "",
               offerLabel: offer.getAttribute("aria-label") ?? "",
             };
           })()`);
@@ -221,6 +226,10 @@ jobs:
             throw new Error(`Prep tooltip still exposes port text: ${prepState.tipText}`);
           }
           if (prepState.repeatedMeta !== 0) throw new Error("Prep tooltip still repeats type/rarity metadata");
+          if (prepState.energyCounters !== 0) throw new Error("Prep still renders element counters or their tooltip targets");
+          if (!/^♥ \d+ health$/.test(prepState.statsText) || /Charge|Heat|Void/.test(prepState.statsText)) {
+            throw new Error(`Prep stats still expose energy state: ${prepState.statsText}`);
+          }
           if (!/^[^,]+, (Solar|Arc|Void|Neutral), (Strike|Tech|Block) affinity, .+, (Common|Uncommon|Rare|Super Rare|Legendary), 1 star$/.test(prepState.offerLabel)) {
             throw new Error(`Prep offer accessible label is incomplete: ${prepState.offerLabel}`);
           }
