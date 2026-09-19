@@ -540,7 +540,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
   the per-mod glyph on pieces (`modIcon`).
 - Done when no split cell remains anywhere, with screenshots of the Armory and Prep.
 
-#### tasks-005 — Remove port drawing and port text
+#### tasks-005 — Remove port drawing and port text · **done**
 *Spec §2.*
 - Delete the pills (`kit.ts:75-77`, `styles.css:538-548`).
 - Delete the Armory card's ports panel, Rotate button and "Orientation" line
@@ -992,7 +992,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-002 | Confirm the decisions | 1 | — | done |
 | tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | done |
 | tasks-004 | One type colour per piece, one action icon | 2 | — | done |
-| tasks-005 | Remove port drawing and port text | 2 | — | todo |
+| tasks-005 | Remove port drawing and port text | 2 | — | done |
 | tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | todo |
 | tasks-007 | Remove the energy UI and the stat blocks | 2 | — | todo |
 | tasks-008 | The eleven shapes | 3 | — | todo |
