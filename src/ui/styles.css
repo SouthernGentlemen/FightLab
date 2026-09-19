@@ -266,7 +266,6 @@ p, h1, h2 { margin: 0; }
 }
 .slot[data-filled="true"] { cursor: grab; }
 .slot.is-target { border-color: var(--ink); border-style: dashed; background: #fff7d6; }
-.slot.is-carried { border-color: var(--rose); border-style: dashed; }
 
 .prep__mods { left: 52rem; top: 28rem; width: 56rem; height: 36.6rem; }
 .prep__mods .panel__body { padding: 1.4rem 2rem; }
