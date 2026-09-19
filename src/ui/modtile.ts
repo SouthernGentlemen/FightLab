@@ -1,4 +1,3 @@
-import { RARITY } from "../mods/rarity.ts";
 import type { ModDefinition } from "../mods/registry.ts";
 import type { Stars } from "../mods/stars.ts";
 import { h, icon } from "./dom.ts";
@@ -22,15 +21,15 @@ export function modSquare(definition: ModDefinition, className = "square"): HTML
 
 /** One catalogue tile: shape, stars and the mod name. Everything else is in its accessible label. */
 export function modTile(definition: ModDefinition, stars: Stars, owned: number): HTMLButtonElement {
-  const material = RARITY[definition.rarity].material;
   const node = h("button", {
     type: "button",
     class: "tile",
     "data-mod": definition.id,
+    "data-rarity": definition.rarity,
     "aria-label": modLabel(definition, stars),
   },
   modSquare(definition, "square tile__square"),
-  h("span", { class: "tile__side" }, starRow(stars, material, "stars tile__stars")),
+  h("span", { class: "tile__side" }, starRow(stars, "stars tile__stars")),
   h("b", { class: "tile__name" }, definition.name));
   node.classList.toggle("is-unowned", owned === 0);
   return node;
