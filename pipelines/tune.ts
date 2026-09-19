@@ -92,7 +92,7 @@ export function botRun(seed: number, maxDays = 40): BotRun {
     }
     for (let rerolls = 0; ; ) {
       const choices = run.shop.offers.flatMap((mod, offer) => {
-        if (mod === null || priceOf(mod) > run.money || REGISTRY[mod].tags.includes("neutral")) return [];
+        if (mod === null || priceOf(mod) > run.money || REGISTRY[mod].type === "neutral") return [];
         const spot = firstFit(run.grid, mod);
         return spot ? [{ offer, price: priceOf(mod), to: { grid: { x: spot.x, y: spot.y, rotation: spot.rotation } } }] : [];
       }).sort((a, b) => b.price - a.price);
