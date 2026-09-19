@@ -548,7 +548,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - The port model itself goes in tasks-015, so this changes no numbers.
 - Done when nothing on screen mentions a port.
 
-#### tasks-006 — Remove the labels the shape already says
+#### tasks-006 — Remove the labels the shape already says · **done**
 *Spec §13, §17, §19, §21 · D5.*
 - On the Armory tile, delete the `×N` owned count, `tile__type`, `tile__rarity` and the material band
   (`modtile.ts:32-35`).
@@ -993,7 +993,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | done |
 | tasks-004 | One type colour per piece, one action icon | 2 | — | done |
 | tasks-005 | Remove port drawing and port text | 2 | — | done |
-| tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | todo |
+| tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | done |
 | tasks-007 | Remove the energy UI and the stat blocks | 2 | — | todo |
 | tasks-008 | The eleven shapes | 3 | — | todo |
 | tasks-009 | Board width and height | 3 | — | todo |
