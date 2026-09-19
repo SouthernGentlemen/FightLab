@@ -1,6 +1,6 @@
 # Mix Up — mod catalogue simplification, 64-mod rebuild and heavy colour pass
 
-**Status: planned.** Only `tasks-001` (the audit, §4) is done. This is the plan for the next pass over
+**Status: planned.** `tasks-001` (the audit, §4) and `tasks-002` (the decisions, §3) are done. This is the plan for the next pass over
 Mix Up's mods — the game in this repository, FightLab. [`AGENTS.md`](AGENTS.md) is the contract every
 task is held to; [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) records what is built and measured today;
 [`docs/MODS.md`](docs/MODS.md) describes the mod system this pass replaces.
@@ -25,12 +25,13 @@ hierarchy, filtering, the selected-item pane and readability — not something t
   id. Open a pull request to `main`, merge it remotely once its gates are satisfied, then delete the
   remote branch. **There is no separate push step.**
 - **Remote verification is a hard prerequisite for implementation work.** `npm run verify` remains
-  the canonical executable gate, but FightLab currently depends on `boneyard: file:../Boneyard` and
-  the pinned Boneyard checkout is not available to a GitHub runner. Before an implementation task may
-  claim "verify green" or merge under this plan, the exact pinned Boneyard contents must be made
-  remotely retrievable without weakening C1, and a GitHub Actions workflow must run install plus
-  `npm run verify` on the task branch / pull request. Until that remote gate exists, planning- or
-  documentation-only changes may land after source review, but code-changing tasks stop before merge.
+  the canonical executable gate. FightLab keeps `boneyard: file:../Boneyard`; the remote source for
+  that sibling is `SouthernGentlemen/Boneyard`, and `boneyard.pin.json` names the exact commit and
+  digest FightLab accepts. CI checks out FightLab and that exact Boneyard commit as sibling
+  directories, gives the private Boneyard checkout a credential with read access, installs FightLab,
+  and runs `npm run verify`. If the remote verify workflow is absent when an implementation task
+  starts, add that workflow first on its own remote ops change. No implementation branch merges until
+  the remote verify check is green.
 - A task lists the files it touches, what it deletes and when it is done. Done always includes the
   tests the task names. A task that changes what is drawn also needs **remote** visual evidence at
   1920 × 1080 (`AGENTS.md`: verify visually), from a GitHub-hosted preview, artifact or equivalent
@@ -55,7 +56,7 @@ hierarchy, filtering, the selected-item pane and readability — not something t
    large shape in its type colour, at most one action icon, and the name in its rarity colour.
 2. Selecting a card fills a large detail pane with the name, the big shape, the icon, the ★ level and
    a few lines of rules.
-3. `FILTER: NONE` opens a compact modal with Type, Action, Size, Rarity and Clear.
+3. `FILTER: NONE` opens a compact modal with Type, Action, Rarity and Clear.
 4. Mods interact only through orthogonal adjacency. Ports, links and the Heat / Charge / Void
    economy are gone from code, data, UI, tests and docs.
 5. Each of the 11 shape families is one canonical footprint. Rotation belongs to the placed mod and
@@ -68,11 +69,11 @@ hierarchy, filtering, the selected-item pane and readability — not something t
 8. Buy, place, move, rotate, bank, sell, save, load, fight, the catalogue and its filters all run on
    the new model, and the screens hold up at 1920 × 1080, 2560 × 1440 and 3840 × 2160.
 
-## 3. Decisions — confirm or veto before the tasks they gate
+## 3. Decisions — confirmed
 
 The spec settles most questions. These are the ones the code raised, each with the recommendation
-the tasks are written against. D1 is done, and Jacob has confirmed D2, D4 and D11. `tasks-002`
-remains open for D3 and D5–D10.
+the tasks are written against. D1 is done, and Jacob confirmed D2–D11 on 2026-09-18. `tasks-002`
+is complete; no decision gate remains open.
 
 **D1 — done: the run's plan moved to [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md).** This Mac's filesystem
 is case-insensitive, so `implementation_plan.md` *is* `IMPLEMENTATION_PLAN.md`. Writing this file in
@@ -89,7 +90,7 @@ board has a place for every orientation of every piece.
   action colours on screen.
 - Per-cell power moves into the mods themselves: the spec's *occupied cell count*.
 
-**D3 — the Heat / Charge / Void economy retires now.** *Gates tasks-040.* That means the pools,
+**D3 — confirmed: the Heat / Charge / Void economy retires now.** *Jacob, 2026-09-18. Gates tasks-040.* That means the pools,
 Charge capacity and the `generate`, `leech`, `convert`, `spend`, `sink`, `refund`, `accrue` and
 `capacity` effects, plus `LINK_BONUS`. Burn, Shock and Poison stay as **statuses**, and the kernel's
 generic hooks (damage bonus, parry heal, exposure, afflictions) stay exactly as they are. The spec
@@ -103,34 +104,34 @@ status applies its type's: Solar → Burn, Arc → Shock, Void → Poison. Neutr
 hybrids (`black-battery` VOID / ARC and `heat-death` VOID / SOLAR) retire. This gives each type a
 mechanical meaning without energy. *Instead:* any status on any type.
 
-**D5 — rarity materials retire.** *Gates tasks-006, tasks-016.* Iron, Bronze, Silver, Gold and
+**D5 — confirmed: rarity materials retire.** *Jacob, 2026-09-18. Gates tasks-006 and tasks-016.* Iron, Bronze, Silver, Gold and
 Diamond — the star colours, the gem badge on every piece and the tile's colour band — go. Rarity is
 the colour of the name, plus labelled chips in the filter and the accessible label. Stars become
 neutral pips. Prices by rarity are unchanged. *Instead:* keep materials on the stars only.
 
-**D6 — mod surfaces go dark.** *Gates tasks-016, tasks-021.* That covers the whole catalogue, and in
+**D6 — confirmed: mod surfaces go dark.** *Jacob, 2026-09-18. Gates tasks-016 and tasks-021.* That covers the whole catalogue, and in
 Prep the shop offers and the mod tooltip. The board and bank are decided by screenshot in
 `tasks-021`. Title, Fight and Payday keep their look. The rarity colours the spec asks for
 (near-white, mint, cyan, gold) cannot reach 4.5 : 1 on today's white paper. *Instead:* keep paper
 and darken the rarity colours, which then read as muddy and crowd the type colours.
 
-**D7 — a fresh registry of 64 with new ids; save version 4 discards older saves.** *Gates tasks-039,
+**D7 — confirmed: a fresh registry of 64 with new ids; save version 4 discards older saves.** *Jacob, 2026-09-18. Gates tasks-039 and
 tasks-040.* This follows C11's precedent from version 2. The hand-written `description` and
 `visual.glyph` retire: rules text is generated from the effect, and the icon comes from the
 affinity. Only a handful of concepts survive (Piggy Bank, Coupon, Crowd Pleaser, Amplifier), and they
 may keep their names. *Instead:* migrate old ids, which would then name different mods.
 
-**D8 — four filter groups: Type, Action (including None), Size and Rarity.** *Gates tasks-027.*
-Choices within a group combine with OR, groups with AND, and Clear empties all of them. Text search
-and "owned only" go. *Instead:* keep search as a fifth control.
+**D8 — confirmed: three filter groups — Type, Action (including None) and Rarity.** *Jacob,
+2026-09-18. Gates tasks-027.* There is no Size filter. Choices within a group combine with OR,
+groups with AND, and Clear empties all of them. Text search and "owned only" go.
 
-**D9 — rotation in degrees, turned about the cursor.** *Gates tasks-011 to tasks-013.* Rotation is
+**D9 — confirmed: rotation in degrees, turned about the cursor.** *Jacob, 2026-09-18. Gates tasks-011 to tasks-013.* Rotation is
 stored as 0 / 90 / 180 / 270 on the placed mod and normalised to the piece's distinct orientations. A
 held piece turns about the cell under the cursor. The mouse wheel stops rotating; right click and R
 remain. Today rotation is a quarter-turn index and turns about the top-left of the bounding box, and
 the wheel turns too. *Instead:* keep quarter turns internally.
 
-**D10 — catalogue UI tests run in happy-dom.** *Gates tasks-042.* `happy-dom` becomes a dev-only
+**D10 — confirmed: catalogue UI tests run in happy-dom.** *Jacob, 2026-09-18. Gates tasks-042.* `happy-dom` becomes a dev-only
 dependency, used per file through `// @vitest-environment happy-dom`. The spec asks for render,
 selection and filter tests (spec §41), and Vitest runs in Node with no DOM today. *Instead:* test pure
 view models only, and leave the rest to screenshots.
@@ -510,11 +511,9 @@ is done. Every implementation task ends green under the **remote** `npm run veri
 *Spec §43 pass 1.* The audit is §4: what is authoritative today, every consumer of the old port,
 size, colour, tag, lane and energy model, and the spec terms with no counterpart in the code.
 
-#### tasks-002 — Confirm the decisions
-*Owner: Jacob.* D2 (the 4 × 4 board), D4 (one type plus optional affinity) and D11 (more
-tetrominoes) are confirmed. Confirm, change or veto D3 and D5–D10 in §3. Any change is written back
-into §3, and into the tasks it gates, before those tasks start. Pass 2 through Pass 5 depend only on
-D4, D5 and D9.
+#### tasks-002 — Confirm the decisions · **done**
+*Owner: Jacob.* D2–D11 are confirmed in §3. D8 was confirmed with one change from the proposal:
+the Armory has no Size filter. All downstream tasks and the task index reflect those decisions.
 
 ### Pass 2 — Remove visual clutter
 
@@ -771,7 +770,7 @@ D4, D5 and D9.
 #### tasks-027 — The filter model
 *Spec §23 · D8.*
 - `src/mods/armory.ts` gains:
-  - `CatalogFilter`: four sets — types; affinities, with None as a value; size classes; rarities;
+  - `CatalogFilter`: three sets — types; affinities, with None as a value; rarities;
   - `NO_FILTER`;
   - `matches`: OR within a group, AND across groups;
   - `filterSummary`: `NONE`, or the number of choices made.
@@ -785,11 +784,10 @@ D4, D5 and D9.
   groups:
   - TYPE: chips in the type colours;
   - ACTION: Strike, Tech and Block with their icons, and None;
-  - SIZE: 4-cell, 3-cell, 2-cell and 1-cell, each with a small footprint;
   - RARITY: chips labelled and coloured by rarity.
 - CLEAR sits at the bottom. The grid behind updates as each chip is toggled.
 - Escape closes the modal before the catalogue, and focus stays inside the modal.
-- Done when screenshots with choices in three groups are checked.
+- Done when screenshots with choices in all three groups are checked.
 
 ### Pass 10 — The 64-mod catalogue
 
@@ -991,32 +989,32 @@ them. There are no directories for them (`AGENTS.md`).
 | Task | Title | Pass | Gated by | Status |
 | --- | --- | --- | --- | --- |
 | tasks-001 | Audit the mod system | 1 | — | done |
-| tasks-002 | Confirm the decisions | 1 | — | in progress |
+| tasks-002 | Confirm the decisions | 1 | — | done |
 | tasks-003 | Split tags into type and affinity | 2 | D4 ✓ | todo |
 | tasks-004 | One type colour per piece, one action icon | 2 | — | todo |
 | tasks-005 | Remove port drawing and port text | 2 | — | todo |
-| tasks-006 | Remove the labels the shape already says | 2 | D5 | todo |
+| tasks-006 | Remove the labels the shape already says | 2 | D5 ✓ | todo |
 | tasks-007 | Remove the energy UI and the stat blocks | 2 | — | todo |
 | tasks-008 | The eleven shapes | 3 | — | todo |
 | tasks-009 | Board width and height | 3 | — | todo |
 | tasks-010 | Orientation math, and its tests | 4 | — | todo |
-| tasks-011 | Degrees on the placed mod | 4 | D9 | todo |
-| tasks-012 | Turning about the cursor | 4 | D9 | todo |
-| tasks-013 | Controls | 4 | D9 | todo |
+| tasks-011 | Degrees on the placed mod | 4 | D9 ✓ | todo |
+| tasks-012 | Turning about the cursor | 4 | D9 ✓ | todo |
+| tasks-013 | Controls | 4 | D9 ✓ | todo |
 | tasks-014 | The adjacency primitive | 5 | — | todo |
 | tasks-015 | Adjacency replaces ports | 5 | — | todo |
-| tasks-016 | The token set | 6 | D5, D6 | todo |
+| tasks-016 | The token set | 6 | D5 ✓, D6 ✓ | todo |
 | tasks-017 | Choose the palette as one system | 6 | — | todo |
 | tasks-018 | The palette test | 6 | — | todo |
 | tasks-019 | Icons in tokens, and the icon treatment | 6 | — | todo |
 | tasks-020 | States | 6 | — | todo |
-| tasks-021 | The palette on Prep's mod surfaces | 6 | D6 | todo |
+| tasks-021 | The palette on Prep's mod surfaces | 6 | D6 ✓ | todo |
 | tasks-022 | The card's view model | 7 | — | todo |
 | tasks-023 | The card | 7 | — | todo |
 | tasks-024 | Icon placement: centre or anchor | 7 | — | todo |
 | tasks-025 | The catalogue screen | 7 | — | todo |
 | tasks-026 | The detail pane | 8 | — | todo |
-| tasks-027 | The filter model | 9 | D8 | todo |
+| tasks-027 | The filter model | 9 | D8 ✓ | todo |
 | tasks-028 | The filter modal | 9 | — | todo |
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
@@ -1028,10 +1026,10 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-036 | Author Void (16) | 10 | D11 ✓ | todo |
 | tasks-037 | Author Neutral (16) | 10 | D11 ✓ | todo |
 | tasks-038 | Tests stop naming mods | 10 | — | todo |
-| tasks-039 | Swap to the 64 | 10 | D7 | todo |
-| tasks-040 | Delete the energy model | 10 | D3, D7 | todo |
+| tasks-039 | Swap to the 64 | 10 | D7 ✓ | todo |
+| tasks-040 | Delete the energy model | 10 | D3 ✓, D7 ✓ | todo |
 | tasks-041 | Close the model tests | 11 | — | todo |
-| tasks-042 | Catalogue DOM tests | 11 | D10 | todo |
+| tasks-042 | Catalogue DOM tests | 11 | D10 ✓ | todo |
 | tasks-043 | Accessibility | 11 | — | todo |
 | tasks-044 | A whole run, headless | 12 | — | todo |
 | tasks-045 | C9 and determinism on the new model | 12 | — | todo |
