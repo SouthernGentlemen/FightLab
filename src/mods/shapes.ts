@@ -64,6 +64,69 @@ export function sizeOf(shape: ModShape): number {
   return shape.cells.length;
 }
 
+/** Degree rotations used by the canonical orientation API. The placed-mod model moves to these in tasks-011. */
+export type DegreeRotation = 0 | 90 | 180 | 270;
+export const DEGREE_ROTATIONS: readonly DegreeRotation[] = Object.freeze([0, 90, 180, 270]);
+
+export interface ShapeOrientation {
+  readonly rotation: DegreeRotation;
+  readonly cells: readonly GridPoint[];
+}
+
+/** Shift a footprint to min x = min y = 0 and give it a canonical reading-order cell order. */
+export function normalise(cells: readonly GridPoint[]): readonly GridPoint[] {
+  if (cells.length === 0) return Object.freeze([]);
+  const minX = Math.min(...cells.map(({ x }) => x));
+  const minY = Math.min(...cells.map(({ y }) => y));
+  return Object.freeze(
+    cells
+      .map(({ x, y }) => ({ x: x - minX, y: y - minY }))
+      .sort((a, b) => a.y - b.y || a.x - b.x)
+      .map(({ x, y }) => Object.freeze({ x, y })),
+  );
+}
+
+/** Turn a footprint one quarter clockwise, then canonicalise its position and cell order. */
+export function turnClockwise(cells: readonly GridPoint[]): readonly GridPoint[] {
+  return normalise(cells.map(({ x, y }) => ({ x: -y, y: x })));
+}
+
+function rawCellsAt(shape: ModShape, rotation: DegreeRotation): readonly GridPoint[] {
+  let cells = normalise(shape.cells);
+  for (let turn = 0; turn < rotation / 90; turn++) cells = turnClockwise(cells);
+  return cells;
+}
+
+function cellKey(cells: readonly GridPoint[]): string {
+  return cells.map(({ x, y }) => `${x},${y}`).join(";");
+}
+
+/** Distinct orientations in 0/90/180/270 order, keeping the first rotation that makes each cell set. */
+export function orientations(shape: ModShape): readonly ShapeOrientation[] {
+  const seen = new Set<string>();
+  const distinct: ShapeOrientation[] = [];
+  for (const rotation of DEGREE_ROTATIONS) {
+    const cells = rawCellsAt(shape, rotation);
+    const key = cellKey(cells);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    distinct.push(Object.freeze({ rotation, cells }));
+  }
+  return Object.freeze(distinct);
+}
+
+/** Collapse a degree rotation to the first rotation that produces the same canonical footprint. */
+export function normaliseRotation(shape: ModShape, rotation: DegreeRotation): DegreeRotation {
+  const key = cellKey(rawCellsAt(shape, rotation));
+  return orientations(shape).find((orientation) => cellKey(orientation.cells) === key)!.rotation;
+}
+
+/** Canonical cells for a degree rotation, with symmetrical duplicates collapsed to their first orientation. */
+export function cellsAt(shape: ModShape, rotation: DegreeRotation): readonly GridPoint[] {
+  const canonical = normaliseRotation(shape, rotation);
+  return orientations(shape).find((orientation) => orientation.rotation === canonical)!.cells;
+}
+
 /** Quarter turns clockwise. There is no flipping: an L and a J are different pieces. */
 export type Rotation = 0 | 1 | 2 | 3;
 export const ROTATIONS: readonly Rotation[] = [0, 1, 2, 3];
