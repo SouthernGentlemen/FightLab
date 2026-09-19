@@ -162,7 +162,7 @@ if (valid !== 3) throw new Error(`Expected 3 valid carry cells, got ${valid}`);
 await shot("controls-valid-carry");
 
 await clickPointer('.cell[data-x="0"][data-y="0"]');
-await waitFor('Boolean(document.querySelector('.piece[data-uid="1"]')) && document.querySelector(".carried")?.hidden === true', "valid placement");
+await waitFor(`Boolean(document.querySelector(\'.piece[data-uid="1"]\')) && document.querySelector(".carried")?.hidden === true`, "valid placement");
 
 await clickPointer('.piece[data-uid="1"] .mod__cell[data-index="0"]');
 await moveToCell(2, 0);
