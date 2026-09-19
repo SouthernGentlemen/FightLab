@@ -176,10 +176,10 @@ jobs:
             const art = document.querySelector(".shop .mod[data-type=solar][data-affinity=strike]");
             const offer = art?.closest(".offer");
             if (!offer) return false;
-            offer.focus();
+            offer.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
             return true;
           })()`);
-          if (!tipOpened) throw new Error("Could not focus the Solar Strike offer for tooltip evidence");
+          if (!tipOpened) throw new Error("Could not hover the Solar Strike offer for tooltip evidence");
           await waitFor(".tip:not([hidden])");
           await sleep(250);
           const tipText = await evaluate('document.querySelector(".tip:not([hidden])")?.textContent ?? ""');
