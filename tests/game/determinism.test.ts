@@ -10,13 +10,13 @@ import type { BattleSpeed } from "../../src/game/clock.ts";
 import { fightFor } from "../../src/game/fight.ts";
 import { DEFAULT_MATCH, Match } from "../../src/game/match.ts";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
-import { pick } from "../mods/fixtures.ts";
+import { pick, registryFixture } from "../mods/fixtures.ts";
 import type { MatchConfig } from "../../src/game/match.ts";
 import { buy, beginFight, newRun } from "../../src/run/run.ts";
 
 const FRAME_MS = 1000 / 60;
 const DOMINO = pick({ size: 2 });
-const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const STRAIGHT_TRIOMINO = registryFixture(DEFINITIONS.find(({ shape }) => shape === "triomino-i"));
 const SINGLE = pick({ size: 1 });
 
 /** Whether the player mixes up at a pause, decided from what the match shows. */
