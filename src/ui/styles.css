@@ -267,9 +267,9 @@ p, h1, h2 { margin: 0; }
 .slot[data-filled="true"] { cursor: grab; }
 .slot.is-target { border-color: var(--border-selected); border-style: dashed; background: var(--surface-selected); }
 
-.prep__mods { left: 52rem; top: 28rem; width: 56rem; height: 36.6rem; }
-.prep__mods .panel__body { padding: 1.4rem 2rem; }
-.board { display: flex; justify-content: center; gap: 1.6rem; --cell: 9.6rem; }
+.prep__mods { left: .8rem; top: 10rem; width: 40.6rem; height: 54.6rem; }
+.prep__mods .panel__body { display: grid; place-items: center; padding: 1.4rem 2rem; }
+.board { display: flex; justify-content: center; gap: 1.6rem; --cell: 8.9rem; }
 .grid {
   position: relative; display: grid; grid-template-columns: repeat(var(--board-w), var(--cell)); grid-template-rows: repeat(var(--board-h), var(--cell));
   outline: .35rem solid var(--border-strong); border-radius: .4rem; background: var(--surface-root);
@@ -529,7 +529,7 @@ p, h1, h2 { margin: 0; }
 }
 .runend__grid {
   position: relative; display: grid; grid-template-columns: repeat(var(--board-w), var(--cell));
-  grid-template-rows: repeat(var(--board-h), var(--cell)); --cell: 6rem;
+  grid-template-rows: repeat(var(--board-h), var(--cell)); --cell: 4.5rem;
   outline: .35rem solid var(--border-strong); background: var(--surface-root);
 }
 .runend__grid .cell { height: var(--cell); border-color: var(--border-subtle); background: var(--surface-card); }
