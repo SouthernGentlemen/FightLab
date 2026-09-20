@@ -70,7 +70,7 @@ await evaluate(`(async () => {
   const { newRun } = await import("/src/run/run.ts");
   const { writeSave } = await import("/src/run/save.ts");
   const run = newRun(12012);
-  run.grid = Object.freeze([{ uid: 1, mod: "chain-circuit", stars: 1, rotation: 0, x: 0, y: 0 }]);
+  run.grid = Object.freeze([{ uid: 1, mod: "pulse-line", stars: 1, rotation: 0, x: 0, y: 0 }]);
   run.nextUid = 2;
   writeSave(run, null, localStorage);
   return true;
