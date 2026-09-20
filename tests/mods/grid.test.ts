@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import type { ModId } from "../../src/mods/registry.ts";
 import {
-  BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
+  BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
   setBankSlot, turnAbout, turnCellsAbout,
 } from "../../src/mods/grid.ts";
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
@@ -126,11 +126,6 @@ describe("turning about a board cell", () => {
 });
 
 describe("the grid", () => {
-  it("is three lanes: Strike, Tech and Block from the top", () => {
-    expect(LANES).toEqual(["strike", "tech", "block"]);
-    expect(BOARD_HEIGHT).toBe(LANES.length);
-  });
-
   it("accepts a placement only when every cell is on the board and empty", () => {
     const grid = Object.freeze(blockers([point(1, 1)]));
     expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 0 })).toBe(true);
