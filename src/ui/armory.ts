@@ -45,11 +45,9 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
 
   const filterButton = button("FILTER: NONE", "armory__top-control", () => {
     filterModal.show(filterButton);
-    filterButton.setAttribute("aria-expanded", "true");
   }, {
     "data-control": "filter",
     "aria-haspopup": "dialog",
-    "aria-expanded": "false",
   });
   const clearButton = button("CLEAR", "armory__top-control", () => {
     filter = NO_FILTER;
@@ -119,9 +117,7 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
 
   const onKey = (event: KeyboardEvent): void => {
     if (filterModal.open) {
-      if (filterModal.handleKey(event) && !filterModal.open) {
-        filterButton.setAttribute("aria-expanded", "false");
-      }
+      filterModal.handleKey(event);
       return;
     }
     if (event.key === "Escape") {
