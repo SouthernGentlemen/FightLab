@@ -8,9 +8,14 @@ import { compileBuild } from "../../src/mods/compile.ts";
 import { place } from "../../src/mods/grid.ts";
 import type { Grid } from "../../src/mods/grid.ts";
 import { ARCHETYPES, OPPONENT_FIGURES, affinityWeights, figureFor, opponentBudget, opponentFor, placementScore } from "../../src/run/opponents.ts";
+import { pick, placement } from "../mods/fixtures.ts";
 
 const SEEDS = Array.from({ length: 40 }, (_, index) => index * 7919 + 13);
 const DAYS = Array.from({ length: 14 }, (_, index) => index + 1);
+const STRIKE = pick({ affinity: "strike", size: 2 });
+const ALL_ACTIONS = pick({ affinity: null, size: 2 });
+const SOLAR_SINGLE = pick({ type: "solar", size: 1 });
+const ARC_SINGLE = pick({ type: "arc", affinity: null, size: 1 });
 
 describe("generated opponents", () => {
   it("are a pure function of the run seed and the day", () => {
@@ -99,14 +104,14 @@ describe("generated opponents", () => {
     expect(weights.strike + weights.tech + weights.block).toBe(6);
 
     const strikeWeight = weights.strike;
-    expect(placementScore([], { mod: "cinder-edge", rotation: 0, x: 0, y: 0 }, weights)).toBe(strikeWeight);
+    expect(placementScore([], placement([STRIKE, 0, 0]), weights)).toBe(strikeWeight);
 
     const allActions = weights.strike + weights.tech + weights.block;
-    expect(placementScore([], { mod: "furnace", rotation: 0, x: 0, y: 0 }, weights)).toBe(allActions);
+    expect(placementScore([], placement([ALL_ACTIONS, 0, 0]), weights)).toBe(allActions);
 
-    const solar = place([], { uid: 99, mod: "heat-coil", stars: 1, rotation: 0, x: 0, y: 0 })!;
-    expect(placementScore(solar, { mod: "cinder-edge", rotation: 0, x: 0, y: 1 }, weights)).toBe(strikeWeight + 1);
-    expect(placementScore(solar, { mod: "cinder-edge", rotation: 0, x: 1, y: 1 }, weights)).toBe(strikeWeight);
-    expect(placementScore(solar, { mod: "arc-dynamo", rotation: 0, x: 0, y: 1 }, weights)).toBe(allActions);
+    const solar = place([], { uid: 99, stars: 1, ...placement([SOLAR_SINGLE, 0, 0]) })!;
+    expect(placementScore(solar, placement([STRIKE, 0, 1]), weights)).toBe(strikeWeight + 1);
+    expect(placementScore(solar, placement([STRIKE, 1, 1]), weights)).toBe(strikeWeight);
+    expect(placementScore(solar, placement([ARC_SINGLE, 0, 1]), weights)).toBe(allActions);
   });
 });
