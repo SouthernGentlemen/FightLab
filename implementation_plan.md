@@ -865,7 +865,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
   registry, armory and describe.
 - Done when no test names an old id outside the engine tests that tasks-040 deletes.
 
-#### tasks-039 — Swap to the 64
+#### tasks-039 — Swap to the 64 · **done**
 *Spec §7, §10 · D7.*
 - `REGISTRY` becomes the 64, in catalogue order (§6.2). The 29 go with their ids, the hybrids among
   them.
@@ -1030,7 +1030,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-036 | Author Void (16) | 10 | D11 ✓ | done |
 | tasks-037 | Author Neutral (16) | 10 | D11 ✓ | done |
 | tasks-038 | Tests stop naming mods | 10 | — | done |
-| tasks-039 | Swap to the 64 | 10 | D7 ✓ | todo |
+| tasks-039 | Swap to the 64 | 10 | D7 ✓ | done |
 | tasks-040 | Delete the energy model | 10 | D3 ✓, D7 ✓ | todo |
 | tasks-041 | Close the model tests | 11 | — | todo |
 | tasks-042 | Catalogue DOM tests | 11 | D10 ✓ | todo |
