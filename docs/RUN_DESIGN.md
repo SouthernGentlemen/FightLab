@@ -102,7 +102,7 @@ Title ─► New run ─► ┌─► Prep (DAY n) ─► Fight ─► Payday �
 | Hearts | 5. A defeat costs one. |
 | Trophies | 10 win the run. A victory earns one. |
 | Draw (double knockout, stalemate, round limit) | No trophy, no heart. |
-| Fighter health | Full at the start of every fight; carried from round to round within it. Maximum health is 100 plus mods. |
+| Fighter health | Full at the start of every fight; carried from round to round within it. Maximum health is 100. |
 | Starting money | $10 |
 | Run length | 10–14 days. |
 
@@ -253,7 +253,7 @@ other combat number.
 
 ## 5. Health on screen
 
-Health stays granular underneath: 100 plus mods, integer damage from the kernel, exactly as now. On
+Health stays granular underneath: 100, with integer damage from the kernel. On
 screen each fighter's health is **five hearts**, each worth a fifth of that fighter's maximum health,
 filled in proportion — a heart is not a unit of damage. A 12-damage jab against 100 health empties 60%
 of one heart; with one +1 mod it empties 65%. The exact number is printed under the hearts.
@@ -511,7 +511,7 @@ still only ever hears move names, bonuses, heals, exposure and afflictions.
 every hit of that move — and the counter its parry starts — adds, and an integer heal its parry
 adds; a fighter may carry *exposure* that the next hit landing on it adds and clears; and an
 *affliction* takes health between ticks, reported as an event, and can knock a fighter out. The
-kernel never learns what a mod, a lane, an element, a debuff or a round is.
+kernel never learns what a mod, type, affinity, adjacency relationship, status rule or round is.
 
 **Determinism.** One integer PRNG, seeded per purpose: every draw is keyed by the run seed, a purpose
 and its indices — `shop / day / reroll`, `opponent / day` — so rerolling the shop can never shift
