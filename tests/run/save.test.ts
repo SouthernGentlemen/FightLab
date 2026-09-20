@@ -1,23 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { cellsOf } from "../../src/mods/grid.ts";
-import { DEFINITIONS } from "../../src/mods/registry.ts";
-import { pick, registryFixture } from "../mods/fixtures.ts";
+import { pick } from "../mods/fixtures.ts";
 import { beginFight, buy, finishFight, newRun, nextDay } from "../../src/run/run.ts";
 import type { RunState } from "../../src/run/run.ts";
 import { SAVE_KEY, SAVE_VERSION, clearSave, decodeSave, encodeSave, readSave, writeSave } from "../../src/run/save.ts";
 
 const SINGLE = pick({ size: 1 });
 const DOMINO = pick({ size: 2 });
-const STRAIGHT_TRIOMINO = registryFixture(DEFINITIONS.find(({ shape }) => shape === "triomino-i"));
-const O_MOD = registryFixture(DEFINITIONS.find(({ shape }) => shape === "tetromino-o"));
+const TRIOMINO = pick({ size: 3 });
 const REROLL = pick({ type: "neutral", affinity: null, rarity: "uncommon", size: 1 });
 
 /** A run with something in every field: mods on the grid and in the bank, a payday behind it. */
 function lived(): RunState {
   const run = newRun(31337);
   run.money = 40;
-  run.shop = { ...run.shop, offers: [DOMINO.id, SINGLE.id, STRAIGHT_TRIOMINO.id, null, REROLL.id] };
+  run.shop = { ...run.shop, offers: [DOMINO.id, SINGLE.id, TRIOMINO.id, null, REROLL.id] };
   buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
   buy(run, 1);
   buy(run, 2, { grid: { x: 0, y: 2, rotation: 0 } });
@@ -45,37 +42,21 @@ function memory() {
 }
 
 describe("the autosave", () => {
-  it("is versioned, with version 3 storing degree rotations", () => {
-    expect(SAVE_VERSION).toBe(3);
-    expect(JSON.parse(encodeSave(newRun(1), null))).toMatchObject({ version: 3, fight: null });
+  it("is versioned for the replacement 64-mod registry", () => {
+    expect(SAVE_VERSION).toBe(4);
+    expect(JSON.parse(encodeSave(newRun(1), null))).toMatchObject({ version: 4, fight: null });
   });
 
-  it("discards a version-1 save whole: its mods no longer exist", () => {
-    const old = { version: 1, run: { ...JSON.parse(encodeSave(lived(), null)).run }, fight: null };
-    expect(decodeSave(JSON.stringify(old))).toBeNull();
-  });
-
-  it("migrates version-2 quarter turns to canonical degree rotations on the same cells", () => {
-    const run = newRun(22);
-    run.money = 40;
-    run.shop = { ...run.shop, offers: [O_MOD.id, DOMINO.id, null, null, null] };
-    expect(buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } })).toBeNull();
-    expect(buy(run, 1, { grid: { x: 2, y: 0, rotation: 90 } })).toBeNull();
-    const document = JSON.parse(encodeSave(run, null));
-    document.version = 2;
-    document.run.grid[0].rotation = 3;
-    document.run.grid[1].rotation = 3;
-    const loaded = decodeSave(JSON.stringify(document))!;
-    expect(loaded.version).toBe(3);
-    expect(loaded.run.grid[0]).toMatchObject({ mod: O_MOD.id, rotation: 0, x: 0, y: 0 });
-    expect(cellsOf(loaded.run.grid[0])).toEqual([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }]);
-    expect(loaded.run.grid[1]).toMatchObject({ mod: DOMINO.id, rotation: 90, x: 2, y: 0 });
-    expect(cellsOf(loaded.run.grid[1])).toEqual([{ x: 2, y: 0 }, { x: 2, y: 1 }]);
+  it("discards versions 2 and 3 whole", () => {
+    const current = JSON.parse(encodeSave(lived(), null));
+    for (const version of [2, 3]) {
+      expect(decodeSave(JSON.stringify({ ...current, version })), `version ${version}`).toBeNull();
+    }
   });
 
   it("round-trips a run exactly", () => {
     const run = lived();
-    expect(decodeSave(encodeSave(run, null))).toEqual({ version: 3, run, fight: null });
+    expect(decodeSave(encodeSave(run, null))).toEqual({ version: 4, run, fight: null });
     const fresh = newRun(0);
     expect(decodeSave(encodeSave(fresh, null))!.run).toEqual(fresh);
   });
@@ -93,7 +74,7 @@ describe("the autosave", () => {
 
   it("refuses any other version", () => {
     const run = lived();
-    for (const version of [0, 1, 4, "2", "3", null, undefined]) {
+    for (const version of [0, 1, 2, 3, 5, "4", null, undefined]) {
       expect(decodeSave(tampered(run, (document) => { document.version = version; })), String(version)).toBeNull();
     }
   });
