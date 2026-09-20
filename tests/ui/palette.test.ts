@@ -130,6 +130,24 @@ describe("mod palette", () => {
     ).toBeGreaterThanOrEqual(3);
   });
 
+  it("covers the §32 text and state contrast pairs used by the catalogue", () => {
+    // Mod names: rarity is the only name colour, across rest, hover and selected cards.
+    expectContrast(RARITIES, CARD_SURFACES, 4.5, tokens);
+
+    // Detail copy and ordinary buttons.
+    expectContrast(["--text-primary"], ["--surface-panel", "--surface-card", "--surface-card-hover"], 7, tokens);
+    expectContrast(["--text-secondary"], ["--surface-panel", "--surface-card"], 4.5, tokens);
+
+    // Filter chips: type/action semantics must remain readable on the filter panel.
+    expectContrast(TYPES, ["--surface-panel"], 3, tokens);
+    expectContrast(ACTIONS, ["--surface-panel"], 3, tokens);
+    expectContrast(["--text-primary"], ["--surface-panel"], 7, tokens);
+
+    // Selected and disabled states have their own non-opacity contrast.
+    expectContrast(["--border-selected"], ["--surface-selected"], 3, tokens);
+    expectContrast(["--text-disabled"], CARD_SURFACES, 3, tokens);
+  });
+
   it("keeps confusing neighbours visibly separated in OKLab", () => {
     const namedPairs = [
       ["--mod-solar", "--action-strike"],
