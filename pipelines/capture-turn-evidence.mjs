@@ -123,6 +123,15 @@ if (Math.abs(after.pivotX - before.pivotX) > 0.5 || Math.abs(after.pivotY - befo
 }
 await shot("prep-i-after");
 
+await send("Emulation.setDeviceMetricsOverride", { width: 2560, height: 1440, deviceScaleFactor: 1, mobile: false });
+await sleep(150);
+const largeViewport = await evaluate("({ width: innerWidth, height: innerHeight })");
+if (largeViewport.width !== 2560 || largeViewport.height !== 1440) {
+  throw new Error(`Expected 2560x1440 viewport, got ${largeViewport.width}x${largeViewport.height}`);
+}
+const largeImage = await send("Page.captureScreenshot", { format: "png", fromSurface: true, captureBeyondViewport: false });
+writeFileSync("screenshots/prep-2560x1440.png", Buffer.from(largeImage.data, "base64"));
+
 socket.close();
 
 await import("./capture-control-evidence.mjs");
