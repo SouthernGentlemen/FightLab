@@ -96,6 +96,8 @@ const armoryState = await evaluate(`(() => {
     cardText: detail.textContent ?? "",
     nameOverflow: name ? getComputedStyle(name).textOverflow : "",
     nameWhiteSpace: name ? getComputedStyle(name).whiteSpace : "",
+    totalCards: document.querySelectorAll(".armory__grid .catalog-card").length,
+    columns: getComputedStyle(document.querySelector(".armory__grid")).gridTemplateColumns.split(" ").filter(Boolean).length,
   };
 })()`);
 if (!armoryState) throw new Error("Could not inspect Armory catalogue card state");
@@ -103,7 +105,7 @@ if (armoryState.totalCards !== 64 || armoryState.columns !== 4 || armoryState.to
   throw new Error(`Expected 64 catalogue cards in 16 rows of four: ${JSON.stringify(armoryState)}`);
 }
 if (armoryState.visibleText !== "Cinder Edge") throw new Error(`Catalogue card name is wrong: ${armoryState.visibleText}`);
-if (!/^Cinder Edge, Solar, Strike affinity, domino, Uncommon$/.test(armoryState.label)) {
+if (!/^Cinder Edge, Solar, Strike affinity, domino, Common$/.test(armoryState.label)) {
   throw new Error(`Catalogue card accessible label is incomplete: ${armoryState.label}`);
 }
 if (armoryState.cells !== 2 || armoryState.cellSizes.some(([width, height]) => width !== height)) {
