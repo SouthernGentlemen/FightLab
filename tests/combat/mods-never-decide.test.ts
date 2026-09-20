@@ -41,7 +41,7 @@ function loaded(build: Build, index: number): ModState {
 }
 
 const GRIDS = Array.from({ length: BUILDS }, (_, index) => randomGrid(index));
-const BUILT: Build[] = GRIDS.map(compileBuild);
+const BUILT: Build[] = GRIDS.map((grid) => compileBuild(grid));
 const SIDES: CombatSide[] = BUILT.map((build) => combatSide(build));
 
 /** One exchange through the engine and the kernel: commit both actions, step until combat settles. */
