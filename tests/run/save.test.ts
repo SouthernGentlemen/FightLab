@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { cellsOf } from "../../src/mods/grid.ts";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
-import { pick } from "../mods/fixtures.ts";
+import { pick, registryFixture } from "../mods/fixtures.ts";
 import { beginFight, buy, finishFight, newRun, nextDay } from "../../src/run/run.ts";
 import type { RunState } from "../../src/run/run.ts";
 import { SAVE_KEY, SAVE_VERSION, clearSave, decodeSave, encodeSave, readSave, writeSave } from "../../src/run/save.ts";
 
 const SINGLE = pick({ size: 1 });
 const DOMINO = pick({ size: 2 });
-const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
-const O_MOD = DEFINITIONS.find(({ shape }) => shape === "tetromino-o")!;
+const STRAIGHT_TRIOMINO = registryFixture(DEFINITIONS.find(({ shape }) => shape === "triomino-i"));
+const O_MOD = registryFixture(DEFINITIONS.find(({ shape }) => shape === "tetromino-o"));
 const REROLL = pick({ type: "neutral", affinity: null, rarity: "uncommon", size: 1 });
 
 /** A run with something in every field: mods on the grid and in the bank, a payday behind it. */
