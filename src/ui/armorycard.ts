@@ -9,6 +9,7 @@ import type { Stars } from "../mods/stars.ts";
 import { catalogShape } from "./catalogcard.ts";
 import { catalogShapeView } from "./catalogcardview.ts";
 import { button, h, setText } from "./dom.ts";
+import { modLabel } from "./modlabel.ts";
 
 export interface ArmoryCard {
   readonly node: HTMLElement;
@@ -77,6 +78,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   function renderRules(): void {
     if (mod === null) return;
     const definition = REGISTRY[mod];
+    node.setAttribute("aria-label", modLabel(definition, stars));
     starButtons.forEach((node, index) =>
       node.setAttribute("aria-pressed", String(STARS[index] === stars)));
     rules.replaceChildren(...compactRules(effectLines(definition, stars)).map((line) => h("p", {}, line)));
