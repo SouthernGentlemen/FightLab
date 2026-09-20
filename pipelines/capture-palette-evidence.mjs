@@ -139,7 +139,7 @@ if (!entered) throw new Error("Enter did not select the focused catalogue card")
 
 const hoverTarget = await evaluate(`(() => {
   const cards = [...document.querySelectorAll(".catalog-card")];
-  const selected = cards.find((node) => node.getAttribute("data-mod") === "cinder-edge");
+  const selected = cards.find((node) => node.getAttribute("data-mod") === "ember-edge");
   if (!(selected instanceof HTMLButtonElement)) return null;
   selected.click();
   selected.scrollIntoView({ block: "center" });
@@ -161,7 +161,7 @@ const hoverState = await evaluate(`(() => ({
   selected: document.querySelector('.catalog-card[aria-pressed="true"]')?.getAttribute("data-mod"),
   hovered: document.querySelector(".catalog-card:hover")?.getAttribute("data-mod"),
 }))()`);
-if (hoverState.selected !== "cinder-edge" || hoverState.hovered !== hoverTarget.target || hoverState.hovered === hoverState.selected) {
+if (hoverState.selected !== "ember-edge" || hoverState.hovered !== hoverTarget.target || hoverState.hovered === hoverState.selected) {
   throw new Error(`Selected/hover evidence failed: ${JSON.stringify({ hoverTarget, hoverState })}`);
 }
 await shot("screenshots/catalogue-selected-hover.png");
