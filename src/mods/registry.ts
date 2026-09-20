@@ -10,6 +10,7 @@ import { SHAPES } from "./shapes.ts";
 import type { ShapeId } from "./shapes.ts";
 import { isModType } from "./tags.ts";
 import type { ModType } from "./tags.ts";
+import { catalogueProblemsFor } from "./catalogue-validator.ts";
 
 /**
  * The one mod registry. The shop, the grid, compile, the combat engine and the Armory all read
@@ -150,6 +151,16 @@ export function definitionProblems(definition: ModDefinition): string[] {
   if (!triples.some(([one, two, three]) => one < two && two < three)) say("nothing grows from ★ to ★★ to ★★★");
   if (definition.effects.some((effect) => (effect.kind === "spend" && effect.payoff.length === 0) || (effect.kind === "sink" && effect.per.length === 0))) say("pays for nothing");
   return problems;
+}
+
+export interface CatalogueOptions {
+  /** Validate one 16-mod type slice while the replacement catalogue is being authored. */
+  readonly type?: ModType;
+}
+
+/** Target-catalogue balance and vocabulary rules. The live 29-mod registry does not run this until tasks-039. */
+export function catalogueProblems(definitions: readonly ModDefinition[], options: CatalogueOptions = {}): string[] {
+  return catalogueProblemsFor(definitions, options);
 }
 
 /** Everything wrong with a whole registry: each definition, and ids or names used twice. */
