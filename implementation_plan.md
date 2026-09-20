@@ -812,7 +812,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Done when a test shows every mod's text, at every level, is at most three lines of at most
   60 characters.
 
-#### tasks-031 — Retire the row lanes
+#### tasks-031 — Retire the row lanes · **done**
 *D2, confirmed.*
 - `compile.ts` loses `lanes`, `attuned`, `boostOn` and `LANE_POWER`. `Build.preview` gives the bars
   their damage, and the static per-action bonus goes from `sides.ts` (and from `combat/adapter.ts` if
@@ -1022,7 +1022,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-028 | The filter modal | 9 | — | done |
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | done |
 | tasks-030 | Rules text for the vocabulary | 10 | — | done |
-| tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
+| tasks-031 | Retire the row lanes | 10 | D2 ✓ | done |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
 | tasks-033 | The catalogue validator | 10 | D11 ✓ | todo |
 | tasks-034 | Author Solar (16) | 10 | D11 ✓ | todo |
