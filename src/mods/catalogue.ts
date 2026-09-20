@@ -9,6 +9,8 @@ import type { ModType } from "./tags.ts";
 const amount = (value: Scaled, per: Per = "flat"): Amount => ({ value, per });
 const damage = (value: Scaled, per: Per = "flat"): Payoff =>
   ({ kind: "damage", amount: amount(value, per) });
+const heal = (value: Scaled, per: Per = "flat"): Payoff =>
+  ({ kind: "heal", amount: amount(value, per) });
 const status = (value: Scaled, per: Per = "flat"): Payoff =>
   ({ kind: "status", amount: amount(value, per) });
 const exchange = (...payoffs: readonly Payoff[]): ModEffect => ({ kind: "exchange", payoffs });
@@ -174,4 +176,51 @@ export const VOID_CATALOGUE: readonly ModDefinition[] = Object.freeze([
     exchange(damage([1, 2, 3], "adjacent-same"), status([1, 2, 3]))),
   draft("last-breath", "Last Breath", "legendary", "void", "block", "tetromino-i",
     exchange(damage([3, 4, 5], "poison"), status([2, 3, 4]))),
+]);
+
+
+/**
+ * Neutral carries no status: its None row changes the run/build economy, while its action rows add
+ * direct damage or parry healing without creating another elemental engine.
+ */
+export const NEUTRAL_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+  // None
+  draft("piggy-bank", "Piggy Bank", "common", "neutral", null, "domino",
+    { kind: "perk", perk: "income", amount: [2, 3, 4] }),
+  draft("coupon", "Coupon", "uncommon", "neutral", null, "single",
+    { kind: "perk", perk: "free-reroll", amount: [1, 2, 3] }),
+  draft("crowd-pleaser", "Crowd Pleaser", "rare", "neutral", null, "triomino-l",
+    { kind: "perk", perk: "style", amount: [1, 2, 3] }),
+  draft("amplifier", "Amplifier", "legendary", "neutral", null, "tetromino-i",
+    { kind: "boost", amount: [1, 2, 3], to: "adjacent" }),
+
+  // Strike
+  draft("hardpoint", "Hardpoint", "common", "neutral", "strike", "domino",
+    exchange(damage([2, 3, 4]))),
+  draft("impact-rail", "Impact Rail", "uncommon", "neutral", "strike", "domino",
+    exchange(damage([3, 4, 5]))),
+  draft("edge-driver", "Edge Driver", "rare", "neutral", "strike", "single",
+    exchange(damage([1, 2, 3], "adjacent-other"))),
+  draft("breaker-frame", "Breaker Frame", "super-rare", "neutral", "strike", "tetromino-l",
+    exchange(damage([2, 3, 4]), damage([1, 2, 3], "adjacent-other"))),
+
+  // Tech
+  draft("logic-line", "Logic Line", "common", "neutral", "tech", "triomino-i",
+    exchange(damage([1, 2, 3], "cell"))),
+  draft("vector-fork", "Vector Fork", "uncommon", "neutral", "tech", "triomino-l",
+    exchange(damage([1, 2, 3], "cell"))),
+  draft("signal-plate", "Signal Plate", "rare", "neutral", "tech", "tetromino-j",
+    exchange(damage([1, 2, 3], "cell"), damage([1, 2, 3], "adjacent-other"))),
+  draft("tuning-frame", "Tuning Frame", "super-rare", "neutral", "tech", "tetromino-z",
+    exchange(damage([1, 2, 3], "cell"), damage([2, 3, 4], "adjacent-same"))),
+
+  // Block
+  draft("guard-plate", "Guard Plate", "common", "neutral", "block", "tetromino-o",
+    exchange(heal([3, 4, 5]))),
+  draft("brace-frame", "Brace Frame", "uncommon", "neutral", "block", "tetromino-t",
+    exchange(damage([2, 3, 4]), heal([2, 3, 4]))),
+  draft("counterweight", "Counterweight", "rare", "neutral", "block", "domino",
+    exchange(damage([1, 2, 3], "adjacent-same"), heal([2, 3, 4]))),
+  draft("bastion-core", "Bastion Core", "legendary", "neutral", "block", "tetromino-s",
+    exchange(damage([2, 3, 4], "adjacent-other"), heal([4, 5, 6]))),
 ]);
