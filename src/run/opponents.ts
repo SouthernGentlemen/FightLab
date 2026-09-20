@@ -105,6 +105,14 @@ export function affinityWeights(plan: OpponentPlan): Record<ActionType, number> 
   return weights;
 }
 
+/** How strongly this mod's affinity matches the six actions in the opponent's plan. */
+function affinityScore(mod: ModId, weights: Readonly<Record<ActionType, number>>): number {
+  const affinity = REGISTRY[mod].affinity;
+  return affinity === null
+    ? ACTION_TYPES.reduce((sum, action) => sum + weights[action], 0)
+    : weights[affinity];
+}
+
 /** Plan affinity plus one point for every same-type neighbour at this placement. */
 export function placementScore(
   grid: Grid,
@@ -112,10 +120,7 @@ export function placementScore(
   weights: Readonly<Record<ActionType, number>>,
 ): number {
   const definition = REGISTRY[placement.mod];
-  const affinity = definition.affinity;
-  let score = affinity === null
-    ? ACTION_TYPES.reduce((sum, action) => sum + weights[action], 0)
-    : weights[affinity];
+  let score = affinityScore(placement.mod, weights);
   const candidate = { uid: -1, stars: 1 as const, ...placement };
   const graph = adjacencyGraph([...grid, candidate]);
   const byUid = new Map(grid.map((placed) => [placed.uid, placed] as const));
@@ -157,10 +162,17 @@ function buildFor(seed: number, day: number, plan: OpponentPlan): Grid {
   let uid = 1;
   for (let roll = 0; roll < OPPONENT_SHOP_ROLLS; roll++) {
     const random = stream(seed, "opponent-shop", day, roll);
-    for (let offer = 0; offer < SHOP_SIZE; offer++) {
-      const mod = drawOffer(random, day);
-      // Run-only perks do nothing for an opponent, but combat-capable Neutral mods are valid.
-      if (priceOf(mod) > budget || REGISTRY[mod].effect?.kind === "perk") continue;
+    const offers = Array.from({ length: SHOP_SIZE }, (_, offer) => ({
+      offer,
+      mod: drawOffer(random, day),
+    })).filter(({ mod }) => REGISTRY[mod].effect?.kind !== "perk")
+      .sort((left, right) =>
+        affinityScore(right.mod, weights) - affinityScore(left.mod, weights)
+        || priceOf(right.mod) - priceOf(left.mod)
+        || left.offer - right.offer);
+
+    for (const { mod } of offers) {
+      if (priceOf(mod) > budget) continue;
       const placement = bestPlacement(grid, mod, weights);
       if (placement === null) continue;
       grid = place(grid, { uid: uid++, stars: 1, ...placement })!;
