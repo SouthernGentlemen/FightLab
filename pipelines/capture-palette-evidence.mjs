@@ -1,6 +1,7 @@
-import "./capture-filter-evidence.mjs";
-import "./capture-detail-evidence.mjs";
 import { writeFileSync } from "node:fs";
+
+await import("./capture-filter-evidence.mjs");
+await import("./capture-detail-evidence.mjs");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const pages = await fetch("http://127.0.0.1:9222/json").then((response) => response.json());
