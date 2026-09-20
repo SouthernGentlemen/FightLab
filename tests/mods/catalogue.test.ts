@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import type { ActionType } from "../../src/battle/actions.ts";
-import { ARC_CATALOGUE, SOLAR_CATALOGUE } from "../../src/mods/catalogue.ts";
+import { ARC_CATALOGUE, SOLAR_CATALOGUE, VOID_CATALOGUE } from "../../src/mods/catalogue.ts";
 import { effectLines } from "../../src/mods/describe.ts";
 import type { ModEffect, Payoff } from "../../src/mods/effects.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
@@ -188,54 +188,48 @@ describe("catalogueProblems", () => {
 });
 
 
-describe("Solar catalogue", () => {
-  it("fills the sixteen §6.1 Solar slots exactly and passes the type validator", () => {
-    expect(catalogueProblems(SOLAR_CATALOGUE, { type: "solar" })).toEqual([]);
-    expect(SOLAR_CATALOGUE.map(({ affinity, rarity, shape }) => [affinity, rarity, shape])).toEqual([
-      [null, "common", "domino"],
-      [null, "uncommon", "single"],
-      [null, "rare", "triomino-i"],
-      [null, "super-rare", "tetromino-i"],
-      ["strike", "common", "domino"],
-      ["strike", "uncommon", "domino"],
-      ["strike", "rare", "single"],
-      ["strike", "legendary", "tetromino-s"],
-      ["tech", "common", "triomino-i"],
-      ["tech", "uncommon", "triomino-l"],
-      ["tech", "rare", "tetromino-l"],
-      ["tech", "legendary", "tetromino-z"],
-      ["block", "common", "tetromino-o"],
-      ["block", "uncommon", "tetromino-j"],
-      ["block", "rare", "domino"],
-      ["block", "super-rare", "tetromino-t"],
-    ]);
+const AUTHORED_SLICES = [
+  {
+    label: "Solar", type: "solar", definitions: SOLAR_CATALOGUE,
+    slots: [
+      [null, "common", "domino"], [null, "uncommon", "single"], [null, "rare", "triomino-i"], [null, "super-rare", "tetromino-i"],
+      ["strike", "common", "domino"], ["strike", "uncommon", "domino"], ["strike", "rare", "single"], ["strike", "legendary", "tetromino-s"],
+      ["tech", "common", "triomino-i"], ["tech", "uncommon", "triomino-l"], ["tech", "rare", "tetromino-l"], ["tech", "legendary", "tetromino-z"],
+      ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-j"], ["block", "rare", "domino"], ["block", "super-rare", "tetromino-t"],
+    ],
+  },
+  {
+    label: "Arc", type: "arc", definitions: ARC_CATALOGUE,
+    slots: [
+      [null, "common", "domino"], [null, "uncommon", "single"], [null, "rare", "triomino-l"], [null, "legendary", "tetromino-i"],
+      ["strike", "common", "domino"], ["strike", "uncommon", "domino"], ["strike", "rare", "single"], ["strike", "super-rare", "tetromino-z"],
+      ["tech", "common", "triomino-i"], ["tech", "uncommon", "triomino-l"], ["tech", "rare", "tetromino-j"], ["tech", "legendary", "tetromino-s"],
+      ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-t"], ["block", "rare", "domino"], ["block", "super-rare", "tetromino-l"],
+    ],
+  },
+  {
+    label: "Void", type: "void", definitions: VOID_CATALOGUE,
+    slots: [
+      [null, "common", "domino"], [null, "uncommon", "single"], [null, "rare", "triomino-i"], [null, "super-rare", "tetromino-s"],
+      ["strike", "common", "domino"], ["strike", "uncommon", "domino"], ["strike", "rare", "single"], ["strike", "legendary", "tetromino-z"],
+      ["tech", "common", "triomino-i"], ["tech", "uncommon", "triomino-l"], ["tech", "rare", "tetromino-t"], ["tech", "super-rare", "tetromino-j"],
+      ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-l"], ["block", "rare", "domino"], ["block", "legendary", "tetromino-i"],
+    ],
+  },
+] as const;
+
+describe.each(AUTHORED_SLICES)("$label catalogue", ({ type, definitions, slots }) => {
+  it("fills the sixteen §6.1 slots exactly and passes the type validator", () => {
+    expect(catalogueProblems(definitions, { type })).toEqual([]);
+    expect(definitions.map(({ affinity, rarity, shape }) => [affinity, rarity, shape])).toEqual(slots);
   });
 
-  it("keeps Solar names compact and every rules text within three 60-character lines", () => {
-    expect(new Set(SOLAR_CATALOGUE.map(({ name }) => name)).size).toBe(16);
-    expectCompactRules(SOLAR_CATALOGUE);
+  it("keeps names compact and every rules text within three 60-character lines", () => {
+    expectCompactRules(definitions);
   });
 });
 
-
-describe("Arc catalogue", () => {
-  it("fills the sixteen §6.1 Arc slots exactly and passes the type validator", () => {
-    expect(catalogueProblems(ARC_CATALOGUE, { type: "arc" })).toEqual([]);
-    expect(ARC_CATALOGUE.map(({ affinity, rarity, shape }) => [affinity, rarity, shape])).toEqual([
-      [null, "common", "domino"], [null, "uncommon", "single"],
-      [null, "rare", "triomino-l"], [null, "legendary", "tetromino-i"],
-      ["strike", "common", "domino"], ["strike", "uncommon", "domino"],
-      ["strike", "rare", "single"], ["strike", "super-rare", "tetromino-z"],
-      ["tech", "common", "triomino-i"], ["tech", "uncommon", "triomino-l"],
-      ["tech", "rare", "tetromino-j"], ["tech", "legendary", "tetromino-s"],
-      ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-t"],
-      ["block", "rare", "domino"], ["block", "super-rare", "tetromino-l"],
-    ]);
-  });
-
-  it("keeps catalogue names unique and every Arc rules text within three 60-character lines", () => {
-    const names = [...SOLAR_CATALOGUE, ...ARC_CATALOGUE].map(({ name }) => name);
-    expect(new Set(names).size).toBe(names.length);
-    expectCompactRules(ARC_CATALOGUE);
-  });
+it("keeps authored catalogue names unique across types", () => {
+  const names = AUTHORED_SLICES.flatMap(({ definitions }) => definitions.map(({ name }) => name));
+  expect(new Set(names).size).toBe(names.length);
 });
