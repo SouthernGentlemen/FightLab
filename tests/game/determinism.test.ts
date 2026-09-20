@@ -9,10 +9,15 @@ import { FixedClock, SPEEDS } from "../../src/game/clock.ts";
 import type { BattleSpeed } from "../../src/game/clock.ts";
 import { fightFor } from "../../src/game/fight.ts";
 import { DEFAULT_MATCH, Match } from "../../src/game/match.ts";
+import { DEFINITIONS } from "../../src/mods/registry.ts";
+import { pick } from "../mods/fixtures.ts";
 import type { MatchConfig } from "../../src/game/match.ts";
 import { buy, beginFight, newRun } from "../../src/run/run.ts";
 
 const FRAME_MS = 1000 / 60;
+const DOMINO = pick({ size: 2 });
+const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const SINGLE = pick({ size: 1 });
 
 /** Whether the player mixes up at a pause, decided from what the match shows. */
 type Policy = (match: Match) => boolean;
@@ -85,9 +90,9 @@ describe("determinism", () => {
     const run = newRun(606);
     run.day = 7;
     run.money = 40;
-    run.shop = { ...run.shop, offers: ["solar-flare", "thunderhead", "null-reservoir", null, null] };
+    run.shop = { ...run.shop, offers: [DOMINO.id, STRAIGHT_TRIOMINO.id, SINGLE.id, null, null] };
     buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
-    buy(run, 1, { grid: { x: 0, y: 1, rotation: 180 } });
+    buy(run, 1, { grid: { x: 0, y: 1, rotation: 0 } });
     beginFight(run);
     const { config, opponent } = fightFor(run);
     expect(opponent.grid.length).toBeGreaterThan(0);
