@@ -1,0 +1,48 @@
+name: tune-measure
+
+on:
+  pull_request:
+    paths:
+      - "pipelines/tune.ts"
+      - "src/run/opponents.ts"
+      - ".github/workflows/tune-measure.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  tune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out FightLab
+        uses: actions/checkout@v4
+        with:
+          path: FightLab
+
+      - name: Read pinned Boneyard commit
+        id: boneyard
+        shell: bash
+        run: echo "commit=$(node -p "require('./FightLab/boneyard.pin.json').commit")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Boneyard
+        uses: actions/checkout@v4
+        with:
+          repository: SouthernGentlemen/Boneyard
+          ref: ${{ steps.boneyard.outputs.commit }}
+          path: Boneyard
+          token: ${{ secrets.BONEYARD_READ_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: FightLab/package-lock.json
+
+      - name: Install FightLab
+        working-directory: FightLab
+        run: npm ci
+
+      - name: Measure 1000 runs
+        working-directory: FightLab
+        run: npm run tune -- 1000
