@@ -1,6 +1,6 @@
 # Mix Up — mod catalogue simplification, 64-mod rebuild and heavy colour pass
 
-**Status: planned.** `tasks-001` (the audit, §4) and `tasks-002` (the decisions, §3) are done. This is the plan for the next pass over
+**Status: built.** `tasks-001` (the audit, §4) and `tasks-002` (the decisions, §3) are done. This is the plan for the next pass over
 Mix Up's mods — the game in this repository, FightLab. [`AGENTS.md`](AGENTS.md) is the contract every
 task is held to; [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) records what is built and measured today;
 [`docs/MODS.md`](docs/MODS.md) describes the mod system this pass replaces.
@@ -1043,4 +1043,4 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-046 | Opponents, the bot and measurements | 12 | — | done |
 | tasks-047 | Every screen at three resolutions | 12 | — | done |
 | tasks-048 | Docs and the contract | 12 | — | done |
-| tasks-049 | Final sweep | 12 | — | todo |
+| tasks-049 | Final sweep | 12 | — | done |
