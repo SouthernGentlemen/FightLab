@@ -270,26 +270,11 @@ p, h1, h2 { margin: 0; }
 .prep__mods { left: 52rem; top: 28rem; width: 56rem; height: 36.6rem; }
 .prep__mods .panel__body { padding: 1.4rem 2rem; }
 .board { display: flex; justify-content: center; gap: 1.6rem; --cell: 9.6rem; }
-.lanes { display: grid; grid-template-rows: repeat(3, var(--cell)); }
-.lane { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: .4rem; }
-.lane__tag {
-  display: inline-flex; align-items: center; gap: .6rem; padding: .4rem 1rem;
-  border: .3rem solid var(--ink); border-radius: 1rem; background: var(--c); font-size: 1.9rem; text-transform: uppercase;
-}
-.lane__tag .icon { width: 2.6rem; height: 2.6rem; }
-.lane { position: relative; }
-.lane__bonus { font-size: 3rem; }
-.lane__attune { position: absolute; left: -3.4rem; top: 50%; transform: translateY(-50%); }
-.lane__attune .icon { width: 2.6rem; height: 2.6rem; }
-.lane:not([data-attuned=""]) .lane__bonus { color: var(--sun); }
 .grid {
   position: relative; display: grid; grid-template-columns: repeat(var(--board-w), var(--cell)); grid-template-rows: repeat(var(--board-h), var(--cell));
   outline: .35rem solid var(--border-strong); border-radius: .4rem; background: var(--surface-root);
 }
 .cell { border: .2rem solid var(--border-subtle); background: color-mix(in srgb, var(--c) 12%, var(--surface-card)); }
-.cell[data-y="0"] { --c: var(--action-strike); }
-.cell[data-y="1"] { --c: var(--action-tech); }
-.cell[data-y="2"] { --c: var(--action-block); }
 .pieces, .carried { position: absolute; inset: 0; pointer-events: none; }
 .piece { position: absolute; }
 .pieces .piece .mod__cell { pointer-events: auto; cursor: grab; }
@@ -548,9 +533,6 @@ p, h1, h2 { margin: 0; }
   outline: .35rem solid var(--border-strong); background: var(--surface-root);
 }
 .runend__grid .cell { height: var(--cell); border-color: var(--border-subtle); background: var(--surface-card); }
-.runend__grid .cell:nth-child(-n + 3) { --c: var(--action-strike); }
-.runend__grid .cell:nth-child(n + 4):nth-child(-n + 6) { --c: var(--action-tech); }
-.runend__grid .cell:nth-child(n + 7) { --c: var(--action-block); }
 .runend__grid .piece { position: absolute; }
 .runend__bar { display: flex; align-items: center; gap: .8rem; margin: .8rem 0; font-size: 2.4rem; }
 .runend__bar b { min-width: 8rem; }
