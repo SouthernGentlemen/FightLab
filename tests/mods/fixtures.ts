@@ -16,6 +16,11 @@ export interface PickCriteria {
 
 export type PickedMod = ModDefinition & { readonly id: ModId };
 
+export function registryFixture(definition: ModDefinition | undefined): PickedMod {
+  if (definition === undefined) throw new Error("registry fixture was not found");
+  return definition as PickedMod;
+}
+
 /** First registry record matching stable attributes shared by the old and replacement catalogues. */
 export function pick(criteria: PickCriteria = {}): PickedMod {
   const found = DEFINITIONS.find((definition) =>
@@ -24,7 +29,7 @@ export function pick(criteria: PickCriteria = {}): PickedMod {
     && (criteria.size === undefined || SHAPES[definition.shape].cells.length === criteria.size)
     && (criteria.rarity === undefined || definition.rarity === criteria.rarity));
   if (found === undefined) throw new Error(`no registry mod matches ${JSON.stringify(criteria)}`);
-  return found as PickedMod;
+  return registryFixture(found);
 }
 
 /** Compact placement fixture: [definition, x, y, rotation]. */
