@@ -407,7 +407,7 @@ behaviour, not bigger numbers.
 
 `perk` effects (Neutral without an affinity) may appear at any rarity.
 
-### 6.4 Shape budget (provisional)
+### 6.4 Shape budget (measured baseline)
 
 At ★, a mod's budget in points is its price — Common 3, Uncommon 4, Rare 5, Super Rare 7,
 Legendary 8 — times a shape factor. A point is one damage, one heal or one status stack.
@@ -422,9 +422,12 @@ Legendary 8 — times a shape factor. A point is one damage, one heal or one sta
 | S, Z, I | 1.3 |
 
 Awkward footprints earn more, and convenience is part of the price. A single is never the biggest
-number at its rarity. On the 4 × 4 board a tetromino costs less room than it did on 3 × 3, so these
-factors may compress once measured. Every mod grows at ★ → ★★ → ★★★. All of these are first guesses for
-authoring; `npm run tune` measures them (tasks-046), per `AGENTS.md`'s rule against encoded guesses.
+number at its rarity. Every mod grows at ★ → ★★ → ★★★. The tasks-046 `npm run tune 1000` sample
+measured fight win rates of 49% / 47% / 47% / 46% for size classes 1 / 2 / 3 / 4. Type rates span
+47–48% and affinity rates 47–49%. That 3-point size spread is not enough to separate shape budget
+from rarity, effect mix and the bot's placement choices, so the factors above and the authored
+registry amounts remain unchanged. A future adjustment needs a controlled measurement that isolates
+shape rather than encoding a guess from this observational sample.
 
 ### 6.5 Names
 
