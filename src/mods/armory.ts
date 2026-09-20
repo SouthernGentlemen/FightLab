@@ -1,51 +1,81 @@
 import type { ActionType } from "../battle/actions.ts";
-import { RARITY } from "./rarity.ts";
 import type { Rarity } from "./rarity.ts";
 import { DEFINITIONS } from "./registry.ts";
 import type { ModDefinition, ModId } from "./registry.ts";
-import { AFFINITY_LABEL, TYPE_LABEL } from "./tags.ts";
+import { SHAPES } from "./shapes.ts";
 import type { ModType } from "./tags.ts";
 
-/**
- * The Armory's catalogue: the registry itself, filtered. It lists the very records combat runs on,
- * so nothing the Armory shows can differ from what a fight does.
- */
+export type CatalogAffinity = ActionType | "none";
+export type SizeClass = 1 | 2 | 3 | 4;
 
-export interface ArmoryFilter {
-  readonly type: ModType | "all";
-  readonly affinity: ActionType | "all";
-  readonly rarity: Rarity | "all";
-  readonly ownedOnly: boolean;
-  /** Matched, ignoring case, against the name, the description, the type and the rarity. */
-  readonly text: string;
+export interface CatalogFilter {
+  readonly types: ReadonlySet<ModType>;
+  readonly affinities: ReadonlySet<CatalogAffinity>;
+  readonly sizes: ReadonlySet<SizeClass>;
+  readonly rarities: ReadonlySet<Rarity>;
 }
 
-export const EVERYTHING: ArmoryFilter = Object.freeze({ type: "all", affinity: "all", rarity: "all", ownedOnly: false, text: "" });
+const emptySet = <T>(): ReadonlySet<T> => new Set<T>();
+
+/** Every empty group passes everything. */
+export const NO_FILTER: CatalogFilter = Object.freeze({
+  types: emptySet<ModType>(),
+  affinities: emptySet<CatalogAffinity>(),
+  sizes: emptySet<SizeClass>(),
+  rarities: emptySet<Rarity>(),
+});
+
+type FilterGroup = keyof CatalogFilter;
+type SetValue<T> = T extends ReadonlySet<infer V> ? V : never;
+
+/** Toggle one choice without mutating the incoming filter. */
+export function toggle<G extends FilterGroup>(
+  filter: CatalogFilter,
+  group: G,
+  value: SetValue<CatalogFilter[G]>,
+): CatalogFilter {
+  const next = new Set(filter[group] as ReadonlySet<SetValue<CatalogFilter[G]>>);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return Object.freeze({ ...filter, [group]: next }) as CatalogFilter;
+}
+
+function passes<T>(selected: ReadonlySet<T>, value: T): boolean {
+  return selected.size === 0 || selected.has(value);
+}
+
+export function matches(definition: ModDefinition, filter: CatalogFilter): boolean {
+  const affinity: CatalogAffinity = definition.affinity ?? "none";
+  const size = SHAPES[definition.shape].cells.length as SizeClass;
+  return passes(filter.types, definition.type)
+    && passes(filter.affinities, affinity)
+    && passes(filter.sizes, size)
+    && passes(filter.rarities, definition.rarity);
+}
+
+/** The catalogue under a filter, in registry order. */
+export function armoryList(
+  filter: CatalogFilter,
+  definitions: readonly ModDefinition[] = DEFINITIONS,
+): ModDefinition[] {
+  return definitions.filter((definition) => matches(definition, filter));
+}
+
+export function filterSummary(filter: CatalogFilter): string {
+  const count = filter.types.size + filter.affinities.size + filter.sizes.size + filter.rarities.size;
+  return count === 0 ? "NONE" : String(count);
+}
 
 /** How many copies of a mod the player owns; the Armory never knows where that number lives. */
 export type Owned = (mod: ModId) => number;
 
-function searchable(definition: ModDefinition): string {
-  const { label } = RARITY[definition.rarity];
-  const affinity = definition.affinity === null ? "" : ` / ${AFFINITY_LABEL[definition.affinity]}`;
-  return `${definition.name} ${definition.description} ${TYPE_LABEL[definition.type]}${affinity} ${label}`.toLowerCase();
-}
-
-export function matches(definition: ModDefinition, filter: ArmoryFilter, owned: Owned): boolean {
-  const text = filter.text.trim().toLowerCase();
-  return (filter.type === "all" || definition.type === filter.type)
-    && (filter.affinity === "all" || definition.affinity === filter.affinity)
-    && (filter.rarity === "all" || definition.rarity === filter.rarity)
-    && (!filter.ownedOnly || owned(definition.id as ModId) > 0)
-    && (text === "" || searchable(definition).includes(text));
-}
-
-/** The catalogue under a filter, in registry order. */
-export function armoryList(filter: ArmoryFilter, owned: Owned, definitions: readonly ModDefinition[] = DEFINITIONS): ModDefinition[] {
-  return definitions.filter((definition) => matches(definition, filter, owned));
-}
-
 /** How much of the catalogue the player owns at least one copy of. */
-export function collected(owned: Owned, definitions: readonly ModDefinition[] = DEFINITIONS): { readonly owned: number; readonly total: number } {
-  return { owned: definitions.filter((definition) => owned(definition.id as ModId) > 0).length, total: definitions.length };
+export function collected(
+  owned: Owned,
+  definitions: readonly ModDefinition[] = DEFINITIONS,
+): { readonly owned: number; readonly total: number } {
+  return {
+    owned: definitions.filter((definition) => owned(definition.id as ModId) > 0).length,
+    total: definitions.length,
+  };
 }
