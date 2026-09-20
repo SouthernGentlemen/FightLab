@@ -770,7 +770,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 
 ### Pass 9 — Filters
 
-#### tasks-027 — The filter model
+#### tasks-027 — The filter model · **done**
 *Spec §23 · D8.*
 - `src/mods/armory.ts` gains:
   - `CatalogFilter`: four sets — types; affinities, with None as a value; size classes 1–4; rarities;
@@ -1018,7 +1018,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-024 | Icon placement: centre or anchor | 7 | — | done |
 | tasks-025 | The catalogue screen | 7 | — | done |
 | tasks-026 | The detail pane | 8 | — | done |
-| tasks-027 | The filter model | 9 | D8 ✓ | todo |
+| tasks-027 | The filter model | 9 | D8 ✓ | done |
 | tasks-028 | The filter modal | 9 | — | todo |
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
