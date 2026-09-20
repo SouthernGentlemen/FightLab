@@ -1,26 +1,16 @@
 import "./armory-catalog.css";
 
-import { ACTION_TYPES } from "../battle/actions.ts";
-import { NO_FILTER, armoryList, collected, filterSummary, toggle } from "../mods/armory.ts";
-import type {
-  CatalogAffinity,
-  CatalogFilter,
-  Owned,
-  SizeClass,
-} from "../mods/armory.ts";
-import { RARITIES, RARITY } from "../mods/rarity.ts";
-import type { Rarity } from "../mods/rarity.ts";
+import { NO_FILTER, armoryList, collected, filterSummary } from "../mods/armory.ts";
+import type { CatalogFilter, Owned } from "../mods/armory.ts";
 import { MOD_IDS } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
 import { copiesIn } from "../mods/stars.ts";
-import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/tags.ts";
-import type { ModType } from "../mods/tags.ts";
 import type { CollectionRepository } from "../run/collection.ts";
 import { armoryCard } from "./armorycard.ts";
 import { catalogCard } from "./catalogcard.ts";
 import { catalogCardView } from "./catalogcardview.ts";
-import { button, h, icon, setText } from "./dom.ts";
-import { tagIcon } from "./kit.ts";
+import { button, h, setText } from "./dom.ts";
+import { armoryFilterModal } from "./armoryfilter.ts";
 import { paletteDebugSheet } from "./palette-debug.ts";
 
 export interface ArmoryOptions {
@@ -29,105 +19,55 @@ export interface ArmoryOptions {
   back(): void;
 }
 
-interface Segments {
-  readonly node: HTMLElement;
-  refresh(): void;
-}
-
 function counter(label: string, value: number, total: number): HTMLElement {
   return h("span", { class: "armory__counter" },
     h("small", {}, label),
     h("b", {}, `${value} / ${total}`));
 }
 
-/** Catalogue shell; tasks-028 replaces the temporary inline filter controls with the modal. */
 export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => void {
   const owned: Owned = (mod) => options.collection.ownedCopies(mod);
   let filter: CatalogFilter = NO_FILTER;
   let selected: ModId = MOD_IDS[0];
   const detail = armoryCard(owned);
 
-  function segments<T extends string | number>(
-    label: string,
-    values: readonly T[],
-    selectedValues: () => ReadonlySet<T>,
-    choose: (value: T | null) => void,
-    text: (value: T) => Array<Node | string>,
-  ): Segments {
-    const all = button("All", "segment", () => {
-      choose(null);
-      render();
-    }, { "data-value": "all" });
-    const buttons = values.map((value) => button(h("span", {}, ...text(value)), "segment", () => {
-      choose(value);
-      render();
-    }, { "data-value": String(value) }));
-    return {
-      node: h("div", { class: "segments armory__segments", role: "group", "aria-label": label }, all, ...buttons),
-      refresh: () => {
-        const selected = selectedValues();
-        all.setAttribute("aria-pressed", String(selected.size === 0));
-        buttons.forEach((node, index) =>
-          node.setAttribute("aria-pressed", String(selected.has(values[index]))));
-      },
-    };
-  }
-
-  const types = segments<ModType>(
-    "Type",
-    MOD_TYPES,
-    () => filter.types,
-    (value) => {
-      filter = value === null ? { ...filter, types: new Set() } : toggle(filter, "types", value);
-    },
-    (value) => [icon(tagIcon(value)), TYPE_LABEL[value]],
-  );
-  const affinities = ["none", ...ACTION_TYPES] as const satisfies readonly CatalogAffinity[];
-  const actions = segments<CatalogAffinity>(
-    "Action",
-    affinities,
-    () => filter.affinities,
-    (value) => {
-      filter = value === null ? { ...filter, affinities: new Set() } : toggle(filter, "affinities", value);
-    },
-    (value) => value === "none" ? ["None"] : [icon(value), AFFINITY_LABEL[value]],
-  );
-  const rarities = segments<Rarity>(
-    "Rarity",
-    RARITIES,
-    () => filter.rarities,
-    (value) => {
-      filter = value === null ? { ...filter, rarities: new Set() } : toggle(filter, "rarities", value);
-    },
-    (value) => [h("i", { class: "rarity-dot", "data-rarity": value }), RARITY[value].label],
-  );
-  const sizes = segments<SizeClass>(
-    "Size",
-    [1, 2, 3, 4],
-    () => filter.sizes,
-    (value) => {
-      filter = value === null ? { ...filter, sizes: new Set() } : toggle(filter, "sizes", value);
-    },
-    (value) => [`${value} cell${value === 1 ? "" : "s"}`],
-  );
-
-  const filterReadout = h("span", { class: "armory__top-control", "data-control": "filter" }, "FILTER: NONE");
   const grid = h("div", { class: "armory__grid" });
   const empty = h("p", { class: "armory__empty", hidden: "" }, "No mod matches these filters.");
   const footer = h("footer", { class: "armory__count" });
+
+  const filterModal = armoryFilterModal({
+    getFilter: () => filter,
+    setFilter(next) {
+      filter = next;
+      render();
+    },
+  });
+
+  const filterButton = button("FILTER: NONE", "armory__top-control", () => {
+    filterModal.show(filterButton);
+    filterButton.setAttribute("aria-expanded", "true");
+  }, {
+    "data-control": "filter",
+    "aria-haspopup": "dialog",
+    "aria-expanded": "false",
+  });
+  const clearButton = button("CLEAR", "armory__top-control", () => {
+    filter = NO_FILTER;
+    render();
+  }, { "data-control": "clear" });
+
   const screen = h("main", { class: `screen armory teal${options.debug ? " armory--debug" : ""}` },
     h("header", { class: "armory__top" },
       h("div", { class: "armory__top-left", "aria-label": "Catalogue controls" },
-        filterReadout,
-        h("span", { class: "armory__top-control", "data-control": "clear" }, "CLEAR")),
+        filterButton,
+        clearButton),
       h("h1", { class: "armory__title" }, "MOD CATALOG"),
       button("×", "armory__close", options.back, { "aria-label": "Close catalogue" })),
     detail.node,
     h("section", { class: "armory__browser", "aria-label": "Catalogue" },
-      h("div", { class: "armory__filters" }, types.node, actions.node),
-      h("div", { class: "armory__filters" }, rarities.node, sizes.node),
       h("div", { class: "armory__scroll" }, grid, empty),
       footer),
+    filterModal.node,
     ...(options.debug ? [paletteDebugSheet()] : []));
   root.replaceChildren(screen);
 
@@ -142,8 +82,8 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
   }
 
   function render(): void {
-    for (const group of [types, actions, rarities, sizes]) group.refresh();
-    setText(filterReadout, `FILTER: ${filterSummary(filter)}`);
+    filterModal.refresh(filter);
+    setText(filterButton, `FILTER: ${filterSummary(filter)}`);
     const listed = armoryList(filter);
     grid.replaceChildren(...listed.map((definition) => {
       const id = definition.id as ModId;
@@ -178,11 +118,18 @@ export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => vo
   }
 
   const onKey = (event: KeyboardEvent): void => {
+    if (filterModal.open) {
+      if (filterModal.handleKey(event) && !filterModal.open) {
+        filterButton.setAttribute("aria-expanded", "false");
+      }
+      return;
+    }
     if (event.key === "Escape") {
       event.preventDefault();
       options.back();
       return;
     }
+
     const movement: Readonly<Record<string, number>> = {
       ArrowLeft: -1, ArrowRight: 1, ArrowUp: -4, ArrowDown: 4,
     };
