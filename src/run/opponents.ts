@@ -8,7 +8,7 @@ import type { MixupPlan, OpponentPlan } from "../battle/mixup.ts";
 import { adjacencyGraph } from "../mods/adjacency.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { BOARD_HEIGHT, BOARD_WIDTH, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, fits, occupancy, place } from "../mods/grid.ts";
 import type { Grid, Placement } from "../mods/grid.ts";
 import { ROTATIONS } from "../mods/shapes.ts";
 import { stream } from "./random.ts";
@@ -98,22 +98,40 @@ export function figureFor(seed: number, day: number): OpponentFigure {
   return stream(seed, "figure", day).pick(OPPONENT_FIGURES.filter((figure) => figure !== yesterday));
 }
 
-/** How much each lane matters to a plan: how often its action appears across both bars. */
-function laneWeights(plan: OpponentPlan): Record<ActionType, number> {
+/** How often each action appears across both bars. */
+export function affinityWeights(plan: OpponentPlan): Record<ActionType, number> {
   const weights: Record<ActionType, number> = { strike: 0, tech: 0, block: 0 };
   for (const action of [...plan.primary, ...plan.secondary]) weights[action]++;
   return weights;
 }
 
+/** Plan affinity plus one point for every same-type neighbour at this placement. */
+export function placementScore(
+  grid: Grid,
+  placement: Placement,
+  weights: Readonly<Record<ActionType, number>>,
+): number {
+  const definition = REGISTRY[placement.mod];
+  const affinity = definition.affinity;
+  let score = affinity === null
+    ? ACTION_TYPES.reduce((sum, action) => sum + weights[action], 0)
+    : weights[affinity];
+  const candidate = { uid: -1, stars: 1 as const, ...placement };
+  const graph = adjacencyGraph([...grid, candidate]);
+  const byUid = new Map(grid.map((placed) => [placed.uid, placed] as const));
+  for (const uid of graph.neighbours(candidate.uid)) {
+    const neighbour = byUid.get(uid);
+    if (neighbour && REGISTRY[neighbour.mod].type === definition.type) score++;
+  }
+  return score;
+}
+
 /**
- * Where a mod does the plan the most good: element cells in the lanes its bars use most, with a
- * nudge towards neighbouring mods of the same type. The first best placement in reading order
- * wins a tie, so packing is deterministic.
+ * Where a mod best joins the static board. Affinity says how much the plan values the mod; adjacency
+ * breaks placement ties toward same-type clusters. Reading order keeps exact ties deterministic.
  */
 function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionType, number>>): Placement | null {
   const owners = occupancy(grid);
-  const byUid = new Map(grid.map((placed) => [placed.uid, placed] as const));
-  const type = REGISTRY[mod].type === "neutral" ? null : REGISTRY[mod].type;
   let best: Placement | null = null;
   let bestScore = -Infinity;
   for (const rotation of ROTATIONS) {
@@ -121,18 +139,7 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
       for (let x = 0; x < BOARD_WIDTH; x++) {
         const placement = { mod, rotation, x, y };
         if (!fits(owners, placement)) continue;
-        let score = 0;
-        for (const { y: row } of cellsOf(placement)) {
-          if (type !== null) score += weights[LANES[row]];
-        }
-        if (type !== null) {
-          const candidate = { uid: -1, stars: 1 as const, ...placement };
-          const graph = adjacencyGraph([...grid, candidate]);
-          for (const uid of graph.neighbours(candidate.uid)) {
-            const neighbour = byUid.get(uid);
-            if (neighbour && REGISTRY[neighbour.mod].type === type) score += 1;
-          }
-        }
+        const score = placementScore(grid, placement, weights);
         if (score > bestScore) {
           best = placement;
           bestScore = score;
@@ -144,7 +151,7 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
 }
 
 function buildFor(seed: number, day: number, plan: OpponentPlan): Grid {
-  const weights = laneWeights(plan);
+  const weights = affinityWeights(plan);
   let grid: Grid = [];
   let budget = opponentBudget(day);
   let uid = 1;
