@@ -4,16 +4,23 @@ import { compileBuild } from "../../src/mods/compile.ts";
 import { fightFor, playFight, reportOf, resumeFight } from "../../src/game/fight.ts";
 import { Match } from "../../src/game/match.ts";
 import { combatSide } from "../../src/game/sides.ts";
+import { DEFINITIONS } from "../../src/mods/registry.ts";
+import { pick } from "../mods/fixtures.ts";
 import { opponentFor } from "../../src/run/opponents.ts";
 import { beginFight, buy, newRun, setAction } from "../../src/run/run.ts";
 import type { RunState } from "../../src/run/run.ts";
 
+const DOMINO = pick({ size: 2 });
+const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const SINGLE = pick({ size: 1 });
+const ARC_SINGLE = pick({ type: "arc", size: 1 });
+const VOID_SINGLE = pick({ type: "void", size: 1 });
+
 function armed(seed: number): RunState {
   const run = newRun(seed);
   run.money = 40;
-  run.shop = { ...run.shop, offers: ["solar-flare", "null-reservoir", "thunderhead", "venom-tap", "void-tap"] };
-  // Solar Flare along the top and down the middle, Null Reservoir in the bottom-left corner, Venom Tap upright on the right.
-  for (const [offer, x, y, rotation] of [[0, 0, 0, 0], [1, 0, 1, 0], [3, 2, 1, 90]] as const) {
+  run.shop = { ...run.shop, offers: [DOMINO.id, STRAIGHT_TRIOMINO.id, ARC_SINGLE.id, SINGLE.id, VOID_SINGLE.id] };
+  for (const [offer, x, y, rotation] of [[0, 0, 0, 0], [1, 0, 1, 0], [3, 3, 3, 0]] as const) {
     if (buy(run, offer, { grid: { x, y, rotation } }) !== null) throw new Error(`offer ${offer} did not fit`);
   }
   setAction(run, "secondary", 0, "tech");
@@ -38,7 +45,7 @@ describe("the day's fight", () => {
     // The compiled grid reaches the fight through its program, not static CombatSide damage.
     expect(Object.keys(config.sides[0]).sort()).toEqual(["actions", "fighter"]);
     expect(config.programs[0]).toEqual(compileBuild(run.grid).program);
-    expect(config.programs[0].mods.map((mod) => mod.definition.id)).toEqual(["solar-flare", "null-reservoir", "venom-tap"]);
+    expect(config.programs[0].mods.map((mod) => mod.definition.id)).toEqual([DOMINO.id, STRAIGHT_TRIOMINO.id, SINGLE.id]);
     expect(config.programs[1]).toEqual(compileBuild(opponent.grid).program);
   });
 
