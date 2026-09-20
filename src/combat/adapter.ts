@@ -9,10 +9,6 @@ export interface CombatSide {
   readonly actions: ActionTable;
 }
 
-function wholeDamage(value: number): boolean {
-  return Number.isInteger(value) && value >= 0;
-}
-
 /**
  * What one exchange's commit carries beyond the build, from whatever runs around the arena: extra
  * damage on each side's move, extra healing on its parry, and what the next hit on it adds. All of
