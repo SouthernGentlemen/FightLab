@@ -20,11 +20,11 @@ import { stream } from "../../src/run/random.ts";
 
 const BUILDS = 1000;
 
-/** A grid of up to seven random registry mods, each at random stars and a random legal spot. */
+/** A 4×4 grid built from up to one random placement attempt per board cell. */
 function randomGrid(index: number): Grid {
   const random = stream(0xc9, "build", index);
   let grid: Grid = [];
-  const pieces = random.int(8);
+  const pieces = random.int(BOARD_WIDTH * BOARD_HEIGHT + 1);
   for (let piece = 0; piece < pieces; piece++) {
     const mod = random.pick(MOD_IDS);
     const legal: Placement[] = ROTATIONS.flatMap((rotation) => Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, cell) =>
