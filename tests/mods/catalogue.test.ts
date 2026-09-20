@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import type { ActionType } from "../../src/battle/actions.ts";
-import { SOLAR_CATALOGUE } from "../../src/mods/catalogue.ts";
+import { ARC_CATALOGUE, SOLAR_CATALOGUE } from "../../src/mods/catalogue.ts";
 import { effectLines } from "../../src/mods/describe.ts";
 import type { ModEffect, Payoff } from "../../src/mods/effects.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
@@ -63,6 +63,20 @@ function indexOf(predicate: (definition: ModDefinition) => boolean): number {
 
 function messages(definitions: readonly ModDefinition[]): string {
   return catalogueProblems(definitions).join("\n");
+}
+
+const FORBIDDEN_NAME_WORDS = /\b(?:solar|arc|void|neutral|common|uncommon|rare|legendary)\b/;
+
+function expectCompactRules(definitions: readonly ModDefinition[]): void {
+  for (const definition of definitions) {
+    expect(definition.name.length, definition.name).toBeLessThanOrEqual(16);
+    expect(definition.name.toLowerCase(), definition.name).not.toMatch(FORBIDDEN_NAME_WORDS);
+    for (const stars of STARS) {
+      const lines = effectLines(definition, stars);
+      expect(lines.length, `${definition.name} ★${stars}: ${lines.join(" | ")}`).toBeLessThanOrEqual(3);
+      for (const line of lines) expect(line.length, `${definition.name} ★${stars}: ${line}`).toBeLessThanOrEqual(60);
+    }
+  }
 }
 
 describe("catalogueProblems", () => {
@@ -199,17 +213,29 @@ describe("Solar catalogue", () => {
 
   it("keeps Solar names compact and every rules text within three 60-character lines", () => {
     expect(new Set(SOLAR_CATALOGUE.map(({ name }) => name)).size).toBe(16);
-    for (const definition of SOLAR_CATALOGUE) {
-      expect(definition.name.length, definition.name).toBeLessThanOrEqual(16);
-      expect(definition.name.toLowerCase(), definition.name)
-        .not.toMatch(/\b(?:solar|common|uncommon|rare|legendary)\b/);
-      for (const stars of STARS) {
-        const lines = effectLines(definition, stars);
-        expect(lines.length, `${definition.name} ★${stars}: ${lines.join(" | ")}`).toBeLessThanOrEqual(3);
-        for (const line of lines) {
-          expect(line.length, `${definition.name} ★${stars}: ${line}`).toBeLessThanOrEqual(60);
-        }
-      }
-    }
+    expectCompactRules(SOLAR_CATALOGUE);
+  });
+});
+
+
+describe("Arc catalogue", () => {
+  it("fills the sixteen §6.1 Arc slots exactly and passes the type validator", () => {
+    expect(catalogueProblems(ARC_CATALOGUE, { type: "arc" })).toEqual([]);
+    expect(ARC_CATALOGUE.map(({ affinity, rarity, shape }) => [affinity, rarity, shape])).toEqual([
+      [null, "common", "domino"], [null, "uncommon", "single"],
+      [null, "rare", "triomino-l"], [null, "legendary", "tetromino-i"],
+      ["strike", "common", "domino"], ["strike", "uncommon", "domino"],
+      ["strike", "rare", "single"], ["strike", "super-rare", "tetromino-z"],
+      ["tech", "common", "triomino-i"], ["tech", "uncommon", "triomino-l"],
+      ["tech", "rare", "tetromino-j"], ["tech", "legendary", "tetromino-s"],
+      ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-t"],
+      ["block", "rare", "domino"], ["block", "super-rare", "tetromino-l"],
+    ]);
+  });
+
+  it("keeps catalogue names unique and every Arc rules text within three 60-character lines", () => {
+    const names = [...SOLAR_CATALOGUE, ...ARC_CATALOGUE].map(({ name }) => name);
+    expect(new Set(names).size).toBe(names.length);
+    expectCompactRules(ARC_CATALOGUE);
   });
 });
