@@ -205,6 +205,18 @@ The selected border is also 0.391 ΔE from the strong border, and secondary / di
 ΔE apart. With the planned constant `--icon-backing`, the 12 type × action icon combinations share
 the same direct icon contrast; the minimum action contrast is Strike at 5.16 : 1.
 
+
+### Action icon placement
+
+The action icon sits on the **occupied cell nearest the piece's centroid**, with equal-distance ties
+resolved top-to-bottom and then left-to-right. The 1920 × 1080 comparison covered all eleven shape
+families at both card and board size. This rule reads faster than bounding-box centring because the
+disc stays on one solid type-coloured cell; bounding-box centres repeatedly land across cell seams or
+junctions on the I, O, T, S/Z, straight-triomino and domino silhouettes.
+
+Catalogue cards and `modArt` use the same pure anchor rule, so the selected detail, board pieces,
+bank/shop art and cards cannot drift to different icon placements.
+
 ## Architecture
 
 - `src/mods/registry.ts` — **the one registry**: 29 frozen records (id, name, description, rarity,
