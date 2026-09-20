@@ -3,7 +3,7 @@ import type { ActionType } from "../battle/actions.ts";
 import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
-import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, LANES, canPlace, cellsOf, firstFit, turnAbout } from "../mods/grid.ts";
+import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, canPlace, cellsOf, firstFit, turnAbout } from "../mods/grid.ts";
 import { RARITIES, RARITY } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
@@ -12,7 +12,6 @@ import type { GridPoint, Rotation } from "../mods/shapes.ts";
 import { effectLines } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { TYPE_LABEL } from "../mods/tags.ts";
 import { sellValue } from "../run/economy.ts";
 import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggleLock } from "../run/run.ts";
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
@@ -100,19 +99,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   const bank = panel("Bank", "sun", [h("small", {}, "any mod, one slot")], h("div", { class: "bank" }, ...bankSlots));
   bank.classList.add("prep__bank");
 
-  // The grid and its lanes.
-  const lanes = LANES.map((lane) => {
-    const bonus = h("b", { class: "lane__bonus stroke" });
-    const attune = h("span", { class: "lane__attune" });
-    const tag = h("span", { class: "lane__tag", "data-action": lane }, icon(lane), h("span", { class: "stroke" }, ACTION_LABEL[lane]));
-    return { lane, bonus, attune, node: h("div", { class: "lane", "data-lane": lane }, attune, tag, bonus) };
-  });
+  // The mod grid.
   const cells = Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, index) =>
     h("div", { class: "cell", "data-x": String(index % BOARD_WIDTH), "data-y": String(Math.floor(index / BOARD_WIDTH)) }));
   const pieces = h("div", { class: "pieces" });
   const carried = h("div", { class: "carried", hidden: "" });
   const gridBox = h("div", { class: "grid", style: `--board-w:${BOARD_WIDTH};--board-h:${BOARD_HEIGHT}` }, ...cells, pieces, carried);
-  const mods = panel("Mods", "rose", [], h("div", { class: "board" }, h("div", { class: "lanes" }, ...lanes.map(({ node }) => node)), gridBox));
+  const mods = panel("Mods", "rose", [], h("div", { class: "board" }, gridBox));
   mods.classList.add("prep__mods");
 
   // The two action bars, in the negative space on the right.
@@ -235,15 +228,9 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       return art;
     }));
 
-    lanes.forEach(({ lane, bonus, attune, node }) => {
-      setText(bonus, `+${build.lanes[lane]}`);
-      const element = build.attuned[lane];
-      attune.replaceChildren(...(element ? [icon(element)] : []));
-      node.dataset.attuned = element ?? "";
-    });
     BAR_IDS.forEach((bar, index) => barSlots[index].forEach(({ node, chip, damage }, slot) => {
       const action = run.loadout[bar][slot];
-      const hit = hitDamage(side, action);
+      const hit = hitDamage(side, action, build.preview[action]);
       node.dataset.action = action;
       paintChip(chip, action);
       setText(damage, String(hit));
@@ -678,25 +665,14 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const mod = heldMod(found.held);
       if (mod === null) return null;
       const definition = REGISTRY[mod.mod];
-      const elemental = definition.type !== "neutral";
       return [
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
         h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
-        h("small", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
         h("small", {}, found.held.kind === "offer" ? `${priceOf(mod.mod)} · click to carry, drag to place`
           : `Sells for ${sellValue(mod)} · click to carry, drag to move`),
         h("small", {}, "While carried: click to place · right-click or R to turn · Esc to cancel"),
       ];
-    }
-    const lane = target.closest<HTMLElement>("[data-lane]");
-    if (lane) {
-      const action = lane.dataset.lane as ActionType;
-      const build = buildOf(run);
-      const attuned = build.attuned[action];
-      return [h("b", {}, `${ACTION_LABEL[action]} lane +${build.lanes[action]}`),
-        h("span", {}, `Every cell in this row powers ${ACTION_LABEL[action]} ${action === "block" ? "(the riposte)" : ""}`),
-        h("small", {}, attuned ? `Attuned to ${TYPE_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
     }
     return null;
   }
