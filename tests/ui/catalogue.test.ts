@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { DEFINITIONS } from "../../src/mods/registry.ts";
@@ -9,7 +10,7 @@ import { SHAPES, orientations } from "../../src/mods/shapes.ts";
 import { seededCollection } from "../../src/run/collection.ts";
 import { mountArmory } from "../../src/ui/armory.ts";
 
-const STYLES = readFileSync(new URL("../../src/ui/styles.css", import.meta.url), "utf8");
+const STYLES = readFileSync(resolve(process.cwd(), "src/ui/styles.css"), "utf8");
 
 let root: HTMLDivElement;
 let dispose: () => void;
