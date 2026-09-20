@@ -239,7 +239,8 @@ describe.each(AUTHORED_SLICES)("$label catalogue", ({ type, definitions, slots }
 });
 
 it("passes the full 64 validator and keeps names unique across types", () => {
-  const definitions = AUTHORED_SLICES.flatMap(({ definitions }) => definitions);
+  const definitions: ModDefinition[] = [];
+  for (const slice of AUTHORED_SLICES) definitions.push(...slice.definitions);
   expect(catalogueProblems(definitions)).toEqual([]);
   const names = definitions.map(({ name }) => name);
   expect(new Set(names).size).toBe(names.length);
