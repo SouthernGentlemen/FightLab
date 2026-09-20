@@ -27,7 +27,7 @@ describe("the mod registry", () => {
 
   it("catches a broken definition", () => {
     const base = pick();
-    const legacy = { ...base, effect: undefined };
+    const legacy = { ...base, effects: [generate("heat", [1, 2, 3])], effect: undefined };
     const broken = (patch: Partial<ModDefinition>) => definitionProblems({ ...legacy, ...patch });
     expect(broken({ type: "fire" as ModDefinition["type"] })).toEqual([expect.stringMatching(/unknown type/)]);
     expect(broken({ affinity: "guard" as ModDefinition["affinity"] })).toEqual([expect.stringMatching(/unknown affinity/)]);
