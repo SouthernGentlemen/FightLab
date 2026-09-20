@@ -735,13 +735,12 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Delete `modtile.ts` (`modSquare`, `modTile`) and the `.tile*` and `.square*` rules.
 - Done when a screenshot of the grid is checked, and a 32-character name leaves the layout intact.
 
-#### tasks-024 — Icon placement: centre or anchor
+#### tasks-024 — Icon placement: centre or anchor · **done**
 *Spec §20.*
-- Draw both variants for all 11 shapes:
-  - A: centred on the bounding box;
-  - B: on the occupied cell nearest the centroid, ties going to the top-left.
-- Compare them in screenshots at card size and board size, keep the one that scans fastest, delete
-  the other, and write down why in `docs/MODS.md`.
+- The 1920 × 1080 comparison covered both variants for all 11 shapes at card and board size.
+- **B won:** the icon sits on the occupied cell nearest the centroid, with ties going to the
+  top-left. It keeps the disc on a solid cell instead of straddling seams and junctions.
+- The bounding-box-centre variant and its comparison flag are deleted; `docs/MODS.md` records why.
 
 #### tasks-025 — The catalogue screen
 *Spec §22, §42.*
@@ -1015,7 +1014,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-021 | The palette on Prep's mod surfaces | 6 | D6 ✓ | done |
 | tasks-022 | The card's view model | 7 | — | done |
 | tasks-023 | The card | 7 | — | done |
-| tasks-024 | Icon placement: centre or anchor | 7 | — | todo |
+| tasks-024 | Icon placement: centre or anchor | 7 | — | done |
 | tasks-025 | The catalogue screen | 7 | — | todo |
 | tasks-026 | The detail pane | 8 | — | todo |
 | tasks-027 | The filter model | 9 | D8 ✓ | todo |
