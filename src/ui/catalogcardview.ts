@@ -1,12 +1,12 @@
-import type { CatalogCardModel } from "./catalogcard.ts";
+import type { CatalogCardModel, CatalogShapeModel } from "./catalogcard.ts";
 import { h, icon } from "./dom.ts";
 
 function sameCell(first: { x: number; y: number }, second: { x: number; y: number }): boolean {
   return first.x === second.x && first.y === second.y;
 }
 
-/** DOM renderer for the pure catalogue-card model. */
-export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
+/** Shared DOM renderer for catalogue-card artwork and the selected detail preview. */
+export function catalogShapeView(model: CatalogShapeModel): HTMLSpanElement {
   const shape = h("span", {
     class: "catalog-card__shape",
     "data-type": model.type,
@@ -25,7 +25,11 @@ export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
     }
     shape.append(node);
   }
+  return shape;
+}
 
+/** DOM renderer for the pure catalogue-card model. */
+export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
   const pips = h("span", { class: "catalog-card__pips", "aria-hidden": "true" },
     ...model.pips.map(({ stars, filled }) =>
       h("span", { class: "catalog-card__pip", "data-filled": String(filled) }, "★".repeat(stars))),
@@ -38,7 +42,7 @@ export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
     "data-rarity": model.rarity,
     "aria-label": model.label,
   },
-  h("span", { class: "catalog-card__art" }, shape),
+  h("span", { class: "catalog-card__art" }, catalogShapeView(model)),
   pips,
   h("b", { class: "catalog-card__name", title: model.name }, model.name));
 }
