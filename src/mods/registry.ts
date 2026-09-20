@@ -35,10 +35,11 @@ export interface ModDefinition {
 export type ModId = (typeof CATALOGUE)[number]["id"];
 export type RegisteredModDefinition = ModDefinition & { readonly id: ModId };
 
-export const REGISTRY: Readonly<Record<ModId, RegisteredModDefinition>> = Object.freeze(
-  Object.fromEntries(CATALOGUE.map((definition) => [definition.id, definition]))
-    as Record<ModId, RegisteredModDefinition>,
-);
+const BY_ID = Object.fromEntries(
+  CATALOGUE.map((definition) => [definition.id, definition]),
+) as Record<ModId, RegisteredModDefinition>;
+
+export const REGISTRY: Readonly<Record<ModId, RegisteredModDefinition>> = Object.freeze(BY_ID);
 
 /** Registry order is catalogue order: type, then affinity, then rarity (§6.2). */
 export const MOD_IDS: readonly ModId[] = Object.freeze(CATALOGUE.map((definition) => definition.id));
