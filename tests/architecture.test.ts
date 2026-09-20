@@ -162,6 +162,7 @@ describe("retired mod vocabulary", () => {
   });
 
   it("keeps multiplicity counts off mod cards", () => {
+    // These are multiplication readouts, not mod-card ownership counts.
     const allowed = new Map<string, readonly string[]>([
       ["src/ui/kit.ts", ["×${meter.chain}"]],
       ["src/ui/payday.ts", ["×${build.styleMultiplier}"]],
