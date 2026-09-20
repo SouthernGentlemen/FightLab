@@ -4,7 +4,9 @@ import type { ActionType } from "../../src/battle/actions.ts";
 import type { Amount, Condition, ModEffect, Payoff, Per, Status } from "../../src/mods/effects.ts";
 import { EMPTY_PROGRAM, programOf } from "../../src/mods/program.ts";
 import type { ModProgram } from "../../src/mods/program.ts";
+import { REGISTRY } from "../../src/mods/registry.ts";
 import type { ModDefinition, ModId } from "../../src/mods/registry.ts";
+import { pick } from "./fixtures.ts";
 import { freshState, prepareExchange, settleExchange, staticTotal } from "../../src/mods/resolve.ts";
 import type { ModState, Outcome } from "../../src/mods/resolve.ts";
 import type { ShapeId } from "../../src/mods/shapes.ts";
@@ -12,20 +14,12 @@ import type { Stars } from "../../src/mods/stars.ts";
 import type { ModType } from "../../src/mods/tags.ts";
 
 const IDS = {
-  a: "heat-coil",
-  b: "basic-sink",
-  c: "arc-dynamo",
-  d: "battery-cell",
-  domino: "cinder-edge",
+  a: pick({ type: "solar", size: 1 }).id,
+  b: pick({ type: "arc", size: 1 }).id,
+  c: pick({ type: "void", size: 1 }).id,
+  d: pick({ type: "neutral", size: 1 }).id,
+  domino: pick({ type: "solar", affinity: "strike", size: 2 }).id,
 } as const satisfies Record<string, ModId>;
-
-const SHAPE: Readonly<Record<ModId, ShapeId | undefined>> = {
-  "heat-coil": "single",
-  "basic-sink": "single",
-  "arc-dynamo": "single",
-  "battery-cell": "single",
-  "cinder-edge": "domino",
-} as Partial<Record<ModId, ShapeId>> as Record<ModId, ShapeId | undefined>;
 
 function amount(value: number, per: Per = "flat"): Amount {
   return { value: [value, value, value], per };
@@ -44,7 +38,7 @@ function definition(
   type: ModType,
   affinity: ActionType | null,
   effect: ModEffect,
-  shape: ShapeId = SHAPE[id] ?? "single",
+  shape: ShapeId = REGISTRY[id].shape,
 ): ModDefinition {
   return {
     id,
