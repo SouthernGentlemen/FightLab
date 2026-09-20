@@ -1,4 +1,4 @@
-import type { Effect, Payoff, Resource } from "./effects.ts";
+import type { Effect, LegacyPayoff, Resource } from "./effects.ts";
 import type { ModDefinition } from "./registry.ts";
 import { scaled } from "./stars.ts";
 import type { Stars } from "./stars.ts";
@@ -13,7 +13,7 @@ const RESOURCE: Readonly<Record<Resource, string>> = { heat: "Heat", charge: "Ch
 
 const plural = (count: number, one: string, many = `${one}s`): string => `${count} ${count === 1 ? one : many}`;
 
-function payoffText(payoff: Payoff, stars: Stars, blocks: boolean): string {
+function payoffText(payoff: LegacyPayoff, stars: Stars, blocks: boolean): string {
   const amount = scaled(payoff.amount, stars);
   switch (payoff.kind) {
     case "damage": return `+${amount} ${blocks ? "riposte damage" : "damage"}`;
