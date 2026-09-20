@@ -754,7 +754,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 
 ### Pass 8 — The selected detail pane
 
-#### tasks-026 — The detail pane
+#### tasks-026 — The detail pane · **done**
 *Spec §18, §21.*
 - The pane shows:
   - the name, in its rarity colour;
@@ -1016,7 +1016,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-023 | The card | 7 | — | done |
 | tasks-024 | Icon placement: centre or anchor | 7 | — | done |
 | tasks-025 | The catalogue screen | 7 | — | done |
-| tasks-026 | The detail pane | 8 | — | todo |
+| tasks-026 | The detail pane | 8 | — | done |
 | tasks-027 | The filter model | 9 | D8 ✓ | todo |
 | tasks-028 | The filter modal | 9 | — | todo |
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
