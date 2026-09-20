@@ -74,16 +74,19 @@ const detail = await evaluate(`(() => {
   const catalogCell = document.querySelector(".catalog-card:not([data-mod=cinder-wall]) .catalog-card__cell");
   const detailCell = art?.querySelector(".catalog-card__cell");
   const copies = pane?.querySelector(".detail-pane__copies");
+  const name = pane?.querySelector(".detail-pane__name");
   if (!(pane instanceof HTMLElement)
       || !(art instanceof HTMLElement)
-      || !catalogCell || !detailCell || !(copies instanceof HTMLElement)) return null;
+      || !catalogCell || !detailCell || !(copies instanceof HTMLElement)
+      || !(name instanceof HTMLElement)) return null;
 
   const filled = [...selected.querySelectorAll(".catalog-card__pip")]
     .filter((node) => node.getAttribute("data-filled") === "true")
     .map((node) => node.textContent?.trim() ?? "");
   return {
-    name: pane.querySelector(".detail-pane__name")?.textContent?.trim(),
-    rarity: pane.dataset.rarity,
+    name: name.textContent?.trim(),
+    rarity: name.dataset.rarity,
+    rarityNodes: pane.querySelectorAll("[data-rarity]").length,
     cells: art.querySelectorAll(".catalog-card__cell").length,
     actions: art.querySelectorAll(".catalog-card__action").length,
     pips: pane.querySelectorAll(".detail-pane__pip").length,
@@ -103,6 +106,7 @@ const detail = await evaluate(`(() => {
 if (!detail
     || detail.name !== "Cinder Wall"
     || detail.rarity !== "uncommon"
+    || detail.rarityNodes !== 1
     || detail.cells !== 4
     || detail.actions !== 1
     || detail.pips !== 3
