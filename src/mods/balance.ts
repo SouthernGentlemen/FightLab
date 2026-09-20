@@ -16,10 +16,6 @@ export const POISON_DIVISOR = 2;
 /** Charge a fighter can hold before any Battery. Charge above capacity is lost as it is made. */
 export const BASE_CHARGE_CAPACITY = 3;
 
-/** Lane power: what each elemental-tagged cell adds to its row's action, and in an attuned row. */
-export const LANE_POWER = 1;
-export const ATTUNED_LANE_POWER = 2;
-
 /** Burn after a round ends: it halves, rounding down, so 8 → 4 → 2 → 1 → 0. */
 export function burnAfterRound(burn: number): number {
   return Math.floor(burn / 2);
