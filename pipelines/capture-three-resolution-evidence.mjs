@@ -97,10 +97,10 @@ await send("Runtime.enable");
 const sizes = [[1920, 1080], [2560, 1440], [3840, 2160]];
 for (const [width, height] of sizes) {
   const tag = `${width}x${height}`;
-  await viewport(width, height);
-
+  await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
   await evaluate("localStorage.clear()");
   await reload();
+  await viewport(width, height);
   await clickText("Armory");
   await waitFor(".armory");
   await evaluate(`document.querySelector('[data-mod="ember-edge"]')?.click()`);
