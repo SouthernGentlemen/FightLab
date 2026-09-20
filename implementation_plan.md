@@ -846,7 +846,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - It runs one type at a time while the catalogue is authored, and on the whole catalogue once it is
   swapped in. Its messages say which count is off, and by how much.
 
-#### tasks-034 — Author Solar (16)
+#### tasks-034 — Author Solar (16) · **done**
 #### tasks-035 — Author Arc (16)
 #### tasks-036 — Author Void (16)
 #### tasks-037 — Author Neutral (16)
@@ -1025,7 +1025,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | done |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | done |
 | tasks-033 | The catalogue validator | 10 | D11 ✓ | done |
-| tasks-034 | Author Solar (16) | 10 | D11 ✓ | todo |
+| tasks-034 | Author Solar (16) | 10 | D11 ✓ | done |
 | tasks-035 | Author Arc (16) | 10 | D11 ✓ | todo |
 | tasks-036 | Author Void (16) | 10 | D11 ✓ | todo |
 | tasks-037 | Author Neutral (16) | 10 | D11 ✓ | todo |
