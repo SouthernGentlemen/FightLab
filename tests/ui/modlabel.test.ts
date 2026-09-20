@@ -13,13 +13,14 @@ function fixture(
   return {
     id: name.toLowerCase().replaceAll(" ", "-"),
     name,
-    description: "Fixture only.",
     rarity,
     type,
     affinity,
     shape,
-    effects: [],
-    visual: { glyph: "chip" },
+    effect: {
+      kind: "exchange",
+      payoffs: [{ kind: "damage", amount: { value: [1, 2, 3], per: "flat" } }],
+    },
   };
 }
 
