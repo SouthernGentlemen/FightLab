@@ -4,7 +4,11 @@ import type { ActionType } from "../../src/battle/actions.ts";
 import type { ModProgram } from "../../src/mods/program.ts";
 import { endRound, freshState, prepareExchange, settleExchange } from "../../src/mods/resolve.ts";
 import type { ModState, Outcome, Pair } from "../../src/mods/resolve.ts";
-import { NOTHING, PLAYER_LANDS, QUIET, program, state } from "./programs.ts";
+import {
+  LEGACY_BATTERY, LEGACY_CHAIN, LEGACY_CINDER, LEGACY_DYNAMO, LEGACY_FEEDBACK, LEGACY_GUARD, LEGACY_HEAT,
+  LEGACY_STORM, LEGACY_VENOM, LEGACY_VOID_TAP, legacyProgram,
+} from "./legacy-fixtures.ts";
+import { NOTHING, PLAYER_LANDS, QUIET, state } from "./programs.ts";
 
 /** One exchange through steps 1–3 and 5, with the kernel's part (step 4) given as its outcome. */
 function exchange(states: Pair<ModState>, programs: Pair<ModProgram>, actions: Pair<ActionType>, outcome: Outcome = QUIET) {
@@ -14,7 +18,7 @@ function exchange(states: Pair<ModState>, programs: Pair<ModProgram>, actions: P
 
 describe("Solar: fast build, low sustained payoff", () => {
   it("generates Heat, spends it on a burning Strike, and the Burn halves away after the round", () => {
-    const solar = program(["heat-coil", 0, 0], ["cinder-edge", 1, 0]);
+    const solar = legacyProgram([LEGACY_HEAT, 0, 0], [LEGACY_CINDER, 1, 0]);
     const first = exchange([freshState(solar), state()], [solar, NOTHING], ["strike", "tech"], PLAYER_LANDS);
     expect(first.prepared.states[0].heat).toBe(0);
     expect(first.prepared.bonus[0]).toBe(2);
@@ -28,7 +32,7 @@ describe("Solar: fast build, low sustained payoff", () => {
 
 describe("Arc: setup and burst", () => {
   it("stores Charge, spends it on Shock, and one hit takes the whole Shock at once", () => {
-    const arc = program(["arc-dynamo", 0, 0], ["battery-cell", 1, 0], ["storm-cell", 0, 1]);
+    const arc = legacyProgram([LEGACY_DYNAMO, 0, 0], [LEGACY_BATTERY, 1, 0], [LEGACY_STORM, 0, 1]);
     let states: Pair<ModState> = [freshState(arc), state()];
     expect(states[0].capacity).toBe(5);
     states = exchange(states, [arc, NOTHING], ["tech", "tech"]).states;
@@ -47,8 +51,8 @@ describe("Arc: setup and burst", () => {
 
 describe("Void: slow build, persistent high payoff", () => {
   it("leeches into Void, spends it on Poison, and the Poison stays and grows through the rounds", () => {
-    const leecher = program(["void-tap", 0, 0], ["venom-tap", 1, 0]);
-    const foe = program(["heat-coil", 0, 0], ["arc-dynamo", 0, 1]);
+    const leecher = legacyProgram([LEGACY_VOID_TAP, 0, 0], [LEGACY_VENOM, 1, 0]);
+    const foe = legacyProgram([LEGACY_HEAT, 0, 0], [LEGACY_DYNAMO, 0, 1]);
     let states: Pair<ModState> = [freshState(leecher), freshState(foe)];
     const poisonDealt: number[] = [];
     for (let round = 0; round < 4; round++) {
@@ -66,15 +70,15 @@ describe("Void: slow build, persistent high payoff", () => {
 
 describe("stars, rotation and tags", () => {
   it("scale a mod's own numbers with its stars", () => {
-    const at = (stars: 1 | 2 | 3) => prepareExchange([state({ heat: 1 }), state()], [program(["cinder-edge", 0, 0, stars]), NOTHING], ["strike", "tech"]);
+    const at = (stars: 1 | 2 | 3) => prepareExchange([state({ heat: 1 }), state()], [legacyProgram([LEGACY_CINDER, 0, 0, stars]), NOTHING], ["strike", "tech"]);
     expect([1, 2, 3].map((stars) => at(stars as 1 | 2 | 3).bonus[0])).toEqual([2, 3, 4]);
     expect([1, 2, 3].map((stars) => at(stars as 1 | 2 | 3).pending[0][0].amount)).toEqual([2, 3, 5]);
   });
 
   it("let Chain Circuit make more Charge for every adjacent mod", () => {
-    const alone = program(["chain-circuit", 0, 1]);
-    const neighbouring = program(["arc-dynamo", 0, 0], ["chain-circuit", 0, 1]);
-    const circuit = neighbouring.mods.find((mod) => mod.definition.id === "chain-circuit")!;
+    const alone = legacyProgram([LEGACY_CHAIN, 0, 1]);
+    const neighbouring = legacyProgram([LEGACY_DYNAMO, 0, 0], [LEGACY_CHAIN, 0, 1]);
+    const circuit = neighbouring.mods.find((mod) => mod.definition.id === LEGACY_CHAIN.id)!;
     expect(circuit.adjacent).toHaveLength(1);
     const charge = (built: ModProgram) => prepareExchange([state({ capacity: 99 }), state()], [built, NOTHING], ["tech", "tech"]).states[0].charge;
     expect(charge(alone)).toBe(1);
@@ -82,7 +86,7 @@ describe("stars, rotation and tags", () => {
   });
 
   it("refund Charge when an adjacent mod spends it", () => {
-    const loop = program(["arc-dynamo", 0, 0, 2], ["feedback-loop", 1, 0], ["capacitor-guard", 2, 0]);
+    const loop = legacyProgram([LEGACY_DYNAMO, 0, 0, 2], [LEGACY_FEEDBACK, 1, 0], [LEGACY_GUARD, 2, 0]);
     const blocked = prepareExchange([freshState(loop), state()], [loop, NOTHING], ["block", "strike"]);
     expect(blocked.heal[0]).toBe(3);
     expect(blocked.states[0].charge).toBe(1);
