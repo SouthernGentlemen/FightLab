@@ -43,6 +43,27 @@ async function waitFor(selector) {
   throw new Error(`Timed out waiting for ${selector}`);
 }
 
+async function openArmory(url) {
+  await send("Page.navigate", { url });
+  await waitFor(".title");
+  const opened = await evaluate(`(() => {
+    const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim().startsWith("Armory"));
+    if (!button) return false;
+    button.click();
+    return true;
+  })()`);
+  if (!opened) throw new Error("Could not open Armory in debug mode");
+}
+
+async function shot(path) {
+  const image = await send("Page.captureScreenshot", {
+    format: "png",
+    fromSurface: true,
+    captureBeyondViewport: false,
+  });
+  writeFileSync(path, Buffer.from(image.data, "base64"));
+}
+
 await send("Page.enable");
 await send("Runtime.enable");
 await send("Emulation.setDeviceMetricsOverride", {
@@ -52,15 +73,7 @@ await send("Emulation.setDeviceMetricsOverride", {
   mobile: false,
 });
 
-await send("Page.navigate", { url: "http://127.0.0.1:5192/?debug" });
-await waitFor(".title");
-const opened = await evaluate(`(() => {
-  const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim().startsWith("Armory"));
-  if (!button) return false;
-  button.click();
-  return true;
-})()`);
-if (!opened) throw new Error("Could not open Armory in debug mode");
+await openArmory("http://127.0.0.1:5192/?debug");
 await waitFor(".palette-sheet");
 await sleep(250);
 
@@ -94,11 +107,29 @@ if (!evidence.selectedCorners || !evidence.poor || !evidence.sold || !evidence.v
   throw new Error(`Palette state hooks are missing: ${JSON.stringify(evidence)}`);
 }
 if (evidence.visible <= 0) throw new Error("Palette sheet is not visible");
+await shot("screenshots/palette-sheet.png");
 
-const image = await send("Page.captureScreenshot", {
-  format: "png",
-  fromSurface: true,
-  captureBeyondViewport: false,
-});
-writeFileSync("screenshots/palette-sheet.png", Buffer.from(image.data, "base64"));
+await openArmory("http://127.0.0.1:5192/?debug=icon-placement");
+await waitFor('[data-sheet="icon-placement"]');
+await sleep(250);
+
+const comparison = await evaluate(`(() => ({
+  viewport: [innerWidth, innerHeight],
+  shapes: [...document.querySelectorAll('[data-sheet="icon-placement"] [data-shape]')].map((node) => node.getAttribute("data-shape")),
+  centreCard: document.querySelectorAll('[data-sheet="icon-placement"] [data-placement="centre"][data-size="card"] .mod__action').length,
+  centreBoard: document.querySelectorAll('[data-sheet="icon-placement"] [data-placement="centre"][data-size="board"] .mod__action').length,
+  anchorCard: document.querySelectorAll('[data-sheet="icon-placement"] [data-placement="anchor"][data-size="card"] .mod__action').length,
+  anchorBoard: document.querySelectorAll('[data-sheet="icon-placement"] [data-placement="anchor"][data-size="board"] .mod__action').length,
+  visible: document.querySelector('[data-sheet="icon-placement"]')?.getBoundingClientRect().height ?? 0,
+}))()`);
+const expectedShapes = ["tetromino-i", "tetromino-o", "tetromino-t", "tetromino-s", "tetromino-z", "tetromino-j", "tetromino-l", "triomino-i", "triomino-l", "domino", "single"];
+if (comparison.viewport[0] !== 1920 || comparison.viewport[1] !== 1080
+    || JSON.stringify(comparison.shapes) !== JSON.stringify(expectedShapes)
+    || comparison.centreCard !== 11 || comparison.centreBoard !== 11
+    || comparison.anchorCard !== 11 || comparison.anchorBoard !== 11
+    || comparison.visible <= 0) {
+  throw new Error(`Icon placement comparison incomplete: ${JSON.stringify(comparison)}`);
+}
+await shot("screenshots/icon-placement-compare.png");
+
 socket.close();
