@@ -98,6 +98,7 @@ const sizes = [[1920, 1080], [2560, 1440], [3840, 2160]];
 for (const [width, height] of sizes) {
   const tag = `${width}x${height}`;
   await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+  await reload();
   await evaluate("localStorage.clear()");
   await reload();
   await viewport(width, height);
