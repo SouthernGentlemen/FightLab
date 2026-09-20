@@ -40,7 +40,7 @@ function scale(per: Per, mod: ActiveMod, opponent: ModState): number {
 
 function conditionPasses(mod: ActiveMod, program: ModProgram, opponent: ModState): boolean {
   const effect = mod.definition.effect;
-  if (effect?.kind !== "exchange" || effect.when === undefined) return true;
+  if (effect.kind !== "exchange" || effect.when === undefined) return true;
   const when = effect.when;
   if (when.kind === "opponent-has") return opponent[when.status] > 0;
   const byUid = new Map(program.mods.map((entry) => [entry.uid, entry] as const));
@@ -62,16 +62,16 @@ export function vocabularyExchange(
 
   for (const mod of program.mods) {
     const effect = mod.definition.effect;
-    if (effect?.kind !== "exchange" || !fires(mod, action) || !conditionPasses(mod, program, opponent)) continue;
+    if (effect.kind !== "exchange" || !fires(mod, action) || !conditionPasses(mod, program, opponent)) continue;
     for (const payoff of effect.payoffs) {
       const amount = amountOf(payoff, mod, opponent, action);
       if (payoff.kind === "damage") bonus += amount;
       else if (payoff.kind === "heal") heal += amount;
       else if (payoff.kind === "cleanse") {
-        pending.push({ kind: "cleanse", debuff: payoff.status, amount, needs: needs(mod) });
+        pending.push({ kind: "cleanse", status: payoff.status, amount, needs: needs(mod) });
       } else {
         const status = STATUS_BY_TYPE[mod.definition.type];
-        if (status !== null) pending.push({ kind: "debuff", debuff: status, amount, needs: needs(mod) });
+        if (status !== null) pending.push({ kind: "status", status, amount, needs: needs(mod) });
       }
     }
   }
@@ -84,6 +84,6 @@ export function vocabularyPerkTotal(
 ): number {
   return program.mods.reduce((sum, mod) => {
     const effect = mod.definition.effect;
-    return sum + (effect?.kind === "perk" && effect.perk === perk ? scaled(effect.amount, mod.stars) : 0);
+    return sum + (effect.kind === "perk" && effect.perk === perk ? scaled(effect.amount, mod.stars) : 0);
   }, 0);
 }
