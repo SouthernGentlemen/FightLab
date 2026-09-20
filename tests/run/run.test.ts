@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { defaultLoadout } from "../../src/battle/bars.ts";
 import { DEFINITIONS, priceOf } from "../../src/mods/registry.ts";
 import type { ModId } from "../../src/mods/registry.ts";
-import { pick } from "../mods/fixtures.ts";
+import { pick, registryFixture } from "../mods/fixtures.ts";
 import { STARTING_MONEY, sellValue } from "../../src/run/economy.ts";
 import {
   beginFight, buy, finishFight, move, newRun, nextDay, opponentOf, reroll, rerollPrice, rotate, sell, toggleLock,
@@ -14,7 +14,7 @@ import { REROLL_PRICE, rollOffers } from "../../src/run/shop.ts";
 
 const SEED = 20260918;
 const SINGLE = pick({ size: 1 });
-const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const STRAIGHT_TRIOMINO = registryFixture(DEFINITIONS.find(({ shape }) => shape === "triomino-i"));
 const DOMINO = pick({ size: 2 });
 const LEGENDARY = pick({ rarity: "legendary", size: 4 });
 const ARC_SINGLE = pick({ type: "arc", size: 1 });
