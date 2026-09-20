@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
+import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import type { ModId } from "../../src/mods/registry.ts";
 import {
   BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, canPlace, cellsOf, emptyBank, firstFit, firstFreeBankSlot, place, removeFromGrid, rotateInPlace,
@@ -9,14 +9,19 @@ import {
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
 import { ROTATIONS, SHAPES, SHAPE_IDS, cellsAt, nextRotation, normalise, orientations, shapeCells, sizeOf } from "../../src/mods/shapes.ts";
 import type { GridPoint, Rotation, ShapeId } from "../../src/mods/shapes.ts";
+import { pick, placement } from "./fixtures.ts";
 
 const point = (x: number, y: number): GridPoint => ({ x, y });
 const key = ({ x, y }: GridPoint) => `${x},${y}`;
 const sorted = (cells: readonly GridPoint[]) => cells.map(key).sort();
+const SINGLE = pick({ size: 1 });
+const DOMINO = pick({ size: 2 });
+const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const O_MOD = DEFINITIONS.find(({ shape }) => shape === "tetromino-o")!;
 
 /** A grid of single-cell blockers on exactly these cells. */
 function blockers(cells: readonly GridPoint[], firstUid = 100): PlacedMod[] {
-  return cells.map(({ x, y }, index) => ({ uid: firstUid + index, mod: "heat-coil", stars: 1, rotation: 0, x, y }));
+  return cells.map(({ x, y }, index) => ({ uid: firstUid + index, mod: SINGLE.id, stars: 1, rotation: 0, x, y }));
 }
 
 const ALL_CELLS: GridPoint[] = Array.from(
@@ -118,7 +123,7 @@ describe("turning about a board cell", () => {
   });
 
   it("does not move or rotate an O, whichever occupied cell is the pivot", () => {
-    const placed = { mod: "singularity" as const, rotation: 0 as const, x: 1, y: 1 };
+    const placed = placement([O_MOD, 1, 1]);
     for (const pivot of cellsOf(placed)) expect(turnAbout(placed, pivot)).toEqual(placed);
   });
 });
@@ -126,33 +131,33 @@ describe("turning about a board cell", () => {
 describe("the grid", () => {
   it("accepts a placement only when every cell is on the board and empty", () => {
     const grid = Object.freeze(blockers([point(1, 1)]));
-    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 0 })).toBe(true);
-    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 1 })).toBe(false);
-    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 3, y: 0 })).toBe(false);
-    expect(canPlace(grid, { mod: "furnace", rotation: 90, x: 3, y: 3 })).toBe(false);
-    expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: -1, y: 0 })).toBe(false);
-    expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: 0.5, y: 0 })).toBe(false);
+    expect(canPlace(grid, placement([DOMINO, 0, 0]))).toBe(true);
+    expect(canPlace(grid, placement([DOMINO, 0, 1]))).toBe(false);
+    expect(canPlace(grid, placement([DOMINO, 3, 0]))).toBe(false);
+    expect(canPlace(grid, placement([DOMINO, 3, 3, 90]))).toBe(false);
+    expect(canPlace(grid, placement([SINGLE, -1, 0]))).toBe(false);
+    expect(canPlace(grid, placement([SINGLE, 0.5, 0]))).toBe(false);
     // A piece can always be checked against its own old position.
-    expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: 1, y: 1 }, 100)).toBe(true);
+    expect(canPlace(grid, placement([SINGLE, 1, 1]), 100)).toBe(true);
   });
 
   it("places, refuses and removes without editing the grid it was given", () => {
     const empty: Grid = Object.freeze([]);
-    const one = place(empty, { uid: 1, mod: "chain-circuit", stars: 1, rotation: 0, x: 0, y: 2 })!;
+    const one = place(empty, { uid: 1, stars: 1, ...placement([STRAIGHT_TRIOMINO, 0, 2]) })!;
     expect(one).toHaveLength(1);
     expect(empty).toHaveLength(0);
-    expect(place(one, { uid: 2, mod: "heat-coil", stars: 1, rotation: 0, x: 1, y: 2 })).toBeNull();
-    expect(place(one, { uid: 1, mod: "heat-coil", stars: 1, rotation: 0, x: 0, y: 0 })).toBeNull();
+    expect(place(one, { uid: 2, stars: 1, ...placement([SINGLE, 1, 2]) })).toBeNull();
+    expect(place(one, { uid: 1, stars: 1, ...placement([SINGLE, 0, 0]) })).toBeNull();
     expect(cellsOf(one[0]).map(key)).toEqual(["0,2", "1,2", "2,2"]);
     expect(removeFromGrid(one, 1)).toEqual([]);
     expect(one).toHaveLength(1);
   });
 
   it("fits a mod at the first legal spot in reading order, trying other rotations when it must", () => {
-    expect(firstFit([], "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 0, x: 0, y: 0 });
+    expect(firstFit([], STRAIGHT_TRIOMINO.id)).toEqual({ mod: STRAIGHT_TRIOMINO.id, rotation: 0, x: 0, y: 0 });
     const columns = blockers([point(1, 0), point(1, 1), point(1, 2), point(1, 3), point(2, 0), point(2, 1), point(2, 2), point(2, 3)]);
-    expect(firstFit(columns, "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 90, x: 0, y: 0 });
-    expect(firstFit(blockers(ALL_CELLS), "heat-coil")).toBeNull();
+    expect(firstFit(columns, STRAIGHT_TRIOMINO.id)).toEqual({ mod: STRAIGHT_TRIOMINO.id, rotation: 90, x: 0, y: 0 });
+    expect(firstFit(blockers(ALL_CELLS), SINGLE.id)).toBeNull();
   });
 });
 
