@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import type { ActionType } from "../../src/battle/actions.ts";
-import { ARC_CATALOGUE, SOLAR_CATALOGUE, VOID_CATALOGUE } from "../../src/mods/catalogue.ts";
+import { ARC_CATALOGUE, NEUTRAL_CATALOGUE, SOLAR_CATALOGUE, VOID_CATALOGUE } from "../../src/mods/catalogue.ts";
 import { effectLines } from "../../src/mods/describe.ts";
 import type { ModEffect, Payoff } from "../../src/mods/effects.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
@@ -216,6 +216,15 @@ const AUTHORED_SLICES = [
       ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-l"], ["block", "rare", "domino"], ["block", "legendary", "tetromino-i"],
     ],
   },
+  {
+    label: "Neutral", type: "neutral", definitions: NEUTRAL_CATALOGUE,
+    slots: [
+      [null, "common", "domino"], [null, "uncommon", "single"], [null, "rare", "triomino-l"], [null, "legendary", "tetromino-i"],
+      ["strike", "common", "domino"], ["strike", "uncommon", "domino"], ["strike", "rare", "single"], ["strike", "super-rare", "tetromino-l"],
+      ["tech", "common", "triomino-i"], ["tech", "uncommon", "triomino-l"], ["tech", "rare", "tetromino-j"], ["tech", "super-rare", "tetromino-z"],
+      ["block", "common", "tetromino-o"], ["block", "uncommon", "tetromino-t"], ["block", "rare", "domino"], ["block", "legendary", "tetromino-s"],
+    ],
+  },
 ] as const;
 
 describe.each(AUTHORED_SLICES)("$label catalogue", ({ type, definitions, slots }) => {
@@ -229,7 +238,9 @@ describe.each(AUTHORED_SLICES)("$label catalogue", ({ type, definitions, slots }
   });
 });
 
-it("keeps authored catalogue names unique across types", () => {
-  const names = AUTHORED_SLICES.flatMap(({ definitions }) => definitions.map(({ name }) => name));
+it("passes the full 64 validator and keeps names unique across types", () => {
+  const definitions = AUTHORED_SLICES.flatMap(({ definitions }) => definitions);
+  expect(catalogueProblems(definitions)).toEqual([]);
+  const names = definitions.map(({ name }) => name);
   expect(new Set(names).size).toBe(names.length);
 });
