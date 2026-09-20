@@ -13,10 +13,10 @@ interface OpenExchange {
 
 /**
  * The arena a fight runs on: the combat arena with each fighter's mods resolved around it. Before a
- * commit the engine generates, leeches and spends, and the commit carries what that bought. When
- * combat says the exchange has settled, the engine reads what physically landed — never an
- * animation — and applies the debuffs it earned. When the round ends, Burn and Poison go through
- * the kernel as afflictions. The director sees one `Arena` and never learns a mod exists.
+ * commit the engine derives damage, healing and status payoffs. When combat says the exchange has
+ * settled, the engine reads what physically landed — never an animation — and applies earned
+ * statuses. When the round ends, Burn and Poison go through the kernel as afflictions. The director
+ * sees one `Arena` and never learns a mod exists.
  */
 export class ModdedArena implements Arena {
   readonly combat: CombatArena;
@@ -29,7 +29,7 @@ export class ModdedArena implements Arena {
   constructor(combat: CombatArena, programs: Pair<ModProgram>) {
     this.combat = combat;
     this.programs = programs;
-    this.states = [freshState(programs[0]), freshState(programs[1])];
+    this.states = [freshState(), freshState()];
   }
 
   status(): ArenaStatus {
@@ -63,7 +63,7 @@ export class ModdedArena implements Arena {
   }
 
   endRound(): ArenaStep {
-    const ended = endRound(this.states, this.programs);
+    const ended = endRound(this.states);
     this.states = ended.states;
     this.lastRoundEnd = ended;
     return this.combat.afflict(ended.afflictions);
