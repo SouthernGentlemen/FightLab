@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { DEFINITIONS } from "../../src/mods/registry.ts";
-import type { ModDefinition } from "../../src/mods/registry.ts";
+import type { RegisteredModDefinition } from "../../src/mods/registry.ts";
 import { SHAPES, orientations } from "../../src/mods/shapes.ts";
 import { bestStars } from "../../src/mods/stars.ts";
 import { seededCollection } from "../../src/run/collection.ts";
@@ -24,7 +24,7 @@ function cards(): HTMLButtonElement[] {
   return [...root.querySelectorAll<HTMLButtonElement>(".catalog-card")];
 }
 
-function definitionFor(card: HTMLButtonElement): ModDefinition {
+function definitionFor(card: HTMLButtonElement): RegisteredModDefinition {
   const definition = DEFINITIONS.find(({ id }) => id === card.dataset.mod);
   if (definition === undefined) throw new Error(`unknown catalogue card ${card.dataset.mod}`);
   return definition;
