@@ -3,7 +3,7 @@ import type { Payoff, Per, Status } from "./effects.ts";
 import type { ActiveMod, ModProgram } from "./program.ts";
 import type { ModState, Needs, PendingPayoff } from "./resolve.ts";
 import { scaled } from "./stars.ts";
-import type { ModType } from "./tags.ts";
+import type { ModType } from "./types.ts";
 
 export interface VocabularyContribution {
   readonly bonus: number;

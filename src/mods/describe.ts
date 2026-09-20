@@ -1,4 +1,4 @@
-import { AFFINITY_LABEL, TYPE_LABEL } from "./tags.ts";
+import { AFFINITY_LABEL, TYPE_LABEL } from "./types.ts";
 import type { Amount, Condition, ModEffect, Payoff } from "./effects.ts";
 import type { ModDefinition } from "./registry.ts";
 import { scaled } from "./stars.ts";

@@ -2,7 +2,7 @@ import { RARITY } from "../mods/rarity.ts";
 import type { ModDefinition } from "../mods/registry.ts";
 import { SHAPE_LABEL } from "../mods/shapes.ts";
 import type { Stars } from "../mods/stars.ts";
-import { AFFINITY_LABEL, TYPE_LABEL } from "../mods/tags.ts";
+import { AFFINITY_LABEL, TYPE_LABEL } from "../mods/types.ts";
 
 /** One accessible description for every place the UI presents a mod. */
 export function modLabel(definition: ModDefinition, stars?: Stars): string {

@@ -3,7 +3,7 @@ import { STATUSES } from "./effects.ts";
 import type { Amount, Condition, ModEffect, Payoff } from "./effects.ts";
 import { RARITIES } from "./rarity.ts";
 import { SHAPE_IDS, SHAPES, sizeOf } from "./shapes.ts";
-import { MOD_TYPES } from "./tags.ts";
+import { MOD_TYPES } from "./types.ts";
 import type { CatalogueOptions, ModDefinition } from "./registry.ts";
 
 const AFFINITIES = [null, ...ACTION_TYPES] as const;

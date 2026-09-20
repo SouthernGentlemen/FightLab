@@ -7,8 +7,8 @@ import { RARITY, isRarity } from "./rarity.ts";
 import type { Rarity } from "./rarity.ts";
 import { SHAPES } from "./shapes.ts";
 import type { ShapeId } from "./shapes.ts";
-import { isModType } from "./tags.ts";
-import type { ModType } from "./tags.ts";
+import { isModType } from "./types.ts";
+import type { ModType } from "./types.ts";
 import { catalogueProblemsFor } from "./catalogue-validator.ts";
 
 /**

@@ -3,7 +3,7 @@ import type { Rarity } from "./rarity.ts";
 import { DEFINITIONS } from "./registry.ts";
 import type { ModDefinition, ModId } from "./registry.ts";
 import { SHAPES } from "./shapes.ts";
-import type { ModType } from "./tags.ts";
+import type { ModType } from "./types.ts";
 
 export type CatalogAffinity = ActionType | "none";
 export type SizeClass = 1 | 2 | 3 | 4;

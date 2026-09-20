@@ -1,6 +1,6 @@
 /**
  * Canonical polyomino footprints, authored flat with x increasing right and y increasing down.
- * Cell order is stable through rotation because existing port indices and drag anchors depend on it.
+ * Cell order is stable through rotation because existing drag anchors depend on it.
  */
 
 export interface GridPoint {

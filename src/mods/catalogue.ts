@@ -4,7 +4,7 @@ import type { Rarity } from "./rarity.ts";
 import type { ModDefinition } from "./registry.ts";
 import type { ShapeId } from "./shapes.ts";
 import type { Scaled } from "./stars.ts";
-import type { ModType } from "./tags.ts";
+import type { ModType } from "./types.ts";
 
 const amount = (value: Scaled, per: Per = "flat"): Amount => ({ value, per });
 const damage = (value: Scaled, per: Per = "flat"): Payoff =>
@@ -118,7 +118,7 @@ export const ARC_CATALOGUE = Object.freeze([
   // Tech
   draft("pulse-line", "Pulse Line", "common", "arc", "tech", "triomino-i",
     exchange(status([1, 2, 3], "cell"))),
-  draft("charge-fork", "Charge Fork", "uncommon", "arc", "tech", "triomino-l",
+  draft("pulse-fork", "Pulse Fork", "uncommon", "arc", "tech", "triomino-l",
     exchange(damage([1, 2, 3], "cell"), status([1, 2, 3], "adjacent"))),
   draft("cascade-gate", "Cascade Gate", "rare", "arc", "tech", "tetromino-j",
     exchange(damage([1, 2, 3], "cell"), status([1, 2, 3], "adjacent-same"))),

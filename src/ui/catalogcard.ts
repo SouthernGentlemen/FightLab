@@ -5,7 +5,7 @@ import { SHAPES, orientations, shapeSize } from "../mods/shapes.ts";
 import type { GridPoint } from "../mods/shapes.ts";
 import { STARS, copiesIn } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import type { ModType } from "../mods/tags.ts";
+import type { ModType } from "../mods/types.ts";
 import { modLabel } from "./modlabel.ts";
 
 export const CATALOG_CARD_BOX = Object.freeze({ width: 4, height: 2, cellSize: 1 });

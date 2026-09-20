@@ -1,5 +1,5 @@
 import type { Scaled } from "./stars.ts";
-import type { ModType } from "./tags.ts";
+import type { ModType } from "./types.ts";
 
 export const STATUSES = ["burn", "shock", "poison"] as const;
 export type Status = (typeof STATUSES)[number];
