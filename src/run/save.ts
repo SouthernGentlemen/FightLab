@@ -20,8 +20,8 @@ import { SHOP_SIZE } from "./shop.ts";
  * version, a missing field, an impossible value — is discarded whole, never half-loaded. Changing
  * the saved shape means a new version and, if old saves are to survive, a migration with a test.
  */
-/** Version 3 stores canonical degree rotations; version 2 quarter turns migrate on read. */
-export const SAVE_VERSION = 3;
+/** Version 4 starts with the replacement 64-mod registry; older registry saves are discarded. */
+export const SAVE_VERSION = 4;
 export const SAVE_KEY = "fightlab.run";
 
 /** The player's Mixup decisions in the fight in progress, one per pause left so far. */
@@ -108,20 +108,19 @@ function modId(value: unknown, what: string): ModId {
   return value;
 }
 
-function owned(value: unknown, what: string, v2 = false): OwnedMod {
+function owned(value: unknown, what: string): OwnedMod {
   const data = record(value, what);
   const mod = modId(data.mod, `${what}: mod`);
-  const raw = v2 ? integer(data.rotation, `${what}: rotation`, 0, 3) * 90 : data.rotation;
-  if (!isRotation(raw) || !isStars(data.stars)) fail(`${what}: rotation or stars`);
-  const rotation = normaliseRotation(SHAPES[REGISTRY[mod].shape], raw as Rotation);
+  if (!isRotation(data.rotation) || !isStars(data.stars)) fail(`${what}: rotation or stars`);
+  const rotation = normaliseRotation(SHAPES[REGISTRY[mod].shape], data.rotation as Rotation);
   return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod, stars: data.stars, rotation });
 }
 
-function readGrid(value: unknown, v2 = false): Grid {
+function readGrid(value: unknown): Grid {
   if (!Array.isArray(value)) fail("grid");
   let grid: Grid = Object.freeze([]);
   for (const [index, entry] of value.entries()) {
-    const piece = owned(entry, `grid ${index}`, v2);
+    const piece = owned(entry, `grid ${index}`);
     const data = record(entry, `grid ${index}`);
     const next = place(grid, { ...piece, x: integer(data.x, `grid ${index}: x`, 0), y: integer(data.y, `grid ${index}: y`, 0) });
     if (next === null) fail(`grid ${index}: not a legal placement`);
@@ -130,9 +129,9 @@ function readGrid(value: unknown, v2 = false): Grid {
   return grid;
 }
 
-function readBank(value: unknown, v2 = false): Bank {
+function readBank(value: unknown): Bank {
   if (!Array.isArray(value) || value.length !== BANK_SIZE) fail("bank");
-  return Object.freeze(value.map((entry, index) => (entry === null ? null : owned(entry, `bank ${index}`, v2))));
+  return Object.freeze(value.map((entry, index) => (entry === null ? null : owned(entry, `bank ${index}`))));
 }
 
 function readShop(value: unknown): ShopState {
@@ -189,12 +188,12 @@ function readRecord(value: unknown): RunRecord {
   };
 }
 
-function readRun(value: unknown, v2 = false): RunState {
+function readRun(value: unknown): RunState {
   const data = record(value, "run");
   if (!isSeed(data.seed)) fail("seed");
   const phase = oneOf(data.phase, PHASES, "phase");
-  const grid = readGrid(data.grid, v2);
-  const bank = readBank(data.bank, v2);
+  const grid = readGrid(data.grid);
+  const bank = readBank(data.bank);
   const nextUid = integer(data.nextUid, "next uid", 1);
   const uids = [...grid.map((piece) => piece.uid), ...bank.flatMap((slot) => (slot ? [slot.uid] : []))];
   if (new Set(uids).size !== uids.length || uids.some((uid) => uid >= nextUid)) fail("mod uids");
@@ -224,8 +223,8 @@ function readRun(value: unknown, v2 = false): RunState {
 function readDocument(value: unknown): SaveDocument | null {
   try {
     const data = record(value, "document");
-    if (data.version !== 2 && data.version !== SAVE_VERSION) return null;
-    const run = readRun(data.run, data.version === 2);
+    if (data.version !== SAVE_VERSION) return null;
+    const run = readRun(data.run);
     let fight: FightProgress | null = null;
     if (data.fight !== null) {
       const progress = record(data.fight, "fight");
