@@ -94,6 +94,12 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.catalog-card__name[data-rarity="common"] { color: var(--rarity-common); }
+.catalog-card__name[data-rarity="uncommon"] { color: var(--rarity-uncommon); }
+.catalog-card__name[data-rarity="rare"] { color: var(--rarity-rare); }
+.catalog-card__name[data-rarity="super-rare"] { color: var(--rarity-super-rare); }
+.catalog-card__name[data-rarity="legendary"] { color: var(--rarity-legendary); }
+
 .armory__count {
   display: grid;
   grid-template-columns: repeat(3, max-content) minmax(0, 1fr);
