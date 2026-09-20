@@ -159,8 +159,8 @@ function buildFor(seed: number, day: number, plan: OpponentPlan): Grid {
     const random = stream(seed, "opponent-shop", day, roll);
     for (let offer = 0; offer < SHOP_SIZE; offer++) {
       const mod = drawOffer(random, day);
-      // Money is worth nothing to an opponent, so it never buys a Neutral mod.
-      if (priceOf(mod) > budget || REGISTRY[mod].type === "neutral") continue;
+      // Run-only perks do nothing for an opponent, but combat-capable Neutral mods are valid.
+      if (priceOf(mod) > budget || REGISTRY[mod].effect?.kind === "perk") continue;
       const placement = bestPlacement(grid, mod, weights);
       if (placement === null) continue;
       grid = place(grid, { uid: uid++, stars: 1, ...placement })!;
