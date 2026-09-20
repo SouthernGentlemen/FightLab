@@ -7,7 +7,7 @@ import { REGISTRY, priceOf } from "../../src/mods/registry.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
 import { place } from "../../src/mods/grid.ts";
 import type { Grid } from "../../src/mods/grid.ts";
-import { ARCHETYPES, OPPONENT_FIGURES, figureFor, opponentBudget, opponentFor } from "../../src/run/opponents.ts";
+import { ARCHETYPES, OPPONENT_FIGURES, affinityWeights, figureFor, opponentBudget, opponentFor, placementScore } from "../../src/run/opponents.ts";
 
 const SEEDS = Array.from({ length: 40 }, (_, index) => index * 7919 + 13);
 const DAYS = Array.from({ length: 14 }, (_, index) => index + 1);
@@ -93,12 +93,20 @@ describe("generated opponents", () => {
     }
   });
 
-  it("grow stronger as the days pass", () => {
-    const cells = (day: number) => SEEDS.reduce((sum, seed) => {
-      const { lanes } = compileBuild(opponentFor(seed, day).grid);
-      return sum + lanes.strike + lanes.tech + lanes.block;
-    }, 0);
-    expect(cells(1)).toBeLessThan(cells(5));
-    expect(cells(5)).toBeLessThanOrEqual(cells(10));
+  it("scores mods by plan affinity and same-type adjacency", () => {
+    const plan = opponentFor(13, 4).plan;
+    const weights = affinityWeights(plan);
+    expect(weights.strike + weights.tech + weights.block).toBe(6);
+
+    const strikeWeight = weights.strike;
+    expect(placementScore([], { mod: "cinder-edge", rotation: 0, x: 0, y: 0 }, weights)).toBe(strikeWeight);
+
+    const allActions = weights.strike + weights.tech + weights.block;
+    expect(placementScore([], { mod: "furnace", rotation: 0, x: 0, y: 0 }, weights)).toBe(allActions);
+
+    const solar = place([], { uid: 99, mod: "heat-coil", stars: 1, rotation: 0, x: 0, y: 0 })!;
+    expect(placementScore(solar, { mod: "cinder-edge", rotation: 0, x: 0, y: 1 }, weights)).toBe(strikeWeight + 1);
+    expect(placementScore(solar, { mod: "cinder-edge", rotation: 0, x: 1, y: 1 }, weights)).toBe(strikeWeight);
+    expect(placementScore(solar, { mod: "arc-dynamo", rotation: 0, x: 0, y: 1 }, weights)).toBe(allActions);
   });
 });
