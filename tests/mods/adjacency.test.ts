@@ -52,6 +52,9 @@ describe("adjacency", () => {
     const b = single(2, 1, 0);
     expect(sharedEdges(a, b)).toBe(1);
     expect(areAdjacent(a, b)).toBe(true);
+    const graph = adjacencyGraph(Object.freeze([a, b]));
+    expect(graph.edges(1, 2)).toBe(1);
+    expect(graph.neighbours(1)).toEqual([2]);
   });
 
   it("counts a shared vertical edge as adjacent", () => {
