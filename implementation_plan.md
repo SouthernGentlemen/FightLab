@@ -848,7 +848,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 
 #### tasks-034 — Author Solar (16) · **done**
 #### tasks-035 — Author Arc (16) · **done**
-#### tasks-036 — Author Void (16)
+#### tasks-036 — Author Void (16) · **done**
 #### tasks-037 — Author Neutral (16)
 *Spec §6–§12, §36, §37 · D11, confirmed.*
 - Each task fills one type's slots in §6.1 in `src/mods/catalogue.ts`, with names and effects written
@@ -1027,7 +1027,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-033 | The catalogue validator | 10 | D11 ✓ | done |
 | tasks-034 | Author Solar (16) | 10 | D11 ✓ | done |
 | tasks-035 | Author Arc (16) | 10 | D11 ✓ | done |
-| tasks-036 | Author Void (16) | 10 | D11 ✓ | todo |
+| tasks-036 | Author Void (16) | 10 | D11 ✓ | done |
 | tasks-037 | Author Neutral (16) | 10 | D11 ✓ | todo |
 | tasks-038 | Tests stop naming mods | 10 | — | todo |
 | tasks-039 | Swap to the 64 | 10 | D7 ✓ | todo |
