@@ -6,7 +6,7 @@ import { ARC_CATALOGUE, NEUTRAL_CATALOGUE, SOLAR_CATALOGUE, VOID_CATALOGUE } fro
 import { effectLines } from "../../src/mods/describe.ts";
 import type { ModEffect, Payoff } from "../../src/mods/effects.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
-import { catalogueProblems } from "../../src/mods/registry.ts";
+import { DEFINITIONS, catalogueProblems } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import type { ShapeId } from "../../src/mods/shapes.ts";
 import { STARS } from "../../src/mods/stars.ts";
@@ -95,7 +95,9 @@ describe("catalogueProblems", () => {
   it("checks type, affinity, pair, size, shape and rarity balance", () => {
     expect(messages(changed(0, { type: "arc" }))).toContain("type solar count: expected 16, got 15 (off by 1 low)");
 
-    expect(messages(changed(0, { affinity: "strike" }))).toContain("affinity none count: expected 16, got 15 (off by 1 low)");
+    const changedAffinity = messages(changed(0, { affinity: "strike" }));
+    expect(changedAffinity).toContain("affinity none count: expected 16, got 15 (off by 1 low)");
+    expect(changedAffinity).toContain("pair solar × none count: expected 4, got 3 (off by 1 low)");
 
     expect(messages(changed(0, { shape: "domino" })))
       .toContain("shape tetromino-i count: expected 4, got 3 (off by 1 low)");
@@ -235,10 +237,8 @@ describe.each(AUTHORED_SLICES)("$label catalogue", ({ type, definitions, slots }
   });
 });
 
-it("passes the full 64 validator and keeps names unique across types", () => {
-  const definitions: ModDefinition[] = [];
-  for (const slice of AUTHORED_SLICES) definitions.push(...slice.definitions);
-  expect(catalogueProblems(definitions)).toEqual([]);
-  const names = definitions.map(({ name }) => name);
+it("passes the live 64-mod catalogue through the validator", () => {
+  expect(catalogueProblems(DEFINITIONS)).toEqual([]);
+  const names = DEFINITIONS.map(({ name }) => name);
   expect(new Set(names).size).toBe(names.length);
 });
