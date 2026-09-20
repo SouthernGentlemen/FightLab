@@ -65,13 +65,13 @@ if (!opened) throw new Error("Could not open Armory");
 await waitFor(".armory");
 
 const detail = await evaluate(`(() => {
-  const selected = document.querySelector('[data-mod="thunderhead"]');
+  const selected = document.querySelector('[data-mod="cinder-wall"]');
   if (!(selected instanceof HTMLButtonElement)) return null;
   selected.click();
   selected.scrollIntoView({ block: "center" });
   const pane = document.querySelector(".detail-pane");
   const art = pane?.querySelector(".detail-pane__art");
-  const catalogCell = document.querySelector(".catalog-card:not([data-mod=thunderhead]) .catalog-card__cell");
+  const catalogCell = document.querySelector(".catalog-card:not([data-mod=cinder-wall]) .catalog-card__cell");
   const detailCell = art?.querySelector(".catalog-card__cell");
   const copies = pane?.querySelector(".detail-pane__copies");
   if (!(pane instanceof HTMLElement)
@@ -101,8 +101,8 @@ const detail = await evaluate(`(() => {
 })()`);
 
 if (!detail
-    || detail.name !== "Thunderhead"
-    || detail.rarity !== "legendary"
+    || detail.name !== "Cinder Wall"
+    || detail.rarity !== "uncommon"
     || detail.cells !== 4
     || detail.actions !== 1
     || detail.pips !== 3
