@@ -19,7 +19,9 @@ import { STYLE_RANKS } from "../src/battle/style.ts";
 import { fightFor, playFight, reportOf } from "../src/game/fight.ts";
 import type { Match } from "../src/game/match.ts";
 import { firstFit } from "../src/mods/grid.ts";
+import type { Grid } from "../src/mods/grid.ts";
 import { REGISTRY, priceOf } from "../src/mods/registry.ts";
+import { SHAPES } from "../src/mods/shapes.ts";
 import { stream } from "../src/run/random.ts";
 import { beginFight, buy, finishFight, move, newRun, nextDay, rerollPrice, reroll, setAction } from "../src/run/run.ts";
 import type { DaySummary, Destination, Refusal, RunState, Source } from "../src/run/run.ts";
@@ -63,6 +65,8 @@ export interface BotRun {
   readonly run: RunState;
   /** Money held at the start of each day's fight. */
   readonly stakes: readonly number[];
+  /** The exact grid fielded in each recorded fight. */
+  readonly builds: readonly Grid[];
 }
 
 /** One day's bars, drawn from the bot's own stream so the run's streams never notice the bot. */
@@ -81,6 +85,7 @@ export function botRun(seed: number, maxDays = 40): BotRun {
   const inputs: RunInput[] = [];
   const days: DaySummary[] = [];
   const stakes: number[] = [];
+  const builds: Grid[] = [];
   const act = (input: RunInput): Refusal | null => {
     const refused = apply(run, input);
     if (refused === null) inputs.push(input);
@@ -108,6 +113,7 @@ export function botRun(seed: number, maxDays = 40): BotRun {
       break;
     }
     stakes.push(run.money);
+    builds.push(run.grid);
     const refused = beginFight(run);
     if (refused) throw new Error(`the bot could not fight: ${refused}`);
     const match = playFight(fightFor(run).config, whenBeaten);
@@ -116,7 +122,7 @@ export function botRun(seed: number, maxDays = 40): BotRun {
     days.push(run.last!);
     if (run.phase === "payday") act({ kind: "next" });
   }
-  return { seed, inputs, days, run, stakes };
+  return { seed, inputs, days, run, stakes, builds };
 }
 
 /** A run rebuilt from nothing but its seed and its inputs. */
@@ -133,6 +139,34 @@ export function replayRun(seed: number, inputs: readonly RunInput[]): { run: Run
 
 function percent(part: number, whole: number): string {
   return whole === 0 ? "   —" : `${((100 * part) / whole).toFixed(0).padStart(3)}%`;
+}
+
+interface Rate {
+  fights: number;
+  wins: number;
+}
+
+function rateLine(
+  label: string,
+  keys: readonly string[],
+  runs: readonly BotRun[],
+  keyOf: (grid: Grid) => readonly string[],
+): string {
+  const rates = new Map(keys.map((key) => [key, { fights: 0, wins: 0 } satisfies Rate]));
+  for (const { days, builds } of runs) {
+    days.forEach((summary, index) => {
+      for (const key of new Set(keyOf(builds[index]))) {
+        const rate = rates.get(key);
+        if (!rate) continue;
+        rate.fights++;
+        rate.wins += summary.result === "victory" ? 1 : 0;
+      }
+    });
+  }
+  return `  win by ${label} ${keys.map((key) => {
+    const rate = rates.get(key)!;
+    return `${key} ${percent(rate.wins, rate.fights)} (n=${rate.fights})`;
+  }).join("  ")}`;
 }
 
 function main(argv: readonly string[]): void {
@@ -160,6 +194,12 @@ function main(argv: readonly string[]): void {
   console.log(`tune: ${count} bot runs in ${((performance.now() - started) / 1000).toFixed(1)} s`);
   console.log(`  champion ${percent(champions, count)}   run length median ${lengths[Math.floor(count / 2)]} days (${lengths[0]}–${lengths.at(-1)})`);
   console.log(`  peak style ${STYLE_RANKS.map((rank, index) => `${rank} ${percent(styles[index], fights)}`).join("  ")}`);
+  console.log(rateLine("type", ["solar", "arc", "void", "neutral"], runs,
+    (grid) => grid.map((piece) => REGISTRY[piece.mod].type)));
+  console.log(rateLine("affinity", ["none", "strike", "tech", "block"], runs,
+    (grid) => grid.map((piece) => REGISTRY[piece.mod].affinity ?? "none")));
+  console.log(rateLine("size", ["1", "2", "3", "4"], runs,
+    (grid) => grid.map((piece) => String(SHAPES[REGISTRY[piece.mod].shape].cells.length))));
   console.log("  day  fights   win  loss  draw  money  rounds");
   for (const [day, entry] of [...byDay].sort(([a], [b]) => a - b)) {
     console.log(`  ${String(day).padStart(3)}  ${String(entry.fights).padStart(6)}  ${percent(entry.wins, entry.fights)}  ${percent(entry.losses, entry.fights)}  ${percent(entry.draws, entry.fights)}  ${(entry.money / entry.fights).toFixed(1).padStart(5)}  ${(entry.rounds / entry.fights).toFixed(1).padStart(6)}`);
