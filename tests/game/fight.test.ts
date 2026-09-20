@@ -35,8 +35,8 @@ describe("the day's fight", () => {
     expect(config.opponent).toBe(opponent.plan);
     expect(config.sides[0]).toEqual(combatSide(compileBuild(run.grid)));
     expect(config.sides[1]).toEqual(combatSide(compileBuild(opponent.grid)));
-    // The compiled grid reaches the fight: lane damage on the side, every placed mod in the program.
-    expect(config.sides[0].bonus.strike).toBeGreaterThan(0);
+    // The compiled grid reaches the fight through its program, not static CombatSide damage.
+    expect(Object.keys(config.sides[0]).sort()).toEqual(["actions", "fighter"]);
     expect(config.programs[0]).toEqual(compileBuild(run.grid).program);
     expect(config.programs[0].mods.map((mod) => mod.definition.id)).toEqual(["solar-flare", "null-reservoir", "venom-tap"]);
     expect(config.programs[1]).toEqual(compileBuild(opponent.grid).program);
