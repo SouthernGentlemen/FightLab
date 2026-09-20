@@ -97,7 +97,7 @@ describe("catalogueProblems", () => {
     expect(catalogueProblems(duplicate)).toContain("id 'solar-0' is used twice");
     expect(catalogueProblems(duplicate)).toContain("name 'S0' is used twice");
 
-    const long = changed(0, { name: "SeventeenLetters!!" });
+    const long = changed(0, { name: "SeventeenLetters!" });
     expect(messages(long)).toContain("name is 17 characters; maximum is 16");
   });
 
@@ -119,6 +119,9 @@ describe("catalogueProblems", () => {
     const common = indexOf((definition) => definition.rarity === "common" && definition.type === "solar");
     expect(messages(changed(common, { effect: exchange([{ kind: "damage", amount: amount("adjacent") }]) })))
       .toContain("scale 'adjacent' is not allowed at this rarity");
+    expect(messages(changed(common, {
+      effect: { kind: "exchange", payoffs: [{ kind: "damage", amount: amount() }], when: { kind: "adjacent-to", type: "arc" } },
+    }))).toContain("condition 'adjacent-to' is not allowed at this rarity");
 
     const commonTwo = exchange([{ kind: "damage", amount: amount() }, { kind: "heal", amount: amount() }]);
     expect(messages(changed(common, { effect: commonTwo }))).toContain("has 2 payoffs; this rarity allows 1");
@@ -132,6 +135,9 @@ describe("catalogueProblems", () => {
     const rare = indexOf((definition) => definition.rarity === "rare" && definition.type === "solar");
     expect(messages(changed(rare, { effect: exchange([{ kind: "damage", amount: amount("burn") }]) })))
       .toContain("scale 'burn' is not allowed at this rarity");
+    expect(messages(changed(rare, {
+      effect: { kind: "exchange", payoffs: [{ kind: "damage", amount: amount() }], when: { kind: "opponent-has", status: "burn" } },
+    }))).toContain("condition 'opponent-has' is not allowed at this rarity");
 
     const superRare = indexOf((definition) => definition.rarity === "super-rare");
     expect(messages(changed(superRare, { effect: { kind: "boost", amount: [1, 2, 3], to: "adjacent" } })))
