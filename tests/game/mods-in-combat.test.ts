@@ -8,21 +8,23 @@ import { DEFAULT_MATCH, Match } from "../../src/game/match.ts";
 import type { MatchConfig } from "../../src/game/match.ts";
 import { combatSide } from "../../src/game/sides.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
-import { place } from "../../src/mods/grid.ts";
-import type { Grid } from "../../src/mods/grid.ts";
-import type { ModId } from "../../src/mods/registry.ts";
-import type { Rotation } from "../../src/mods/shapes.ts";
+import {
+  LEGACY_BATTERY, LEGACY_CINDER, LEGACY_DYNAMO, LEGACY_FLARE, LEGACY_HEAT,
+  LEGACY_STORM, LEGACY_VENOM, LEGACY_VOID_TAP, LEGACY_WIRE, legacyGrid,
+} from "../mods/legacy-fixtures.ts";
+import type { LegacyPiece } from "../mods/legacy-fixtures.ts";
 
-let uid = 0;
-function grid(...pieces: ReadonlyArray<readonly [ModId, number, number, Rotation?]>): Grid {
-  return pieces.reduce<Grid>((built, [mod, x, y, rotation = 0]) => place(built, { uid: ++uid, mod, stars: 1, rotation, x, y })!, []);
-}
+type FixtureGrid = ReturnType<typeof legacyGrid>;
+const built = (...pieces: readonly LegacyPiece[]): FixtureGrid => legacyGrid(...pieces);
 
 const all = (action: ActionType) => actionLoadout([action, action, action], [action, action, action]);
 
 /** The player's grid and bars against an opponent's, both steady, through the real director, engine and kernel. */
-function config(mine: Grid, theirs: Grid, player: ActionType, opponent: ActionType): MatchConfig {
-  const builds = [compileBuild(mine), compileBuild(theirs)] as const;
+function config(mine: FixtureGrid, theirs: FixtureGrid, player: ActionType, opponent: ActionType): MatchConfig {
+  const builds = [
+    compileBuild(mine.grid, mine.definitions),
+    compileBuild(theirs.grid, theirs.definitions),
+  ] as const;
   return {
     ...DEFAULT_MATCH,
     sides: [combatSide(builds[0]), combatSide(builds[1])],
@@ -38,7 +40,7 @@ function untilPause(match: Match): void {
 
 describe("mods in a real fight", () => {
   it("Solar: Heat becomes Burn on landed strikes, burns when the round ends, then halves", () => {
-    const match = new Match(config(grid(["heat-coil", 0, 0], ["cinder-edge", 1, 0]), [], "strike", "tech"));
+    const match = new Match(config(built([LEGACY_HEAT, 0, 0], [LEGACY_CINDER, 1, 0]), built(), "strike", "tech"));
     untilPause(match);
     // Three landed strikes put 2 Burn each on the opponent; the round's end burns all 6 and halves it.
     expect(match.battle.rounds[0].afflictions).toEqual([0, 6]);
@@ -49,7 +51,7 @@ describe("mods in a real fight", () => {
   });
 
   it("Arc: stored Charge becomes Shock, and the next landed hit takes every stack at once", () => {
-    const match = new Match(config(grid(["arc-dynamo", 0, 0], ["battery-cell", 1, 0], ["storm-cell", 0, 1]), [], "strike", "tech"));
+    const match = new Match(config(built([LEGACY_DYNAMO, 0, 0], [LEGACY_BATTERY, 1, 0], [LEGACY_STORM, 0, 1]), built(), "strike", "tech"));
     untilPause(match);
     const [first, second, third] = match.battle.history;
     expect(second.damage[1] - first.damage[1]).toBe(0);
@@ -60,7 +62,7 @@ describe("mods in a real fight", () => {
 
   it("Void: leeched energy becomes Poison that stays and grows round after round", () => {
     // Down in the Block row the pair adds nothing to the strikes, so the fight lasts long enough to watch Poison build.
-    const match = new Match(config(grid(["void-tap", 0, 2], ["venom-tap", 1, 2]), grid(["heat-coil", 0, 0], ["arc-dynamo", 0, 1]), "strike", "tech"));
+    const match = new Match(config(built([LEGACY_VOID_TAP, 0, 2], [LEGACY_VENOM, 1, 2]), built([LEGACY_HEAT, 0, 0], [LEGACY_DYNAMO, 0, 1]), "strike", "tech"));
     const poison: number[] = [];
     const dealt: number[] = [];
     for (let round = 0; round < 3; round++) {
@@ -78,7 +80,7 @@ describe("mods in a real fight", () => {
   });
 
   it("plays the same modded fight, engine state and all, from the same inputs", () => {
-    const setup = config(grid(["solar-flare", 0, 0], ["void-tap", 0, 2]), grid(["live-wire", 0, 0], ["arc-dynamo", 2, 0]), "strike", "block");
+    const setup = config(built([LEGACY_FLARE, 0, 0], [LEGACY_VOID_TAP, 0, 2]), built([LEGACY_WIRE, 0, 0], [LEGACY_DYNAMO, 2, 0]), "strike", "block");
     const everyOther = (running: Match) => running.battle.round % 2 === 1;
     const [a, b] = [playFight(setup, everyOther), playFight(setup, everyOther)];
     expect(JSON.stringify([a.battle, a.arena.state, a.events, a.mods.states])).toBe(JSON.stringify([b.battle, b.arena.state, b.events, b.mods.states]));
