@@ -1,7 +1,7 @@
 import { isActionType } from "../battle/actions.ts";
 import type { ActionType } from "../battle/actions.ts";
 import {
-  accrue, burn, capacity, cleanse, convert, damage, generate, heal, laneBoost, leech, perk, poison, refund, scaledOf, shock, sink, spend,
+  accrue, burn, capacity, cleanse, convert, damage, generate, heal, leech, perk, poison, refund, scaledOf, scaledOfModEffect, shock, sink, spend,
 } from "./effects.ts";
 import type { Effect, ModEffect } from "./effects.ts";
 import { RARITY, isRarity } from "./rarity.ts";
@@ -45,10 +45,14 @@ function frozen<T>(value: T): T {
 
 function mod<const I extends string>(
   id: I, name: string, rarity: Rarity, type: ModType, affinity: ActionType | null, shape: ShapeId, description: string,
-  effects: readonly Effect[], glyph?: ModGlyph,
+  effects: readonly Effect[], glyph?: ModGlyph, effect?: ModEffect,
 ): ModDefinition & { readonly id: I } {
   const defaultGlyph = type === "neutral" ? "chip" : type;
-  return frozen({ id, name, description, rarity, type, affinity, shape, effects, visual: { glyph: glyph ?? defaultGlyph } });
+  return frozen({
+    id, name, description, rarity, type, affinity, shape, effects,
+    ...(effect === undefined ? {} : { effect }),
+    visual: { glyph: glyph ?? defaultGlyph },
+  });
 }
 
 const LIST = [
@@ -106,7 +110,8 @@ const LIST = [
   mod("piggy-bank", "Piggy Bank", "common", "neutral", null, "single", "Pays out every payday.", [perk("income", [1, 2, 3])], "coin"),
   mod("coupon", "Coupon", "uncommon", "neutral", null, "single", "Free rerolls every day.", [perk("free-reroll", [1, 2, 3])], "ticket"),
   mod("crowd-pleaser", "Crowd Pleaser", "uncommon", "neutral", null, "domino", "Style pays out again.", [perk("style", [1, 2, 3])], "star"),
-  mod("amplifier", "Amplifier", "legendary", "neutral", null, "single", "Every mod touching it powers its lane more.", [laneBoost([1, 2, 3])], "chip"),
+  mod("amplifier", "Amplifier", "legendary", "neutral", null, "single", "Every mod touching it gets a boost.", [], "chip",
+    { kind: "boost", amount: [1, 2, 3], to: "adjacent" }),
 ] as const;
 
 export type ModId = (typeof LIST)[number]["id"];
@@ -136,8 +141,11 @@ export function definitionProblems(definition: ModDefinition): string[] {
   if (definition.affinity !== null && !isActionType(definition.affinity)) say("unknown affinity");
   if (!isRarity(definition.rarity)) say("unknown rarity");
   if (!Object.hasOwn(SHAPES, definition.shape)) return [...problems, `${definition.id}: unknown shape`];
-  if (definition.effects.length === 0) say("does nothing");
-  const triples = definition.effects.flatMap(scaledOf);
+  if (definition.effects.length === 0 && definition.effect === undefined) say("does nothing");
+  const triples = [
+    ...definition.effects.flatMap(scaledOf),
+    ...(definition.effect === undefined ? [] : scaledOfModEffect(definition.effect)),
+  ];
   if (triples.some((triple) => triple.length !== 3 || triple.some((value) => !Number.isInteger(value) || value < 0))) say("a number that is not three whole amounts");
   if (!triples.some(([one, two, three]) => one < two && two < three)) say("nothing grows from ★ to ★★ to ★★★");
   if (definition.effects.some((effect) => (effect.kind === "spend" && effect.payoff.length === 0) || (effect.kind === "sink" && effect.per.length === 0))) say("pays for nothing");
