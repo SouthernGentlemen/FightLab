@@ -43,6 +43,33 @@ async function waitFor(selector) {
   throw new Error(`Timed out waiting for ${selector}`);
 }
 
+async function openArmory(url) {
+  await send("Page.navigate", { url });
+  await waitFor(".title");
+  const opened = await evaluate(`(() => {
+    const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim().startsWith("Armory"));
+    if (!button) return false;
+    button.click();
+    return true;
+  })()`);
+  if (!opened) throw new Error("Could not open Armory");
+  await waitFor(".armory");
+}
+
+async function key(name) {
+  await evaluate(`window.dispatchEvent(new KeyboardEvent("keydown", { key: ${JSON.stringify(name)}, bubbles: true }))`);
+  await sleep(50);
+}
+
+async function shot(path) {
+  const image = await send("Page.captureScreenshot", {
+    format: "png",
+    fromSurface: true,
+    captureBeyondViewport: false,
+  });
+  writeFileSync(path, Buffer.from(image.data, "base64"));
+}
+
 await send("Page.enable");
 await send("Runtime.enable");
 await send("Emulation.setDeviceMetricsOverride", {
@@ -52,15 +79,107 @@ await send("Emulation.setDeviceMetricsOverride", {
   mobile: false,
 });
 
-await send("Page.navigate", { url: "http://127.0.0.1:5192/?debug" });
-await waitFor(".title");
-const opened = await evaluate(`(() => {
-  const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim().startsWith("Armory"));
-  if (!button) return false;
-  button.click();
-  return true;
+await openArmory("http://127.0.0.1:5192/");
+const shell = await evaluate(`(() => {
+  const grid = document.querySelector(".armory__grid");
+  const scroll = document.querySelector(".armory__scroll");
+  if (!grid || !scroll) return null;
+  return {
+    viewport: [innerWidth, innerHeight],
+    title: document.querySelector(".armory__title")?.textContent?.trim(),
+    controls: [...document.querySelectorAll(".armory__top-control")].map((node) => node.textContent?.trim()),
+    close: document.querySelector(".armory__close")?.textContent?.trim(),
+    filterRows: document.querySelectorAll(".armory__filters").length,
+    columns: getComputedStyle(grid).gridTemplateColumns.trim().split(/\\s+/).length,
+    overflowY: getComputedStyle(scroll).overflowY,
+    scrollable: scroll.scrollHeight > scroll.clientHeight,
+    counters: [...document.querySelectorAll(".armory__counter")].map((node) => node.textContent?.replace(/\\s+/g, " ").trim()),
+  };
 })()`);
-if (!opened) throw new Error("Could not open Armory in debug mode");
+if (!shell
+    || shell.viewport[0] !== 1920 || shell.viewport[1] !== 1080
+    || shell.title !== "MOD CATALOG"
+    || JSON.stringify(shell.controls) !== JSON.stringify(["FILTER: NONE", "CLEAR"])
+    || shell.close !== "×"
+    || shell.filterRows !== 2
+    || shell.columns !== 4
+    || shell.overflowY !== "scroll"
+    || !shell.scrollable
+    || shell.counters.length !== 3
+    || !shell.counters.every((text) => /\d+ \/ \d+$/.test(text))) {
+  throw new Error(`Catalogue shell failed: ${JSON.stringify(shell)}`);
+}
+
+const filtered = await evaluate(`(() => {
+  const solar = document.querySelector('.armory__segments[aria-label="Type"] [data-value="solar"]');
+  if (!(solar instanceof HTMLButtonElement)) return null;
+  solar.click();
+  const cards = [...document.querySelectorAll(".catalog-card__shape")];
+  return { count: cards.length, allSolar: cards.every((node) => node.getAttribute("data-type") === "solar") };
+})()`);
+if (!filtered || filtered.count === 0 || !filtered.allSolar) {
+  throw new Error(`Legacy type filter stopped working: ${JSON.stringify(filtered)}`);
+}
+await evaluate(`document.querySelector('.armory__segments[aria-label="Type"] [data-value="all"]')?.click()`);
+await sleep(50);
+
+await evaluate(`document.querySelectorAll(".catalog-card")[0]?.focus()`);
+await key("ArrowRight");
+const afterRight = await evaluate(`(() => {
+  const cards = [...document.querySelectorAll(".catalog-card")];
+  return cards.indexOf(document.activeElement);
+})()`);
+if (afterRight !== 1) throw new Error(`ArrowRight moved to index ${afterRight}, expected 1`);
+
+await key("ArrowDown");
+const afterDown = await evaluate(`(() => {
+  const cards = [...document.querySelectorAll(".catalog-card")];
+  return cards.indexOf(document.activeElement);
+})()`);
+if (afterDown !== 5) throw new Error(`ArrowDown moved to index ${afterDown}, expected 5`);
+
+await key("Enter");
+const entered = await evaluate(`(() => {
+  const active = document.activeElement;
+  return active instanceof HTMLElement
+    && active.dataset.mod
+    && document.querySelector('.catalog-card[aria-pressed="true"]')?.getAttribute("data-mod") === active.dataset.mod;
+})()`);
+if (!entered) throw new Error("Enter did not select the focused catalogue card");
+
+const hoverTarget = await evaluate(`(() => {
+  const cards = [...document.querySelectorAll(".catalog-card")];
+  const selected = cards.find((node) => node.getAttribute("data-mod") === "cinder-edge");
+  if (!(selected instanceof HTMLButtonElement)) return null;
+  selected.click();
+  selected.scrollIntoView({ block: "center" });
+  const index = cards.indexOf(selected);
+  const target = cards[index + 1] ?? cards[index - 1];
+  if (!(target instanceof HTMLButtonElement)) return null;
+  const rect = target.getBoundingClientRect();
+  return {
+    selected: selected.dataset.mod,
+    target: target.dataset.mod,
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+})()`);
+if (!hoverTarget || hoverTarget.selected === hoverTarget.target) throw new Error("Could not choose separate selected and hover cards");
+await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: hoverTarget.x, y: hoverTarget.y });
+await sleep(150);
+const hoverState = await evaluate(`(() => ({
+  selected: document.querySelector('.catalog-card[aria-pressed="true"]')?.getAttribute("data-mod"),
+  hovered: document.querySelector(".catalog-card:hover")?.getAttribute("data-mod"),
+}))()`);
+if (hoverState.selected !== "cinder-edge" || hoverState.hovered !== hoverTarget.target || hoverState.hovered === hoverState.selected) {
+  throw new Error(`Selected/hover evidence failed: ${JSON.stringify({ hoverTarget, hoverState })}`);
+}
+await shot("screenshots/catalogue-selected-hover.png");
+
+await key("Escape");
+await waitFor(".title");
+
+await openArmory("http://127.0.0.1:5192/?debug");
 await waitFor(".palette-sheet");
 await sleep(250);
 
@@ -94,11 +213,6 @@ if (!evidence.selectedCorners || !evidence.poor || !evidence.sold || !evidence.v
   throw new Error(`Palette state hooks are missing: ${JSON.stringify(evidence)}`);
 }
 if (evidence.visible <= 0) throw new Error("Palette sheet is not visible");
+await shot("screenshots/palette-sheet.png");
 
-const image = await send("Page.captureScreenshot", {
-  format: "png",
-  fromSurface: true,
-  captureBeyondViewport: false,
-});
-writeFileSync("screenshots/palette-sheet.png", Buffer.from(image.data, "base64"));
 socket.close();
