@@ -12,9 +12,9 @@ import { compileBuild } from "../../src/mods/compile.ts";
 import type { Build } from "../../src/mods/compile.ts";
 import { BOARD_HEIGHT, BOARD_WIDTH, canPlace, place } from "../../src/mods/grid.ts";
 import type { Grid, Placement } from "../../src/mods/grid.ts";
-import { MOD_IDS } from "../../src/mods/registry.ts";
+import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import type { ModState } from "../../src/mods/resolve.ts";
-import { ROTATIONS } from "../../src/mods/shapes.ts";
+import { SHAPES, orientations } from "../../src/mods/shapes.ts";
 import { STARS } from "../../src/mods/stars.ts";
 import { stream } from "../../src/run/random.ts";
 
@@ -27,8 +27,10 @@ function randomGrid(index: number): Grid {
   const pieces = random.int(BOARD_WIDTH * BOARD_HEIGHT + 1);
   for (let piece = 0; piece < pieces; piece++) {
     const mod = random.pick(MOD_IDS);
-    const legal: Placement[] = ROTATIONS.flatMap((rotation) => Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, cell) =>
-      ({ mod, rotation, x: cell % BOARD_WIDTH, y: Math.floor(cell / BOARD_WIDTH) }))).filter((placement) => canPlace(grid, placement));
+    const legal: Placement[] = orientations(SHAPES[REGISTRY[mod].shape]).flatMap(({ rotation }) =>
+      Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, cell) =>
+        ({ mod, rotation, x: cell % BOARD_WIDTH, y: Math.floor(cell / BOARD_WIDTH) })))
+      .filter((placement) => canPlace(grid, placement));
     if (legal.length > 0) grid = place(grid, { uid: piece + 1, stars: random.pick(STARS), ...random.pick(legal) })!;
   }
   return grid;
@@ -43,6 +45,23 @@ function loaded(index: number): ModState {
 const GRIDS = Array.from({ length: BUILDS }, (_, index) => randomGrid(index));
 const BUILT: Build[] = GRIDS.map((grid) => compileBuild(grid));
 const SIDES: CombatSide[] = BUILT.map((build) => combatSide(build));
+const BARE_SIDE = combatSide(compileBuild([]));
+const BARE_TICKS = new Map<string, number>();
+
+function baselineTicks(player: ActionType, opponent: ActionType): number {
+  const key = `${player}/${opponent}`;
+  const cached = BARE_TICKS.get(key);
+  if (cached !== undefined) return cached;
+  const arena = new CombatArena([BARE_SIDE, BARE_SIDE]);
+  arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
+  let ticks = 0;
+  do {
+    arena.step();
+    ticks++;
+  } while (arena.status() === "busy");
+  BARE_TICKS.set(key, ticks);
+  return ticks;
+}
 
 /** One exchange through the engine and the kernel: commit both actions, step until combat settles. */
 function exchange(pair: readonly [number, number], player: ActionType, opponent: ActionType) {
@@ -51,14 +70,16 @@ function exchange(pair: readonly [number, number], player: ActionType, opponent:
   arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
   const damage = [0, 0];
   const healing = [0, 0];
+  let ticks = 0;
   do {
     const step = arena.step();
+    ticks++;
     for (const side of [0, 1]) {
       damage[side] += step.damage[side];
       healing[side] += step.healing[side];
     }
   } while (arena.status() === "busy");
-  return { damage, healing };
+  return { damage, healing, ticks };
 }
 
 describe("C9 — mods never decide an exchange", () => {
@@ -82,8 +103,11 @@ describe("C9 — mods never decide an exchange", () => {
       const pair = [index, (index + 1) % BUILDS] as const;
       for (const player of ACTION_TYPES) {
         for (const opponent of ACTION_TYPES) {
-          const { damage, healing } = exchange(pair, player, opponent);
+          const { damage, healing, ticks } = exchange(pair, player, opponent);
           const result = resolveMatchup(player, opponent);
+          if (ticks !== baselineTicks(player, opponent)) {
+            expect.fail(`build ${index}: ${player}/${opponent} took ${ticks} ticks; bare combat takes ${baselineTicks(player, opponent)}`);
+          }
           const [toPlayer, toOpponent] = damage;
           const agrees = result === "player" ? toOpponent > 0 && toPlayer === 0
             : result === "opponent" ? toPlayer > 0 && toOpponent === 0
