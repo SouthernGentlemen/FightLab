@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
-import type { ActionType } from "../../src/battle/actions.ts";
 import { ARC_CATALOGUE, NEUTRAL_CATALOGUE, SOLAR_CATALOGUE, VOID_CATALOGUE } from "../../src/mods/catalogue.ts";
 import { effectLines } from "../../src/mods/describe.ts";
 import type { ModEffect, Payoff } from "../../src/mods/effects.ts";

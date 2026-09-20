@@ -8,9 +8,7 @@ import type {
   SizeClass,
 } from "../mods/armory.ts";
 import { RARITIES, RARITY } from "../mods/rarity.ts";
-import type { Rarity } from "../mods/rarity.ts";
 import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL } from "../mods/types.ts";
-import type { ModType } from "../mods/types.ts";
 import { button, h, icon } from "./dom.ts";
 
 export interface ArmoryFilterModal {

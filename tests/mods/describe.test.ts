@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ActionType } from "../../src/battle/actions.ts";
 import { effectLines } from "../../src/mods/describe.ts";
-import type { Amount, Condition, ModEffect, Payoff, Per, Status } from "../../src/mods/effects.ts";
+import type { Amount, Condition, ModEffect, Payoff, Per } from "../../src/mods/effects.ts";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import { STARS } from "../../src/mods/stars.ts";
