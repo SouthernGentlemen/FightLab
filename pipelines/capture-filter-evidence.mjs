@@ -56,6 +56,9 @@ await send("Emulation.setDeviceMetricsOverride", {
   width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false,
 });
 await send("Page.navigate", { url: "http://127.0.0.1:5192/" });
+await waitFor(".screen");
+await evaluate("localStorage.clear()");
+await send("Page.navigate", { url: "http://127.0.0.1:5192/" });
 await waitFor(".title");
 
 const opened = await evaluate(`(() => {
