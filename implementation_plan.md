@@ -857,7 +857,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
   Coupon and Crowd Pleaser). Its Legendary I4 is the `boost` aura that replaces Amplifier.
 - Each is done when the validator passes on that type, and all 16 rules texts read cleanly.
 
-#### tasks-038 — Tests stop naming mods
+#### tasks-038 — Tests stop naming mods · **done**
 *Spec §41. This task can move earlier, after tasks-003.*
 - `tests/mods/fixtures.ts` gains `pick({ type, affinity, size, rarity })`, which returns the first
   registry mod that matches.
@@ -1029,7 +1029,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-035 | Author Arc (16) | 10 | D11 ✓ | done |
 | tasks-036 | Author Void (16) | 10 | D11 ✓ | done |
 | tasks-037 | Author Neutral (16) | 10 | D11 ✓ | done |
-| tasks-038 | Tests stop naming mods | 10 | — | todo |
+| tasks-038 | Tests stop naming mods | 10 | — | done |
 | tasks-039 | Swap to the 64 | 10 | D7 ✓ | todo |
 | tasks-040 | Delete the energy model | 10 | D3 ✓, D7 ✓ | todo |
 | tasks-041 | Close the model tests | 11 | — | todo |
