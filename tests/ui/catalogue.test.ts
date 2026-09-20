@@ -127,7 +127,7 @@ describe("Armory catalogue DOM", () => {
   });
 
   it("exposes complete detail and filter labels and supports the keyboard contract", () => {
-    const [first, second, , , , sixth] = cards();
+    const first = cards()[0];
     const firstDefinition = definitionFor(first);
     const detail = root.querySelector<HTMLElement>(".detail-pane");
     if (detail === null) throw new Error("detail pane is missing");
@@ -159,14 +159,16 @@ describe("Armory catalogue DOM", () => {
 
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
     expect(document.activeElement).toBe(filterButton);
+    root.querySelector<HTMLButtonElement>('[data-control="clear"]')?.click();
 
-    first.focus();
+    const [gridFirst, gridSecond, , , , gridSixth] = cards();
+    gridFirst.focus();
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
-    expect(document.activeElement).toBe(second);
+    expect(document.activeElement).toBe(gridSecond);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
-    expect(document.activeElement).toBe(sixth);
+    expect(document.activeElement).toBe(gridSixth);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-    expect(sixth.getAttribute("aria-pressed")).toBe("true");
+    expect(gridSixth.getAttribute("aria-pressed")).toBe("true");
 
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
     expect(backs).toBe(1);
