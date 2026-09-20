@@ -128,8 +128,8 @@ describe("the grid", () => {
     const grid = Object.freeze(blockers([point(1, 1)]));
     expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 0 })).toBe(true);
     expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 0, y: 1 })).toBe(false);
-    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 2, y: 0 })).toBe(false);
-    expect(canPlace(grid, { mod: "furnace", rotation: 90, x: 2, y: 2 })).toBe(false);
+    expect(canPlace(grid, { mod: "furnace", rotation: 0, x: 3, y: 0 })).toBe(false);
+    expect(canPlace(grid, { mod: "furnace", rotation: 90, x: 3, y: 3 })).toBe(false);
     expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: -1, y: 0 })).toBe(false);
     expect(canPlace(grid, { mod: "heat-coil", rotation: 0, x: 0.5, y: 0 })).toBe(false);
     // A piece can always be checked against its own old position.
@@ -150,7 +150,7 @@ describe("the grid", () => {
 
   it("fits a mod at the first legal spot in reading order, trying other rotations when it must", () => {
     expect(firstFit([], "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 0, x: 0, y: 0 });
-    const columns = blockers([point(1, 0), point(1, 1), point(1, 2), point(2, 0), point(2, 1), point(2, 2)]);
+    const columns = blockers([point(1, 0), point(1, 1), point(1, 2), point(1, 3), point(2, 0), point(2, 1), point(2, 2), point(2, 3)]);
     expect(firstFit(columns, "chain-circuit")).toEqual({ mod: "chain-circuit", rotation: 90, x: 0, y: 0 });
     expect(firstFit(blockers(ALL_CELLS), "heat-coil")).toBeNull();
   });
