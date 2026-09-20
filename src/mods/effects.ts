@@ -94,3 +94,9 @@ export function scaledOf(effect: Effect): Scaled[] {
     default: return [effect.amount];
   }
 }
+
+/** Every Scaled triple carried by one new-vocabulary effect. */
+export function scaledOfModEffect(effect: ModEffect): Scaled[] {
+  if (effect.kind === "exchange") return effect.payoffs.map((payoff) => payoff.amount.value);
+  return [effect.amount];
+}
