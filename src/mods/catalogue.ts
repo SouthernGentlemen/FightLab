@@ -35,14 +35,11 @@ function draft<const I extends string>(
   return frozen({
     id,
     name,
-    description: "Target catalogue draft.",
     rarity,
     type,
     affinity,
     shape,
-    effects: [],
     effect,
-    visual: { glyph: type === "neutral" ? "chip" : type },
   });
 }
 
