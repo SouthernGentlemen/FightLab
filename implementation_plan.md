@@ -124,9 +124,9 @@ tasks-040.* This follows C11's precedent from version 2. The hand-written `descr
 affinity. Only a handful of concepts survive (Piggy Bank, Coupon, Crowd Pleaser, Amplifier), and they
 may keep their names. *Instead:* migrate old ids, which would then name different mods.
 
-**D8 — confirmed: three filter groups — Type, Action (including None) and Rarity.** *Jacob,
-2026-09-18. Gates tasks-027.* There is no Size filter. Choices within a group combine with OR,
-groups with AND, and Clear empties all of them. Text search and "owned only" go.
+**D8 — confirmed: four filter groups — Type, Action (including None), Size and Rarity.** *Jacob,
+2026-09-19. Gates tasks-027.* Size is the occupied-cell class 1–4. Choices within a group combine
+with OR, groups with AND, and Clear empties all of them. Text search and "owned only" go.
 
 **D9 — confirmed: rotation in degrees, turned about the cursor.** *Jacob, 2026-09-18. Gates tasks-011 to tasks-013.* Rotation is
 stored as 0 / 90 / 180 / 270 on the placed mod and normalised to the piece's distinct orientations. A
@@ -773,8 +773,8 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 #### tasks-027 — The filter model
 *Spec §23 · D8.*
 - `src/mods/armory.ts` gains:
-  - `CatalogFilter`: three sets — types; affinities, with None as a value; rarities;
-  - `NO_FILTER`;
+  - `CatalogFilter`: four sets — types; affinities, with None as a value; size classes 1–4; rarities;
+  - `NO_FILTER` and `toggle(filter, group, value)`;
   - `matches`: OR within a group, AND across groups;
   - `filterSummary`: `NONE`, or the number of choices made.
 - Delete text search, owned-only and `EVERYTHING`.
@@ -787,6 +787,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
   groups:
   - TYPE: chips in the type colours;
   - ACTION: Strike, Tech and Block with their icons, and None;
+  - SIZE: 1, 2, 3 and 4 cells;
   - RARITY: chips labelled and coloured by rarity.
 - CLEAR sits at the bottom. The grid behind updates as each chip is toggled.
 - Escape closes the modal before the catalogue, and focus stays inside the modal.
