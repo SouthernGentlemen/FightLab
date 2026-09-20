@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
-import { generate } from "../../src/mods/effects.ts";
 import { RARITIES, RARITY } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY, catalogueProblems, definitionProblems, isModId, priceOf, registryProblems } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
@@ -27,12 +26,11 @@ describe("the mod registry", () => {
 
   it("catches a broken definition", () => {
     const base = pick();
-    const legacy = { ...base, effects: [generate("heat", [1, 2, 3])], effect: undefined };
-    const broken = (patch: Partial<ModDefinition>) => definitionProblems({ ...legacy, ...patch });
+    const broken = (patch: Partial<ModDefinition>) => definitionProblems({ ...base, ...patch });
     expect(broken({ type: "fire" as ModDefinition["type"] })).toEqual([expect.stringMatching(/unknown type/)]);
     expect(broken({ affinity: "guard" as ModDefinition["affinity"] })).toEqual([expect.stringMatching(/unknown affinity/)]);
-    expect(broken({ effects: [generate("heat", [2, 2, 2])] })).toEqual([expect.stringMatching(/nothing grows/)]);
-    expect(broken({ effects: [generate("heat", [1, 2, 3.5])] })).toContainEqual(expect.stringMatching(/three whole amounts/));
+    expect(broken({ effect: { kind: "boost", amount: [2, 2, 2], to: "adjacent" } })).toEqual([expect.stringMatching(/nothing grows/)]);
+    expect(broken({ effect: { kind: "boost", amount: [1, 2, 3.5], to: "adjacent" } })).toContainEqual(expect.stringMatching(/three whole amounts/));
     expect(registryProblems([base, base])).toEqual([
       `id '${base.id}' is used twice`,
       `name '${base.name}' is used twice`,
@@ -47,15 +45,14 @@ describe("the mod registry", () => {
 
   it("prices a mod by its rarity alone, and keeps rarity out of the star numbers", () => {
     for (const id of MOD_IDS) expect(priceOf(id)).toBe(RARITY[REGISTRY[id].rarity].price);
-    expect(Object.keys(pick()).sort()).toEqual(["affinity", "description", "effect", "effects", "id", "name", "rarity", "shape", "type", "visual"]);
+    expect(Object.keys(pick()).sort()).toEqual(["affinity", "effect", "id", "name", "rarity", "shape", "type"]);
   });
 
   it("is frozen all the way down", () => {
     for (const definition of DEFINITIONS) {
       expect(Object.isFrozen(definition)).toBe(true);
-      expect(Object.isFrozen(definition.effects)).toBe(true);
-      expect(definition.effects.every(Object.isFrozen)).toBe(true);
       expect(Object.isFrozen(definition.effect)).toBe(true);
+      if (definition.effect.kind === "exchange") expect(definition.effect.payoffs.every(Object.isFrozen)).toBe(true);
     }
   });
 });
