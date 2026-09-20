@@ -15,6 +15,7 @@ import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import { SHAPES } from "../../src/mods/shapes.ts";
 import { MOD_TYPES } from "../../src/mods/tags.ts";
 import { DEV_MAX_COPIES, seededCollection } from "../../src/run/collection.ts";
+import { pick, placement } from "./fixtures.ts";
 
 const NONE: Owned = () => 0;
 const ids = (filter: CatalogFilter) => armoryList(filter).map((definition) => definition.id);
@@ -25,16 +26,9 @@ describe("the Armory's catalogue", () => {
     expect(listed.map((definition) => definition.id)).toEqual([...MOD_IDS]);
     listed.forEach((definition, index) => expect(definition).toBe(REGISTRY[MOD_IDS[index]]));
 
-    const build = compileBuild(place([], {
-      uid: 1,
-      mod: "cinder-edge",
-      stars: 2,
-      rotation: 0,
-      x: 0,
-      y: 0,
-    })!);
-    expect(build.program.mods[0].definition)
-      .toBe(listed.find((definition) => definition.id === "cinder-edge"));
+    const chosen = pick({ type: "solar", affinity: "strike", size: 2 });
+    const build = compileBuild(place([], { uid: 1, stars: 2, ...placement([chosen, 0, 0]) })!);
+    expect(build.program.mods[0].definition).toBe(listed.find((definition) => definition.id === chosen.id));
   });
 
   it("filters each group alone, with OR inside the group", () => {
@@ -75,13 +69,18 @@ describe("the Armory's catalogue", () => {
   it("ANDs two and three groups together", () => {
     let two = toggle(NO_FILTER, "types", "solar");
     two = toggle(two, "affinities", "strike");
-    expect(ids(two)).toEqual(["cinder-edge", "afterburner", "solar-flare"]);
+    expect(ids(two)).toEqual(DEFINITIONS.filter((definition) =>
+      definition.type === "solar" && definition.affinity === "strike").map(({ id }) => id));
 
     let three = toggle(two, "sizes", 3);
-    expect(ids(three)).toEqual(["afterburner"]);
+    expect(ids(three)).toEqual(DEFINITIONS.filter((definition) =>
+      definition.type === "solar" && definition.affinity === "strike" && SHAPES[definition.shape].cells.length === 3)
+      .map(({ id }) => id));
 
     three = toggle(three, "rarities", "super-rare");
-    expect(ids(three)).toEqual(["afterburner"]);
+    expect(ids(three)).toEqual(DEFINITIONS.filter((definition) =>
+      definition.type === "solar" && definition.affinity === "strike"
+      && SHAPES[definition.shape].cells.length === 3 && definition.rarity === "super-rare").map(({ id }) => id));
   });
 
   it("can produce an empty result", () => {
@@ -107,7 +106,8 @@ describe("the Armory's catalogue", () => {
 
   it("counts how much of the catalogue is collected", () => {
     expect(collected(NONE)).toEqual({ owned: 0, total: DEFINITIONS.length });
-    expect(collected((mod) => (mod === "heat-coil" ? 6 : 0)))
+    const owned = pick();
+    expect(collected((mod) => (mod === owned.id ? 6 : 0)))
       .toEqual({ owned: 1, total: DEFINITIONS.length });
   });
 });
