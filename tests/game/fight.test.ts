@@ -5,13 +5,13 @@ import { fightFor, playFight, reportOf, resumeFight } from "../../src/game/fight
 import { Match } from "../../src/game/match.ts";
 import { combatSide } from "../../src/game/sides.ts";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
-import { pick } from "../mods/fixtures.ts";
+import { pick, registryFixture } from "../mods/fixtures.ts";
 import { opponentFor } from "../../src/run/opponents.ts";
 import { beginFight, buy, newRun, setAction } from "../../src/run/run.ts";
 import type { RunState } from "../../src/run/run.ts";
 
 const DOMINO = pick({ size: 2 });
-const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const STRAIGHT_TRIOMINO = registryFixture(DEFINITIONS.find(({ shape }) => shape === "triomino-i"));
 const SINGLE = pick({ size: 1 });
 const ARC_SINGLE = pick({ type: "arc", size: 1 });
 const VOID_SINGLE = pick({ type: "void", size: 1 });
