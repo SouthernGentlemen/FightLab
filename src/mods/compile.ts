@@ -37,9 +37,10 @@ function staticScale(per: Per, mod: ActiveMod): number {
 function staticCondition(mod: ActiveMod, program: ModProgram): boolean {
   const effect = mod.definition.effect;
   if (effect?.kind !== "exchange" || effect.when === undefined) return true;
-  if (effect.when.kind === "opponent-has") return false;
+  const when = effect.when;
+  if (when.kind === "opponent-has") return false;
   const byUid = new Map(program.mods.map((entry) => [entry.uid, entry] as const));
-  return mod.adjacent.some((uid) => byUid.get(uid)?.definition.type === effect.when!.type);
+  return mod.adjacent.some((uid) => byUid.get(uid)?.definition.type === when.type);
 }
 
 function previewFor(program: ModProgram, action: ActionType): number {
