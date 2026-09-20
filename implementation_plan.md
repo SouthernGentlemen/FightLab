@@ -1032,7 +1032,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-038 | Tests stop naming mods | 10 | — | done |
 | tasks-039 | Swap to the 64 | 10 | D7 ✓ | done |
 | tasks-040 | Delete the energy model | 10 | D3 ✓, D7 ✓ | done |
-| tasks-041 | Close the model tests | 11 | — | todo |
+| tasks-041 | Close the model tests | 11 | — | done |
 | tasks-042 | Catalogue DOM tests | 11 | D10 ✓ | todo |
 | tasks-043 | Accessibility | 11 | — | todo |
 | tasks-044 | A whole run, headless | 12 | — | todo |
