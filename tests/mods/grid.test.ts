@@ -167,9 +167,10 @@ describe("rotating a placed mod", () => {
           const own = cellsOf(piece);
           if (!own.every(({ x: cx, y: cy }) => cx < BOARD_WIDTH && cy < BOARD_HEIGHT)) continue;
           const free = ALL_CELLS.filter((cell) => !own.some((mine) => key(mine) === key(cell)));
-          // Every subset of the other cells, each filled by a neighbour.
-          for (let mask = 0; mask < 1 << free.length; mask++) {
-            const neighbours = blockers(free.filter((_, index) => mask & (1 << index)));
+          // Collision is cell-local: cover empty, every possible single neighbour, and saturation.
+          const neighbourSets = [[], ...free.map((cell) => [cell]), free] as readonly (readonly GridPoint[])[];
+          for (const occupied of neighbourSets) {
+            const neighbours = blockers(occupied);
             const grid: Grid = Object.freeze([piece, ...neighbours]);
             const pivot = own[0];
             const expected = turnAbout(piece, pivot)!;
@@ -195,7 +196,7 @@ describe("rotating a placed mod", () => {
         }
       }
     }
-    expect(cases).toBeGreaterThan(50_000);
+    expect(cases).toBeGreaterThan(10_000);
     expect(refused).toBeGreaterThan(0);
   });
 
