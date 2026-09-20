@@ -23,6 +23,8 @@ const ids = (filter: CatalogFilter) => armoryList(filter).map((definition) => de
 describe("the Armory's catalogue", () => {
   it("lists every registered mod, in registry order, as the very records combat runs on", () => {
     const listed = armoryList(NO_FILTER);
+    expect(listed).toHaveLength(64);
+    expect(listed.length / 4).toBe(16);
     expect(listed.map((definition) => definition.id)).toEqual([...MOD_IDS]);
     listed.forEach((definition, index) => expect(definition).toBe(REGISTRY[MOD_IDS[index]]));
 
@@ -85,7 +87,8 @@ describe("the Armory's catalogue", () => {
 
   it("can produce an empty result", () => {
     let filter = toggle(NO_FILTER, "types", "neutral");
-    filter = toggle(filter, "affinities", "block");
+    filter = toggle(filter, "affinities", "strike");
+    filter = toggle(filter, "sizes", 3);
     expect(armoryList(filter)).toEqual([]);
   });
 
