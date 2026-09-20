@@ -100,18 +100,23 @@ describe("C9 — mods never decide an exchange", () => {
     expect(exchanges).toBe(BUILDS * 9);
   });
 
-  it("makes a stronger lane hit harder, and nothing more", () => {
+  it("keeps static build damage out of CombatSide while per-commit extras still work", () => {
     const bare = combatSide(compileBuild([]));
-    const strong = SIDES.reduce((best, side) => (side.bonus.strike > best.bonus.strike ? side : best), bare);
-    expect(strong.bonus.strike).toBeGreaterThan(0);
-    const hit = (sides: readonly [CombatSide, CombatSide]) => {
+    const built = combatSide(BUILT.find((build) => build.program.mods.length > 0)!);
+    expect(Object.keys(built).sort()).toEqual(["actions", "fighter"]);
+
+    const hit = (sides: readonly [CombatSide, CombatSide], bonus: number) => {
       const arena = new CombatArena(sides);
-      arena.commit("strike", "tech", { round: 1, mixedUp: [false, false] });
+      arena.commit("strike", "tech", { round: 1, mixedUp: [false, false] }, {
+        bonus: [bonus, 0],
+        heal: [0, 0],
+        exposure: [0, 0],
+      });
       let lost = 0;
       do lost += arena.step().damage[1]; while (arena.status() === "busy");
       return lost;
     };
-    expect(hit([strong, bare])).toBe(12 + strong.bonus.strike);
-    expect(hit([bare, bare])).toBe(12);
+    expect(hit([built, bare], 0)).toBe(12);
+    expect(hit([built, bare], 5)).toBe(17);
   });
 });
