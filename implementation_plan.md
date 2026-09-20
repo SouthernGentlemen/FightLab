@@ -781,7 +781,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Done when tests cover each group alone, two and three groups together, an empty result, and Clear
   bringing back every mod.
 
-#### tasks-028 — The filter modal
+#### tasks-028 — The filter modal · **done**
 *Spec §23.*
 - `FILTER: NONE` opens a compact modal with a header bar and a close (×), shaped like Batomon's. Its
   groups:
@@ -1019,7 +1019,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-025 | The catalogue screen | 7 | — | done |
 | tasks-026 | The detail pane | 8 | — | done |
 | tasks-027 | The filter model | 9 | D8 ✓ | done |
-| tasks-028 | The filter modal | 9 | — | todo |
+| tasks-028 | The filter modal | 9 | — | done |
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
