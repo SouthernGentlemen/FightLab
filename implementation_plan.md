@@ -833,7 +833,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Done when a test places every orientation of every library shape on the empty board, and a Prep
   screenshot is checked.
 
-#### tasks-033 — The catalogue validator
+#### tasks-033 — The catalogue validator · **done**
 *Spec §6, §8–§12, §38 · D11, confirmed.*
 - `catalogueProblems(definitions)` checks:
   - exactly 64; 16 of each type; 16 of each affinity, None included; 4 of every type × affinity pair;
@@ -1024,7 +1024,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-030 | Rules text for the vocabulary | 10 | — | done |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | done |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | done |
-| tasks-033 | The catalogue validator | 10 | D11 ✓ | todo |
+| tasks-033 | The catalogue validator | 10 | D11 ✓ | done |
 | tasks-034 | Author Solar (16) | 10 | D11 ✓ | todo |
 | tasks-035 | Author Arc (16) | 10 | D11 ✓ | todo |
 | tasks-036 | Author Void (16) | 10 | D11 ✓ | todo |
