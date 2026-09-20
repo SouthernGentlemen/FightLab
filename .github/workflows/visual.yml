@@ -145,7 +145,7 @@ jobs:
           await clickText("Armory");
           await waitFor(".armory");
           const selected = await evaluate(`(() => {
-            const node = document.querySelector('[data-mod="cinder-edge"]');
+            const node = document.querySelector('[data-mod="ember-edge"]');
             if (!node) return false;
             node.click();
             return true;
@@ -153,7 +153,7 @@ jobs:
           if (!selected) throw new Error("Could not select Cinder Edge in the Armory");
           await sleep(250);
           const armoryState = await evaluate(`(() => {
-            const catalog = document.querySelector('[data-mod="cinder-edge"]');
+            const catalog = document.querySelector('[data-mod="ember-edge"]');
             const detail = document.querySelector(".card");
             if (!catalog || !detail) return null;
             const cells = [...catalog.querySelectorAll(".catalog-card__cell")];
@@ -199,7 +199,7 @@ jobs:
           await shot("armory");
 
           const longName = await evaluate(`(() => {
-            const catalog = document.querySelector('[data-mod="cinder-edge"]');
+            const catalog = document.querySelector('[data-mod="ember-edge"]');
             const name = catalog?.querySelector(".catalog-card__name");
             if (!catalog || !name) return null;
             name.textContent = "12345678901234567890123456789012";
