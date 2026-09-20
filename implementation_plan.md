@@ -795,7 +795,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 
 ### Pass 10 — The 64-mod catalogue
 
-#### tasks-029 — The effect vocabulary
+#### tasks-029 — The effect vocabulary · **done**
 *Spec §36, §37 · D4.*
 - `effects.ts` gains §5's `ModEffect` beside the old kinds, as a bridge until tasks-040.
 - `program.ts` precomputes each mod's cell count and its adjacent, same-type and other-type counts
@@ -1020,7 +1020,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-026 | The detail pane | 8 | — | done |
 | tasks-027 | The filter model | 9 | D8 ✓ | done |
 | tasks-028 | The filter modal | 9 | — | done |
-| tasks-029 | The effect vocabulary | 10 | D4 ✓ | todo |
+| tasks-029 | The effect vocabulary | 10 | D4 ✓ | done |
 | tasks-030 | Rules text for the vocabulary | 10 | — | todo |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
