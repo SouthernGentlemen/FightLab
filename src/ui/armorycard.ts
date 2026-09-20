@@ -85,7 +85,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   function render(): void {
     if (mod === null) return;
     const definition = REGISTRY[mod];
-    node.dataset.rarity = definition.rarity;
+    name.dataset.rarity = definition.rarity;
     setText(name, definition.name);
     renderArt();
     renderRules();
