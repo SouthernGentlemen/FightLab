@@ -24,8 +24,7 @@ a mod grid, reads an opponent over a few rounds and chooses when to mix up.
 - Each fighter owns two **action bars** of exactly three actions. One is active at a time; a round
   plays it once, slot against slot; between rounds the player may **Mixup** to the other.
 - A **run** of days: prep (shop, grid, bars) → fight → payday. Ten trophies win it; five hearts lose it.
-- **Mods** change how hard a fighter hits, how much health it has and how much a parry heals —
-  never who wins an exchange.
+- **Mods** change bonus damage, parry healing, statuses and run perks — never who wins an exchange.
 - Everything generated comes from the run seed; the fight has no randomness.
 
 ## Status
@@ -37,7 +36,7 @@ a mod grid, reads an opponent over a few rounds and chooses when to mix up.
 | 2. Combat | kernel bonus and parry heal, adapter, compiled sides, C9 property test, determinism, the tuning bot and replays | done |
 | 3. UI | 16:9 stage, prep, fight and pause, payday, run end, title, settings | done |
 | 4. Tuning | bot runs, measured numbers below | first measurements in; balancing to follow |
-| 5. Mods as a build system | tags, registry, resources and debuffs, kernel hooks, ports, ★ combining, rarity, Armory (`docs/MODS.md`) | done; numbers provisional |
+| 5. 64-mod spatial build | type and affinity, 11 shapes, 4 × 4 board, adjacency, effect vocabulary, statuses, ★ combining, rarity, Armory and colour system (`docs/MODS.md`) | done; measured baseline in |
 
 ## What the survey found
 
@@ -137,17 +136,16 @@ contact, and a test proves the two always agree.
 | `parry` | block | 2 / 16 / 10 | parry window, frames 2–17, no hitbox | a jab that touches it is absorbed: the jabber is stunned 28 ticks, the parrier answers with `riposte` and may heal |
 | `riposte` | (block's answer) | 5 / 3 / 12 | fist, frames 5–7 | 14 damage, 20 hitstun |
 
-Mods reach an exchange four ways, none of which touches a frame count:
+Mods reach an exchange through generic kernel inputs, none of which touches a frame count:
 
-- **Bonus damage.** The adapter commits each move with an integer bonus — the lane's power for that
-  action plus whatever the engine's spends bought this exchange. Every hit the move lands adds it,
-  and a parry passes its bonus to the riposte it starts, so Block's bonus is riposte damage.
-- **Parry heal.** A parry may be committed with extra `heal`; a successful parry restores its own heal
-  plus that, never past maximum health, and the kernel reports it.
-- **Exposure.** Each commit sets both fighters' exposure to their Shock; the first damaging hit on a
-  fighter adds all of it and clears it, and the contact reports how much.
+- **Bonus damage.** Exchange effects that fire for the current action contribute an integer bonus.
+  Every hit the committed move lands adds it, and a parry passes its bonus to the riposte it starts.
+- **Parry heal.** A Block effect may contribute extra `heal`; a successful parry restores its own
+  heal plus that amount, never past maximum health, and the kernel reports it.
+- **Exposure.** Each commit sets both fighters' exposure from their current Shock. The first damaging
+  hit on a fighter adds all of it and clears it; misses and non-damaging contacts consume nothing.
 - **Afflictions.** After slot 3 settles, Burn and Poison damage goes through the kernel between ticks
-  as an `afflicted` event, and can knock a fighter out.
+  as an `afflicted` event and can knock a fighter out.
 
 Pacing, in ticks:
 
@@ -227,34 +225,37 @@ raises the rank one step (C → B → A → S, capped); a loss or trade resets t
 
 ## Mods and compile
 
-The mod system is designed in [`MODS.md`](MODS.md): tags, the three resource loops, the
-three debuffs, ports and rotation, ★ upgrades, rarity, the registry and the Armory.
+The live mod contract is [`MODS.md`](MODS.md). A definition is exactly
+`{ id, name, rarity, type, affinity, shape, effect }`; the runtime registry contains 64.
 
 ```ts
-type ModTag = "solar" | "arc" | "void" | "neutral" | ActionType;   // one or two per mod
-type Stars = 1 | 2 | 3;                                              // the upgrade level, only
+type ModType = "solar" | "arc" | "void" | "neutral";
+type Rotation = 0 | 90 | 180 | 270;
+type Stars = 1 | 2 | 3;
+
 interface OwnedMod { uid: number; mod: ModId; stars: Stars; rotation: Rotation }
 interface PlacedMod extends OwnedMod { x: number; y: number }
 ```
 
-- **Registry** (`src/mods/registry.ts`): the one source of truth — 29 frozen data records with an id,
-  name, description, rarity, 1–2 tags, shape, ports, effects and a glyph. Every scalable number is a
-  `[★, ★★, ★★★]` triple. `registryProblems` validates it; nothing reads a mod by id to decide what
-  it does. Constants live in `src/mods/balance.ts`.
-- **Shapes and grid** (`shapes.ts`, `grid.ts`): unchanged — polyominoes, clockwise rotation, a 3×3 grid
-  of Strike, Tech and Block lanes, rotate-in-place only when legal, a four-slot bank.
-- **Ports** (`ports.ts`): on a cell and a side, turned with the piece; `links` finds every out-port
-  facing a matching in-port.
-- **`compileBuild(grid)`** (`compile.ts`): lane power (+1 per elemental-tagged cell, +2 in an attuned
-  row, + Amplifier), the run perks, Charge capacity, and the **program** (`program.ts`) — each placed
-  mod at its stars with its links.
-- **Engine** (`resolve.ts`): pure `prepareExchange` → `settleExchange` → `endRound` over each fighter's
-  Heat, Charge, capacity, Void, Burn, Shock and Poison, in the order `docs/MODS.md` fixes.
-- **`combatSide(build)`** (`src/game/sides.ts`): the authored frame data, untouched, and the lanes as
-  the bonus per action. **`ModdedArena`** (`src/game/modded.ts`) wraps the combat arena with the
-  engine: it commits each exchange with the damage, heal and exposure the engine bought, settles the
-  engine from what physically landed, and applies Burn and Poison as kernel afflictions at the round's
-  end.
+- **Types and affinity** (`tags.ts`): every mod has one type; affinity is Strike, Tech, Block or
+  null. Solar status payoffs apply Burn, Arc applies Shock, Void applies Poison, Neutral applies none.
+- **Registry** (`catalogue.ts`, `registry.ts`): one 64-definition catalogue, ordered by type,
+  affinity and rarity. The validator holds type/affinity counts, the 28 / 12 / 16 / 8 size split,
+  all 11 shapes, rarity counts, unique ids/names, status-by-type and the rarity vocabulary ladder.
+- **Shapes and board** (`shapes.ts`, `grid.ts`): eleven canonical polyominoes on a 4 × 4 board,
+  degree rotation normalised to distinct orientations, cursor-pivoted turns, and a four-slot bank.
+- **Adjacency** (`adjacency.ts`): sharing an orthogonal cell edge makes two placed mods neighbours;
+  corner contact does not. The graph records neighbours and shared-edge counts from turned cells.
+- **Program and compile** (`program.ts`, `compile.ts`): each active mod carries its cell count,
+  neighbours, same/other-type counts and per-action boost. `compileBuild` returns the program,
+  unconditional damage `preview` for Strike/Tech/Block, and the income/free-reroll/style run perks.
+- **Effect/status engine** (`effects.ts`, `effectresolve.ts`, `resolve.ts`): the vocabulary is
+  exchange payoffs, adjacency/status scales and conditions, adjacent boosts and run perks.
+  `ModState` is only `{ burn, shock, poison }`; Burn halves after round-end damage, Shock is
+  consumed by the next damaging hit, and Poison persists.
+- **Combat integration** (`src/game/modded.ts`): commits the compiled bonus, heal and exposure,
+  settles earned status/cleanse payoffs from what physically happened, then applies round-end
+  afflictions. The combat kernel never learns what a mod is.
 
 ## The run
 
@@ -280,12 +281,12 @@ on a legal-but-refused request (can't afford, no room).
   $1; payday base $5, result +$2 / +$1 / $0, interest +$1 per $5 held at the start of the fight (cap
   $2), style $0–$3 (paid again per Crowd Pleaser star), Piggy Bank +$1 per star.
 - **Opponents** (`src/run/opponents.ts`): figure, archetype, two bars, a mixup plan and a build, all
-  from `opponent / day`; the build is bought from that day's odds with a budget growing by day, never
-  a Neutral mod, and packed greedily into the lanes its bars use most.
-- **Save** (`src/run/save.ts`): `{ version: 2, run, fight: { decisions } | null }` in `localStorage`
-  under `fightlab.run`. Decoding validates everything — version, integers in range, known mods and
-  star levels, legal placements, a valid loadout — and returns `null` for anything else. Version 1
-  saves name mods that no longer exist and are discarded.
+  from `opponent / day`; the build is bought from that day's odds with a budget growing by day,
+  skips mods that only pay the run, and is packed by affinity weight and same-type adjacency.
+- **Save** (`src/run/save.ts`): `{ version: 4, run, fight: { decisions } | null }` in `localStorage`
+  under `fightlab.run`. Decoding validates everything — version, integers in range, known 64-registry
+  mod ids and star levels, normalised degree rotations, legal placements and a valid loadout — and
+  returns `null` for anything else. Older registry formats are discarded.
 - **Collection** (`src/run/collection.ts`): `CollectionRepository` — how many copies of each mod the
   player owns. Nothing persists it yet; the Armory is handed a seeded development collection.
 
@@ -369,25 +370,29 @@ see a clip name.
 
 All inside the 16:9 stage (C10). Layouts and proportions are in `RUN_DESIGN.md` §10.
 
-- **Title** — `FIGHTLAB`, `Play` (continuing a saved run or starting one), `Armory`, `Settings`, and a
-  small `New run` while a run is saved; fullscreen where the browser allows it.
-- **Armory** — the whole registry on one screen: filters (element, action, rarity, owned only,
-  search), tiles, the collection count, and a detail card with ★ / ★★ / ★★★ previews, numbers at
-  every star, ports with a rotate control, copies owned and what combining needs.
-- **Settings** — Battle speed `1x / 2x / 4x`, `Reset settings`, `Return`. Stored in `localStorage`; the
-  page works without it.
-- **Prep** — top bar (hearts, day, trophies, settings, leave); bank and grid in the centre; the two
-  action bars in the right negative space; rank odds, money and Lock; Reroll, five offers and Fight.
-  No opponent information. Drag to buy, move and sell; tap an offer to bank it; tap an owned mod to
-  pick it up and tap where it goes (or arrows, R, Enter, B to bank, S to sell); right-click or R turns
-  a placed mod in place; hover or focus explains anything.
-- **Fight** — hearts and health numbers, round, speed, style meters, the active bar, the opponent's
-  revealed actions, the current exchange; the **round pause** overlay with both bars, `Mixup` (M) and
-  `Fight` (Enter or Space); the knockout result. The clock holds while the display is unsupported.
+- **Title** — `FIGHTLAB`, `Play` (continue or new run), `Armory`, `Settings`, and a small
+  `New run` while a run is saved; fullscreen where the browser allows it.
+- **Armory** — the 64-definition registry in a four-column scrolling grid with a selected detail pane.
+  Cards are shape-first: type colour, at most one affinity icon on the centroid-nearest occupied cell,
+  rarity-coloured name and collection pips. `FILTER: NONE` opens Type, Action (including None), Size
+  and Rarity; Clear resets every group. The detail previews ★ / ★★ / ★★★ and distinct rotations.
+- **Settings** — Battle speed `1x / 2x / 4x`, `Reset settings`, `Return`. Stored in
+  `localStorage`; the page works without it.
+- **Prep** — top bar (hearts, day, trophies, settings, leave); four-slot bank and dark 4 × 4 board in
+  the centre; the two action bars in the right negative space; rarity odds, money and Lock; Reroll,
+  five offers and Fight. No opponent information. Left click/tap picks up and places; right click or R
+  rotates clockwise about the occupied cursor cell; invalid carries stay readable under the invalid
+  hatch/outline and are refused.
+- **Fight** — hearts and health numbers, round, speed, style meters, the active bar, opponent reveals,
+  current exchange and Burn / Shock / Poison status badges. The **round pause** overlays both bars,
+  `Mixup` (M) and `Fight` (Enter or Space); the clock holds while the display is unsupported.
 - **Payday** — outcome, trophy or heart change, the tally, `Next day`.
-- **Run end** — `Champion` or `Knocked out`, the record, best style, the final build, `New run`,
+- **Run end** — `Champion` or `Knocked out`, record, best style, final 4 × 4 build, `New run`,
   `Title`.
 - **Unsupported** — portrait or too small: one card, nothing rearranged.
+
+Tasks-047 checked catalogue, Prep, Fight statuses and Run end at 1920 × 1080, 2560 × 1440 and
+3840 × 2160 with the same 1600 × 900 composition scaled to the window.
 
 ## Testing requirements
 
@@ -400,25 +405,29 @@ Run with `npm test`; all headless.
 | Mixup plans: each kind's decisions, purity, replay | `tests/battle/mixup.test.ts` |
 | Director: round 1 on primary, three exchanges per round, `0 → 1 → 2`, slot 3 settles before the pause, KO in slot 1 or 2 ends it, nothing after KO, Mixup toggles and is refused outside the pause, leaving without Mixup keeps the bar, the opponent's decision is fixed at the pause, stalemate and limit draws, locked loadouts | `tests/battle/director.test.ts` |
 | Style against an independent oracle for every outcome sequence up to length 8, plus the named cases | `tests/battle/style.test.ts` |
-| Shapes, rotation, legal placement, rotate-in-place for every mod, rotation, position and neighbour; the bank | `tests/mods/grid.test.ts` |
-| Tags (≤ 2, valid combinations), rarity, star recipes and `6 ★ = ★★★`, ports turning with rotation and linking | `tests/mods/model.test.ts` |
-| Registry: the seed catalogue, validation, unique ids and names, rarity separate from stars, split-colour metadata | `tests/mods/registry.test.ts` |
-| Engine: Heat, sinks, Charge and capacity, spends, leech, Burn halving to 0, all Shock consumed by one hit and none by a non-hit, Poison's persistence and scaling, no caps; the Solar, Arc and Void sequences; star scaling; rotation; dual-tag firing | `tests/mods/resolve.test.ts`, `tests/mods/sequences.test.ts` |
-| Compile: lanes, attunement with hybrids, Amplifier, the program, capacity, run perks by stars | `tests/mods/compile.test.ts` |
-| Rules text from effects; Armory filters, every mod listed, the same records as combat; the dev collection | `tests/mods/describe.test.ts`, `tests/mods/armory.test.ts` |
+| 11 canonical shapes, orientation counts, degree normalisation and cursor-pivoted turns | `tests/mods/grid.test.ts`, `tests/mods/rotation.test.ts` |
+| Orthogonal adjacency, corners excluded, rotated footprints and symmetric graph | `tests/mods/adjacency.test.ts` |
+| Type and optional affinity, rarity separate from stars, star recipes and `6 ★ = ★★★` | `tests/mods/model.test.ts` |
+| 64-mod catalogue counts, all type × affinity pairs, 28 / 12 / 16 / 8 sizes, all shapes, rarity ladder, unique ids/names and status-by-type | `tests/mods/catalogue.test.ts`, `tests/mods/registry.test.ts` |
+| Effect vocabulary: every scale/condition, boost, status-by-type and affinity landing rules | `tests/mods/effects.test.ts` |
+| Status engine: Burn decay, Shock exposure/consumption, Poison persistence, cleanses and round-end afflictions | `tests/mods/resolve.test.ts` |
+| Compile: program geometry/adjacency, per-action preview and run perks | `tests/mods/compile.test.ts` |
+| Rules text from effects; filter groups combine; Clear restores all 64 | `tests/mods/describe.test.ts`, `tests/mods/armory.test.ts` |
 | Combining copies into ★★ and ★★★ | `tests/run/combine.test.ts` |
 | Kernel hooks: parry heal, exposure, afflictions; the round's end in the director | `tests/combat/kernel-extensions.test.ts`, `tests/battle/round-end.test.ts` |
-| Burn, Shock and Poison in a real match; the same modded fight from the same inputs | `tests/game/mods-in-combat.test.ts` |
+| A whole 64-mod run path: buy, place, turn, move, bank, sell, save/load, and an adjacency payoff that lands a status | `tests/game/catalogue-run.test.ts` |
 | Random streams are pure and independent; shop odds, rerolls, lock; economy; opponents from the seed | `tests/run/*.test.ts` |
 | The run state machine and its refusals; a recorded run replays to the same paydays; saves round-trip and malformed or foreign-version saves are refused | `tests/run/run.test.ts`, `tests/run/save.test.ts`, `tests/game/replay.test.ts` |
 | Kernel frame boundaries, trades, parry → riposte, guard break, single-hit gate, bonus damage and its inheritance, parry heal and its cap, content validation | `tests/combat/kernel.test.ts` |
 | Every pair resolves physically as the matrix says, damage only through contact, healing only through a parry | `tests/combat/exchange.test.ts` |
-| C9: a thousand random registry builds, at random stars and rotations, with their mods firing, never change a winner or a timing field | `tests/combat/mods-never-decide.test.ts` |
+| C9: a thousand random boards from the 64 on 4 × 4, at random stars and degree rotations with statuses loaded; all nine pairs keep the same winner and timing fields | `tests/combat/mods-never-decide.test.ts` |
 | Clip contact poses inside move windows; every named clip exists | `tests/combat/frame-data.test.ts` |
 | Health persists between rounds; same inputs → same fight; 1×/2×/4× identical; every loadout terminates against the reference opponent and agrees with the matrix | `tests/game/determinism.test.ts`, `tests/game/match.test.ts` |
 | Resuming a fight from recorded decisions reaches the same pause | `tests/game/fight.test.ts` |
 | Figures assemble from Boneyard's loader; the renderer's clip choice is total | `tests/render/figures.test.ts` |
-| Heart fill; the 16:9 scale, no resolution cap, and one unsupported-display query shared by the stylesheet and the fight clock | `tests/ui/hearts.test.ts`, `tests/ui/display.test.ts` |
+| Catalogue DOM: 64 cards, shape cells, rotation preview, type colour, affinity icon, rarity name, hover/selection and filters | `tests/ui/catalogue.test.ts` |
+| Palette tokens, contrast, OKLab separation, all 12 type × affinity icon pairs and no mod-UI colour literals | `tests/ui/palette.test.ts` |
+| Heart fill; the 16:9 scale, no resolution cap, and one unsupported-display query shared by the stylesheet and fight clock | `tests/ui/hearts.test.ts`, `tests/ui/display.test.ts` |
 | Layer import rules, kernel seal, no randomness in rules, vocabulary boundary, Boneyard never imports FightLab | `tests/architecture.test.ts` |
 | Installed Boneyard matches the pin | `tests/boneyard-pin.test.ts` |
 
@@ -433,9 +442,9 @@ so a change to frame data, the rules or the reference opponent shows up in a dif
 - The default loadout wins in 3 rounds (exchanges 3–0, 2–1, 3–0), 793 ticks, with 88 health left.
 - Across those 729 fights: 3 to 6 rounds (median 4), 8 to 17 exchanges (median 10), 694 to 1604
   ticks (median 877, about 15 s at 1× without the pauses). A clash lasts 24 to 52 ticks.
-- C9: a thousand random registry builds at random stars and rotations, loaded with resources so
-  every payoff can fire, nine pairs each — 9,000 exchanges, none disagreeing with the matrix, none
-  healing without a parry.
+- C9: a thousand random boards from the 64 on the 4 × 4 board at random stars and degree rotations,
+  with statuses loaded so status-scaled payoffs can fire; nine pairs each — 9,000 exchanges, none
+  disagreeing with the matrix and none changing a timing field.
 - Opponent generation takes about 0.25 ms; the 729 fights simulate in about 0.4 s.
 - The tuning bot (`npm run tune 1000`: fresh random bars every day, buys the dearest affordable
   non-perk mod that fits, Mixups after a lost round, never sells), after opponents began prioritising
