@@ -1,57 +1,114 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
-import { EVERYTHING, armoryList, collected } from "../../src/mods/armory.ts";
-import type { Owned } from "../../src/mods/armory.ts";
+import {
+  NO_FILTER,
+  armoryList,
+  collected,
+  filterSummary,
+  toggle,
+} from "../../src/mods/armory.ts";
+import type { CatalogAffinity, CatalogFilter, Owned, SizeClass } from "../../src/mods/armory.ts";
 import { place } from "../../src/mods/grid.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
+import { SHAPES } from "../../src/mods/shapes.ts";
 import { MOD_TYPES } from "../../src/mods/tags.ts";
 import { DEV_MAX_COPIES, seededCollection } from "../../src/run/collection.ts";
 
 const NONE: Owned = () => 0;
-const names = (list: ReturnType<typeof armoryList>) => list.map((definition) => definition.name);
+const ids = (filter: CatalogFilter) => armoryList(filter).map((definition) => definition.id);
 
 describe("the Armory's catalogue", () => {
   it("lists every registered mod, in registry order, as the very records combat runs on", () => {
-    const listed = armoryList(EVERYTHING, NONE);
+    const listed = armoryList(NO_FILTER);
     expect(listed.map((definition) => definition.id)).toEqual([...MOD_IDS]);
     listed.forEach((definition, index) => expect(definition).toBe(REGISTRY[MOD_IDS[index]]));
-    // A compiled grid hands the engine the same object the Armory shows.
-    const build = compileBuild(place([], { uid: 1, mod: "cinder-edge", stars: 2, rotation: 0, x: 0, y: 0 })!);
-    expect(build.program.mods[0].definition).toBe(listed.find((definition) => definition.id === "cinder-edge"));
+
+    const build = compileBuild(place([], {
+      uid: 1,
+      mod: "cinder-edge",
+      stars: 2,
+      rotation: 0,
+      x: 0,
+      y: 0,
+    })!);
+    expect(build.program.mods[0].definition)
+      .toBe(listed.find((definition) => definition.id === "cinder-edge"));
   });
 
-  it("filters by type and affinity", () => {
+  it("filters each group alone, with OR inside the group", () => {
     for (const type of MOD_TYPES) {
-      const listed = armoryList({ ...EVERYTHING, type }, NONE);
+      const filter = toggle(NO_FILTER, "types", type);
+      const listed = armoryList(filter);
       expect(listed.length, type).toBeGreaterThan(0);
       expect(listed.every((definition) => definition.type === type), type).toBe(true);
     }
-    expect(names(armoryList({ ...EVERYTHING, type: "solar" }, NONE))).not.toContain("Heat Death");
-    expect(names(armoryList({ ...EVERYTHING, type: "void" }, NONE))).toContain("Heat Death");
-    expect(names(armoryList({ ...EVERYTHING, type: "neutral" }, NONE))).toEqual(["Piggy Bank", "Coupon", "Crowd Pleaser", "Amplifier"]);
-    for (const affinity of ACTION_TYPES) {
-      expect(armoryList({ ...EVERYTHING, affinity }, NONE).every((definition) => definition.affinity === affinity), affinity).toBe(true);
+
+    for (const affinity of ["none", "strike", "tech", "block"] as const satisfies readonly CatalogAffinity[]) {
+      const filter = toggle(NO_FILTER, "affinities", affinity);
+      const listed = armoryList(filter);
+      expect(listed.length, affinity).toBeGreaterThan(0);
+      expect(listed.every((definition) => (definition.affinity ?? "none") === affinity), affinity).toBe(true);
     }
-    expect(names(armoryList({ ...EVERYTHING, type: "solar", affinity: "strike" }, NONE))).toEqual(["Cinder Edge", "Afterburner", "Solar Flare"]);
+
+    for (const size of [1, 2, 3, 4] as const satisfies readonly SizeClass[]) {
+      const filter = toggle(NO_FILTER, "sizes", size);
+      const listed = armoryList(filter);
+      expect(listed.length, String(size)).toBeGreaterThan(0);
+      expect(listed.every((definition) => SHAPES[definition.shape].cells.length === size), String(size)).toBe(true);
+    }
+
+    for (const rarity of RARITIES) {
+      const filter = toggle(NO_FILTER, "rarities", rarity);
+      const listed = armoryList(filter);
+      expect(listed.length, rarity).toBeGreaterThan(0);
+      expect(listed.every((definition) => definition.rarity === rarity), rarity).toBe(true);
+    }
+
+    let filter = toggle(NO_FILTER, "types", "solar");
+    filter = toggle(filter, "types", "arc");
+    expect(armoryList(filter).every((definition) =>
+      definition.type === "solar" || definition.type === "arc")).toBe(true);
   });
 
-  it("filters by rarity, by ownership and by text", () => {
-    for (const rarity of RARITIES) expect(armoryList({ ...EVERYTHING, rarity }, NONE).every((definition) => definition.rarity === rarity)).toBe(true);
-    expect(armoryList({ ...EVERYTHING, rarity: "legendary" }, NONE)).toHaveLength(6);
-    const owned: Owned = (mod) => (mod === "furnace" || mod === "coupon" ? 2 : 0);
-    expect(names(armoryList({ ...EVERYTHING, ownedOnly: true }, owned))).toEqual(["Furnace", "Coupon"]);
-    expect(names(armoryList({ ...EVERYTHING, text: "cinder" }, NONE))).toEqual(["Cinder Edge"]);
-    expect(armoryList({ ...EVERYTHING, text: "UNCOMMON" }, NONE).every((definition) => definition.rarity === "uncommon")).toBe(true);
-    expect(names(armoryList({ ...EVERYTHING, text: "void / tech" }, NONE))).toEqual(["Event Horizon", "Singularity"]);
-    expect(armoryList({ ...EVERYTHING, text: "nothing like this" }, NONE)).toEqual([]);
+  it("ANDs two and three groups together", () => {
+    let two = toggle(NO_FILTER, "types", "solar");
+    two = toggle(two, "affinities", "strike");
+    expect(ids(two)).toEqual(["cinder-edge", "afterburner", "solar-flare"]);
+
+    let three = toggle(two, "sizes", 3);
+    expect(ids(three)).toEqual(["afterburner"]);
+
+    three = toggle(three, "rarities", "super-rare");
+    expect(ids(three)).toEqual(["afterburner"]);
+  });
+
+  it("can produce an empty result", () => {
+    let filter = toggle(NO_FILTER, "types", "neutral");
+    filter = toggle(filter, "affinities", "block");
+    expect(armoryList(filter)).toEqual([]);
+  });
+
+  it("toggles choices off again, and clearing brings back every mod", () => {
+    let filter = toggle(NO_FILTER, "types", "void");
+    filter = toggle(filter, "sizes", 4);
+    filter = toggle(filter, "rarities", "legendary");
+    expect(filterSummary(filter)).toBe("3");
+    expect(armoryList(filter).length).toBeLessThan(DEFINITIONS.length);
+
+    filter = toggle(filter, "types", "void");
+    expect(filter.types.size).toBe(0);
+    expect(filterSummary(filter)).toBe("2");
+
+    expect(filterSummary(NO_FILTER)).toBe("NONE");
+    expect(armoryList(NO_FILTER)).toEqual(DEFINITIONS);
   });
 
   it("counts how much of the catalogue is collected", () => {
     expect(collected(NONE)).toEqual({ owned: 0, total: DEFINITIONS.length });
-    expect(collected((mod) => (mod === "heat-coil" ? 6 : 0))).toEqual({ owned: 1, total: DEFINITIONS.length });
+    expect(collected((mod) => (mod === "heat-coil" ? 6 : 0)))
+      .toEqual({ owned: 1, total: DEFINITIONS.length });
   });
 });
 
