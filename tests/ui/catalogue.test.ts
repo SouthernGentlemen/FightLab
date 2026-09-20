@@ -100,7 +100,7 @@ describe("Armory catalogue DOM", () => {
     expect(name.textContent).toHaveLength(32);
     expect(name.classList.contains("catalog-card__name")).toBe(true);
 
-    const nameRule = cssBody(/\.catalog-card__name\s*\{([^}]*)\}/);
+    const nameRule = cssBody(/(?:^|\n)\.catalog-card__name\s*\{([^}]*)\}/);
     expect(nameRule).toMatch(/overflow:\s*hidden/);
     expect(nameRule).toMatch(/text-overflow:\s*ellipsis/);
     expect(nameRule).toMatch(/white-space:\s*nowrap/);
