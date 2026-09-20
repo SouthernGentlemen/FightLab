@@ -7,7 +7,7 @@ import {
   setBankSlot, turnAbout, turnCellsAbout,
 } from "../../src/mods/grid.ts";
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
-import { ROTATIONS, SHAPES, SHAPE_IDS, cellsAt, nextRotation, normalise, shapeCells, shapeSize, sizeOf } from "../../src/mods/shapes.ts";
+import { ROTATIONS, SHAPES, SHAPE_IDS, cellsAt, nextRotation, normalise, orientations, shapeCells, sizeOf } from "../../src/mods/shapes.ts";
 import type { GridPoint, Rotation, ShapeId } from "../../src/mods/shapes.ts";
 
 const point = (x: number, y: number): GridPoint => ({ x, y });
@@ -51,20 +51,18 @@ describe("shapes", () => {
     }
   });
 
-  it("keeps every registry shape legal on the current 3×3 board in every rotation", () => {
-    const registryShapes = new Set(MOD_IDS.map((mod) => REGISTRY[mod].shape));
-    for (const shapeId of registryShapes) {
-      for (const rotation of ROTATIONS) {
-        const cells = shapeCells(shapeId, rotation);
-        expect(cells).toHaveLength(sizeOf(SHAPES[shapeId]));
-        expect(new Set(cells.map(key)).size).toBe(cells.length);
-        expect(Math.min(...cells.map(({ x }) => x))).toBe(0);
-        expect(Math.min(...cells.map(({ y }) => y))).toBe(0);
-        const [width, height] = shapeSize(cells);
-        expect(width).toBeLessThanOrEqual(BOARD_WIDTH);
-        expect(height).toBeLessThanOrEqual(BOARD_HEIGHT);
+  it("places every orientation of all eleven library shapes on the empty 4×4 board", () => {
+    expect([BOARD_WIDTH, BOARD_HEIGHT]).toEqual([4, 4]);
+    let checked = 0;
+    for (const shapeId of SHAPE_IDS) {
+      for (const { rotation, cells } of orientations(SHAPES[shapeId])) {
+        const legal = ALL_CELLS.some(({ x, y }) =>
+          cells.every((cell) => x + cell.x < BOARD_WIDTH && y + cell.y < BOARD_HEIGHT));
+        expect(legal, `${shapeId} at ${rotation}°`).toBe(true);
+        checked++;
       }
     }
+    expect(checked).toBe(28);
   });
 
   it("turn clockwise, and four turns come back where they started", () => {
