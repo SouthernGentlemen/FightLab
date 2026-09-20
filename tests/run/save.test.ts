@@ -102,7 +102,7 @@ describe("the autosave", () => {
       "an unknown phase": (document) => { document.run.phase = "shopping"; },
       "an unknown mod": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].mod = "laser"; },
       "overlapping mods": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].y = 0; },
-      "a mod off the board": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].x = 1; },
+      "a mod off the board": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].x = 2; },
       "a bad rotation": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].rotation = 45; },
       "four stars": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].stars = 4; },
       "no stars": (document) => { delete (document.run.bank as Array<Record<string, unknown> | null>)[0]!.stars; },
