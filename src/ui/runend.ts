@@ -1,9 +1,11 @@
 import { BAR_IDS } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import { BOARD_HEIGHT, BOARD_WIDTH } from "../mods/grid.ts";
+import { REGISTRY } from "../mods/registry.ts";
 import type { RunState } from "../run/run.ts";
 import { h } from "./dom.ts";
 import { BAR_NAME, actionChip, bevel, modArt } from "./kit.ts";
+import { modLabel } from "./modlabel.ts";
 
 export interface RunEndOptions {
   readonly run: RunState;
@@ -26,6 +28,8 @@ export function mountRunEnd(root: HTMLElement, options: RunEndOptions): () => vo
       const art = modArt(piece.mod, piece.rotation, "piece", piece.stars);
       art.style.left = `calc(var(--cell) * ${piece.x})`;
       art.style.top = `calc(var(--cell) * ${piece.y})`;
+      art.setAttribute("role", "img");
+      art.setAttribute("aria-label", modLabel(REGISTRY[piece.mod], piece.stars));
       return art;
     }));
   const bars = BAR_IDS.map((bar) => h("p", { class: "runend__bar" }, h("b", {}, BAR_NAME[bar]),
