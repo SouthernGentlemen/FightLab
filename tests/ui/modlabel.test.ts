@@ -1,23 +1,43 @@
 import { describe, expect, it } from "vitest";
 
-import { REGISTRY } from "../../src/mods/registry.ts";
+import type { ModDefinition } from "../../src/mods/registry.ts";
 import { modLabel } from "../../src/ui/modlabel.ts";
+
+function fixture(
+  name: string,
+  type: ModDefinition["type"],
+  affinity: ModDefinition["affinity"],
+  shape: ModDefinition["shape"],
+  rarity: ModDefinition["rarity"],
+): ModDefinition {
+  return {
+    id: name.toLowerCase().replaceAll(" ", "-"),
+    name,
+    description: "Fixture only.",
+    rarity,
+    type,
+    affinity,
+    shape,
+    effects: [],
+    visual: { glyph: "chip" },
+  };
+}
 
 describe("modLabel", () => {
   it("names type, affinity, current shape word, rarity and stars", () => {
-    expect(modLabel(REGISTRY["cinder-edge"], 2))
-      .toBe("Cinder Edge, Solar, Strike affinity, domino, Uncommon, 2 stars");
+    const mod = fixture("Fixture One", "solar", "strike", "domino", "uncommon");
+    expect(modLabel(mod, 2)).toBe("Fixture One, Solar, Strike affinity, domino, Uncommon, 2 stars");
   });
 
   it("says when a mod has no affinity and handles a single star", () => {
-    expect(modLabel(REGISTRY["piggy-bank"], 1))
-      .toBe("Piggy Bank, Neutral, no affinity, single, Common, 1 star");
+    const mod = fixture("Fixture Two", "neutral", null, "single", "common");
+    expect(modLabel(mod, 1)).toBe("Fixture Two, Neutral, no affinity, single, Common, 1 star");
   });
 
   it("can omit star level when the surface does not have one", () => {
-    expect(modLabel(REGISTRY["heat-coil"]))
-      .toBe("Heat Coil, Solar, no affinity, single, Common");
-    expect(modLabel(REGISTRY["thunderhead"]))
-      .toContain("J tetromino");
+    const plain = fixture("Fixture Three", "solar", null, "single", "common");
+    const shaped = fixture("Fixture Four", "arc", "strike", "tetromino-j", "legendary");
+    expect(modLabel(plain)).toBe("Fixture Three, Solar, no affinity, single, Common");
+    expect(modLabel(shaped)).toContain("J tetromino");
   });
 });
