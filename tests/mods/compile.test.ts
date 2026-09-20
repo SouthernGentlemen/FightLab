@@ -8,7 +8,7 @@ import type { Grid } from "../../src/mods/grid.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import type { Rotation } from "../../src/mods/shapes.ts";
 import type { Stars } from "../../src/mods/stars.ts";
-import type { ModType } from "../../src/mods/tags.ts";
+import type { ModType } from "../../src/mods/types.ts";
 import { pick, placement } from "./fixtures.ts";
 
 const SOLAR_SINGLE = pick({ type: "solar", size: 1 });

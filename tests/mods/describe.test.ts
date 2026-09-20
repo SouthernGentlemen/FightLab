@@ -6,7 +6,7 @@ import type { Amount, Condition, ModEffect, Payoff, Per, Status } from "../../sr
 import { DEFINITIONS } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import { STARS } from "../../src/mods/stars.ts";
-import type { ModType } from "../../src/mods/tags.ts";
+import type { ModType } from "../../src/mods/types.ts";
 
 function amount(value: number, per: Per = "flat"): Amount {
   return { value: [value, value + 1, value + 2], per };

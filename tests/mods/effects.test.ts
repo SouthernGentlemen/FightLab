@@ -12,7 +12,7 @@ import { freshState, prepareExchange, settleExchange } from "../../src/mods/reso
 import type { ModState, Outcome } from "../../src/mods/resolve.ts";
 import type { ShapeId } from "../../src/mods/shapes.ts";
 import type { Stars } from "../../src/mods/stars.ts";
-import type { ModType } from "../../src/mods/tags.ts";
+import type { ModType } from "../../src/mods/types.ts";
 
 const IDS = {
   a: pick({ type: "solar", size: 1 }).id,

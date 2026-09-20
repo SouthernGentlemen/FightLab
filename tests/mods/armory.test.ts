@@ -13,7 +13,7 @@ import { place } from "../../src/mods/grid.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import { SHAPES } from "../../src/mods/shapes.ts";
-import { MOD_TYPES } from "../../src/mods/tags.ts";
+import { MOD_TYPES } from "../../src/mods/types.ts";
 import { DEV_MAX_COPIES, seededCollection } from "../../src/run/collection.ts";
 import { pick, placement } from "./fixtures.ts";
 

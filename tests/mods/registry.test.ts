@@ -4,7 +4,7 @@ import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import { RARITIES, RARITY } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY, catalogueProblems, definitionProblems, isModId, priceOf, registryProblems } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
-import { MOD_TYPES } from "../../src/mods/tags.ts";
+import { MOD_TYPES } from "../../src/mods/types.ts";
 import { pick } from "./fixtures.ts";
 
 describe("the mod registry", () => {

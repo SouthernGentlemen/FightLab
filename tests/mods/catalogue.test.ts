@@ -10,8 +10,8 @@ import { DEFINITIONS, catalogueProblems } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import type { ShapeId } from "../../src/mods/shapes.ts";
 import { STARS } from "../../src/mods/stars.ts";
-import { MOD_TYPES } from "../../src/mods/tags.ts";
-import type { ModType } from "../../src/mods/tags.ts";
+import { MOD_TYPES } from "../../src/mods/types.ts";
+import type { ModType } from "../../src/mods/types.ts";
 
 const AFFINITIES = [null, ...ACTION_TYPES] as const;
 const RARITY_BY_SLOT = [...RARITIES.slice(0, 3).flatMap((rarity) => Array(4).fill(rarity)), "super-rare", "super-rare", "legendary", "legendary"] as const;

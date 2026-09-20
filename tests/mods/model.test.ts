@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { RARITIES, RARITY } from "../../src/mods/rarity.ts";
 import { RECIPES, STARS, bestStars, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
-import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL, isModType } from "../../src/mods/tags.ts";
+import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL, isModType } from "../../src/mods/types.ts";
 
 describe("mod type and affinity", () => {
   it("defines the four mod types and their labels", () => {

@@ -139,6 +139,42 @@ describe("mod presentation", () => {
   });
 });
 
+describe("retired mod vocabulary", () => {
+  const modCode = ["src/mods", "src/ui", "src/run", "src/game"].flatMap((directory) =>
+    filesUnder(join(ROOT, directory)).filter((path) => [".ts", ".css"].includes(extname(path))));
+
+  it("keeps ports, tags, material identifiers, tiers and retired resources out", () => {
+    expect(existsSync(join(ROOT, "src/mods/ports.ts"))).toBe(false);
+    expect(existsSync(join(ROOT, "src/mods/tags.ts"))).toBe(false);
+
+    const forbidden = [
+      /\bports?\b|data-port|\b(?:north|south|east|west)Port\b/i,
+      /\btags\b|\bModTags?\b|\bMAX_TAGS\b|data-tag/i,
+      /\bMATERIALS\b|data-material/,
+      /\bT[1-3]\b/,
+      /\b(?:heat|charge|voidCharge|capacity|leech|refund|accrue)\b/i,
+    ];
+    for (const path of modCode) {
+      const source = readFileSync(path, "utf8");
+      const file = relative(ROOT, path);
+      for (const pattern of forbidden) expect(source, `${file} contains retired mod vocabulary`).not.toMatch(pattern);
+    }
+  });
+
+  it("keeps multiplicity counts off mod cards", () => {
+    const allowed = new Map<string, readonly string[]>([
+      ["src/ui/kit.ts", ["×${meter.chain}"]],
+      ["src/ui/payday.ts", ["×${build.styleMultiplier}"]],
+    ]);
+    for (const path of sources("src/ui")) {
+      const file = relative(ROOT, path).split(sep).join("/");
+      let source = readFileSync(path, "utf8");
+      for (const snippet of allowed.get(file) ?? []) source = source.replaceAll(snippet, "");
+      expect(source, `${file} contains a × count`).not.toMatch(/×\s*(?:\d+|\$\{)/);
+    }
+  });
+});
+
 describe("the dependency direction", () => {
   it("has Boneyard know nothing about FightLab", () => {
     const upstream = [...filesUnder(join(BONEYARD_ROOT, "src")), ...filesUnder(join(BONEYARD_ROOT, "pipelines")), join(BONEYARD_ROOT, "package.json")];

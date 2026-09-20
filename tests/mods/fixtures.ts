@@ -5,7 +5,7 @@ import type { ModDefinition, ModId } from "../../src/mods/registry.ts";
 import { SHAPES } from "../../src/mods/shapes.ts";
 import type { Rotation } from "../../src/mods/shapes.ts";
 import type { Rarity } from "../../src/mods/rarity.ts";
-import type { ModType } from "../../src/mods/tags.ts";
+import type { ModType } from "../../src/mods/types.ts";
 
 export interface PickCriteria {
   readonly type?: ModType;
