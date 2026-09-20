@@ -79,8 +79,9 @@ export function programOf(
   for (const target of base) {
     for (const uid of target.adjacent) {
       const booster = activeByUid.get(uid);
-      const effect = booster?.definition.effect;
-      if (!booster || effect?.kind !== "boost") continue;
+      if (!booster) continue;
+      const effect = booster.definition.effect;
+      if (effect.kind !== "boost") continue;
       if (effect.to === "adjacent-same" && booster.definition.type !== target.definition.type) continue;
       for (const action of ACTION_TYPES) {
         if (booster.definition.affinity !== null && booster.definition.affinity !== action) continue;
