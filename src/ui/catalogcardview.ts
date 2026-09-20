@@ -18,6 +18,7 @@ export function catalogShapeView(model: CatalogShapeModel): HTMLSpanElement {
   for (const cell of model.cells) {
     const node = h("span", {
       class: "catalog-card__cell",
+      "data-type": model.type,
       style: `left: calc(var(--catalog-cell) * ${cell.x}); top: calc(var(--catalog-cell) * ${cell.y})`,
     });
     if (model.affinity !== null && sameCell(cell, model.iconCell)) {
@@ -39,10 +40,9 @@ export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
     type: "button",
     class: `catalog-card${model.pips[0].filled ? "" : " is-unowned"}`,
     "data-mod": model.id,
-    "data-rarity": model.rarity,
     "aria-label": model.label,
   },
   h("span", { class: "catalog-card__art" }, catalogShapeView(model)),
   pips,
-  h("b", { class: "catalog-card__name", title: model.name }, model.name));
+  h("b", { class: "catalog-card__name", "data-rarity": model.rarity, title: model.name }, model.name));
 }
