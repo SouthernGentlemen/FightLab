@@ -128,3 +128,50 @@ export const ARC_CATALOGUE: readonly ModDefinition[] = Object.freeze([
   draft("flash-guard", "Flash Guard", "super-rare", "arc", "block", "tetromino-l",
     exchange(damage([3, 4, 5], "shock"), status([2, 3, 4]))),
 ]);
+
+
+/**
+ * Void grows over rounds: lower tiers keep adding Poison, while top-end pieces turn the opponent's
+ * persistent Poison into damage without replacing the long-term stack engine.
+ */
+export const VOID_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+  // None
+  draft("mire-seed", "Mire Seed", "common", "void", null, "domino",
+    exchange(status([1, 2, 3], "cell"))),
+  draft("deep-root", "Deep Root", "uncommon", "void", null, "single",
+    exchange(status([1, 2, 3], "adjacent"))),
+  draft("rot-lattice", "Rot Lattice", "rare", "void", null, "triomino-i",
+    exchange(status([1, 2, 3], "adjacent-same"))),
+  draft("grave-bloom", "Grave Bloom", "super-rare", "void", null, "tetromino-s",
+    exchange(status([1, 2, 3], "adjacent-same"), damage([1, 2, 3], "poison"))),
+
+  // Strike
+  draft("venom-edge", "Venom Edge", "common", "void", "strike", "domino",
+    exchange(status([1, 2, 3], "cell"))),
+  draft("blight-fang", "Blight Fang", "uncommon", "void", "strike", "domino",
+    exchange(damage([1, 2, 3]), status([1, 2, 3], "adjacent"))),
+  draft("rot-needle", "Rot Needle", "rare", "void", "strike", "single",
+    exchange(damage([1, 2, 3]), status([1, 2, 3], "adjacent-same"))),
+  draft("deadfall", "Deadfall", "legendary", "void", "strike", "tetromino-z",
+    exchange(damage([2, 3, 4], "poison"), status([1, 2, 3], "adjacent-same"))),
+
+  // Tech
+  draft("spore-line", "Spore Line", "common", "void", "tech", "triomino-i",
+    exchange(status([1, 2, 3], "cell"))),
+  draft("miasma-fork", "Miasma Fork", "uncommon", "void", "tech", "triomino-l",
+    exchange(damage([1, 2, 3]), status([1, 2, 3], "adjacent"))),
+  draft("wither-mesh", "Wither Mesh", "rare", "void", "tech", "tetromino-t",
+    exchange(damage([1, 2, 3], "cell"), status([1, 2, 3], "adjacent-same"))),
+  draft("blight-engine", "Blight Engine", "super-rare", "void", "tech", "tetromino-j",
+    exchange(damage([1, 2, 3], "poison"), status([2, 3, 4]))),
+
+  // Block
+  draft("grave-guard", "Grave Guard", "common", "void", "block", "tetromino-o",
+    exchange(status([3, 4, 5]))),
+  draft("rot-wall", "Rot Wall", "uncommon", "void", "block", "tetromino-l",
+    exchange(damage([2, 3, 4]), status([2, 3, 4]))),
+  draft("decay-shield", "Decay Shield", "rare", "void", "block", "domino",
+    exchange(damage([1, 2, 3], "adjacent-same"), status([1, 2, 3]))),
+  draft("last-breath", "Last Breath", "legendary", "void", "block", "tetromino-i",
+    exchange(damage([3, 4, 5], "poison"), status([2, 3, 4]))),
+]);
