@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import type { ActionType } from "../../src/battle/actions.ts";
+import { SOLAR_CATALOGUE } from "../../src/mods/catalogue.ts";
+import { effectLines } from "../../src/mods/describe.ts";
 import type { ModEffect, Payoff } from "../../src/mods/effects.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
 import { catalogueProblems } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import type { ShapeId } from "../../src/mods/shapes.ts";
+import { STARS } from "../../src/mods/stars.ts";
 import { MOD_TYPES } from "../../src/mods/tags.ts";
 import type { ModType } from "../../src/mods/tags.ts";
 
@@ -167,5 +170,46 @@ describe("catalogueProblems", () => {
       effect: { kind: "exchange", payoffs: [{ kind: "damage", amount: { value: [1, 1, 1], per: "flat" } }] },
     });
     expect(messages(stalled)).toContain("nothing grows at every ★");
+  });
+});
+
+
+describe("Solar catalogue", () => {
+  it("fills the sixteen §6.1 Solar slots exactly and passes the type validator", () => {
+    expect(catalogueProblems(SOLAR_CATALOGUE, { type: "solar" })).toEqual([]);
+    expect(SOLAR_CATALOGUE.map(({ affinity, rarity, shape }) => [affinity, rarity, shape])).toEqual([
+      [null, "common", "domino"],
+      [null, "uncommon", "single"],
+      [null, "rare", "triomino-i"],
+      [null, "super-rare", "tetromino-i"],
+      ["strike", "common", "domino"],
+      ["strike", "uncommon", "domino"],
+      ["strike", "rare", "single"],
+      ["strike", "legendary", "tetromino-s"],
+      ["tech", "common", "triomino-i"],
+      ["tech", "uncommon", "triomino-l"],
+      ["tech", "rare", "tetromino-l"],
+      ["tech", "legendary", "tetromino-z"],
+      ["block", "common", "tetromino-o"],
+      ["block", "uncommon", "tetromino-j"],
+      ["block", "rare", "domino"],
+      ["block", "super-rare", "tetromino-t"],
+    ]);
+  });
+
+  it("keeps Solar names compact and every rules text within three 60-character lines", () => {
+    expect(new Set(SOLAR_CATALOGUE.map(({ name }) => name)).size).toBe(16);
+    for (const definition of SOLAR_CATALOGUE) {
+      expect(definition.name.length, definition.name).toBeLessThanOrEqual(16);
+      expect(definition.name.toLowerCase(), definition.name)
+        .not.toMatch(/\b(?:solar|common|uncommon|rare|legendary)\b/);
+      for (const stars of STARS) {
+        const lines = effectLines(definition, stars);
+        expect(lines.length, `${definition.name} ★${stars}: ${lines.join(" | ")}`).toBeLessThanOrEqual(3);
+        for (const line of lines) {
+          expect(line.length, `${definition.name} ★${stars}: ${line}`).toBeLessThanOrEqual(60);
+        }
+      }
+    }
   });
 });
