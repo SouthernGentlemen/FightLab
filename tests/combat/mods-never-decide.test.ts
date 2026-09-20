@@ -46,21 +46,21 @@ const GRIDS = Array.from({ length: BUILDS }, (_, index) => randomGrid(index));
 const BUILT: Build[] = GRIDS.map((grid) => compileBuild(grid));
 const SIDES: CombatSide[] = BUILT.map((build) => combatSide(build));
 const BARE_SIDE = combatSide(compileBuild([]));
-const BARE_TICKS = new Map<string, number>();
+const BARE_CONTACTS = new Map<string, readonly number[]>();
 
-function baselineTicks(player: ActionType, opponent: ActionType): number {
+function baselineContacts(player: ActionType, opponent: ActionType): readonly number[] {
   const key = `${player}/${opponent}`;
-  const cached = BARE_TICKS.get(key);
+  const cached = BARE_CONTACTS.get(key);
   if (cached !== undefined) return cached;
   const arena = new CombatArena([BARE_SIDE, BARE_SIDE]);
   arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
-  let ticks = 0;
+  const contacts: number[] = [];
   do {
     arena.step();
-    ticks++;
+    for (const _contact of arena.lastReport?.contacts ?? []) contacts.push(arena.lastReport!.frame);
   } while (arena.status() === "busy");
-  BARE_TICKS.set(key, ticks);
-  return ticks;
+  BARE_CONTACTS.set(key, contacts);
+  return contacts;
 }
 
 /** One exchange through the engine and the kernel: commit both actions, step until combat settles. */
@@ -70,16 +70,16 @@ function exchange(pair: readonly [number, number], player: ActionType, opponent:
   arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
   const damage = [0, 0];
   const healing = [0, 0];
-  let ticks = 0;
+  const contacts: number[] = [];
   do {
     const step = arena.step();
-    ticks++;
+    for (const _contact of arena.combat.lastReport?.contacts ?? []) contacts.push(arena.combat.lastReport!.frame);
     for (const side of [0, 1]) {
       damage[side] += step.damage[side];
       healing[side] += step.healing[side];
     }
   } while (arena.status() === "busy");
-  return { damage, healing, ticks };
+  return { damage, healing, contacts };
 }
 
 describe("C9 — mods never decide an exchange", () => {
@@ -103,11 +103,10 @@ describe("C9 — mods never decide an exchange", () => {
       const pair = [index, (index + 1) % BUILDS] as const;
       for (const player of ACTION_TYPES) {
         for (const opponent of ACTION_TYPES) {
-          const { damage, healing, ticks } = exchange(pair, player, opponent);
+          const { damage, healing, contacts } = exchange(pair, player, opponent);
           const result = resolveMatchup(player, opponent);
-          if (ticks !== baselineTicks(player, opponent)) {
-            expect.fail(`build ${index}: ${player}/${opponent} took ${ticks} ticks; bare combat takes ${baselineTicks(player, opponent)}`);
-          }
+          expect(contacts, `build ${index}: ${player}/${opponent} contact timing`)
+            .toEqual(baselineContacts(player, opponent));
           const [toPlayer, toOpponent] = damage;
           const agrees = result === "player" ? toOpponent > 0 && toPlayer === 0
             : result === "opponent" ? toPlayer > 0 && toOpponent === 0
