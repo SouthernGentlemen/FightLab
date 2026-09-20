@@ -1,18 +1,12 @@
-import { ACTION_TYPES } from "../battle/actions.ts";
 import type { ActionTable, ActionType } from "../battle/actions.ts";
 import type { Arena, ArenaStatus, ArenaStep, CommitContext } from "../battle/director.ts";
 import { CombatSimulation, isActionable, px } from "./kernel/index.ts";
 import type { Command, FighterDefinition, FighterState, FrameReport, SimulationState } from "./kernel/index.ts";
 
-/**
- * One side of a fight: the frame data it runs on, what each action means to it, and the extra damage
- * its build gives each action — Block's reaches the riposte, through the parry that starts it. None
- * of it is timing: a side changes how hard a move lands, never when.
- */
+/** One side of a fight: authored frame data and the action-to-move mapping. */
 export interface CombatSide {
   readonly fighter: FighterDefinition;
   readonly actions: ActionTable;
-  readonly bonus: Readonly<Record<ActionType, number>>;
 }
 
 function wholeDamage(value: number): boolean {
@@ -53,12 +47,9 @@ export class CombatArena implements Arena {
   private pending: [Command, Command] = [null, null];
 
   constructor(sides: readonly [CombatSide, CombatSide]) {
-    for (const { fighter, actions, bonus } of sides) {
+    for (const { fighter, actions } of sides) {
       for (const action of Object.values(actions)) {
         if (!fighter.moves[action.move]) throw new Error(`${fighter.id}: ${action.id} names missing move '${action.move}'`);
-      }
-      if (!ACTION_TYPES.every((action) => wholeDamage(bonus[action]))) {
-        throw new Error(`${fighter.id}: bonuses must be whole, non-negative damage`);
       }
     }
     this.sides = sides;
@@ -77,8 +68,7 @@ export class CombatArena implements Arena {
 
   private command(index: 0 | 1, action: ActionType, extras: CommitExtras): Command {
     const side = this.sides[index];
-    const bonus = side.bonus[action] + extras.bonus[index];
-    return { kind: "move", move: side.actions[action].move, bonus, heal: extras.heal[index] };
+    return { kind: "move", move: side.actions[action].move, bonus: extras.bonus[index], heal: extras.heal[index] };
   }
 
   /** A bare arena has nothing to resolve between rounds. */
