@@ -1,3 +1,4 @@
+import "./capture-filter-evidence.mjs";
 import "./capture-detail-evidence.mjs";
 import { writeFileSync } from "node:fs";
 
@@ -102,7 +103,7 @@ if (!shell
     || shell.title !== "MOD CATALOG"
     || JSON.stringify(shell.controls) !== JSON.stringify(["FILTER: NONE", "CLEAR"])
     || shell.close !== "×"
-    || shell.filterRows !== 2
+    || shell.filterRows !== 0
     || shell.columns !== 4
     || shell.overflowY !== "scroll"
     || !shell.scrollable
@@ -110,19 +111,6 @@ if (!shell
     || !shell.counters.every((text) => /\d+ \/ \d+$/.test(text))) {
   throw new Error(`Catalogue shell failed: ${JSON.stringify(shell)}`);
 }
-
-const filtered = await evaluate(`(() => {
-  const solar = document.querySelector('.armory__segments[aria-label="Type"] [data-value="solar"]');
-  if (!(solar instanceof HTMLButtonElement)) return null;
-  solar.click();
-  const cards = [...document.querySelectorAll(".catalog-card__shape")];
-  return { count: cards.length, allSolar: cards.every((node) => node.getAttribute("data-type") === "solar") };
-})()`);
-if (!filtered || filtered.count === 0 || !filtered.allSolar) {
-  throw new Error(`Legacy type filter stopped working: ${JSON.stringify(filtered)}`);
-}
-await evaluate(`document.querySelector('.armory__segments[aria-label="Type"] [data-value="all"]')?.click()`);
-await sleep(50);
 
 await evaluate(`document.querySelectorAll(".catalog-card")[0]?.focus()`);
 await key("ArrowRight");
