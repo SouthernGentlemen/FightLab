@@ -9,7 +9,6 @@ import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import type { ModType } from "../mods/tags.ts";
 import { iconAnchorCell } from "./catalogcard.ts";
 import { button, h, icon, replay, setData, setText } from "./dom.ts";
 import type { IconName } from "./icons.ts";
@@ -21,11 +20,6 @@ export const ACTION_LABEL: Readonly<Record<ActionType, string>> = {
 };
 
 export const BAR_NAME: Readonly<Record<BarId, string>> = { primary: "Bar A", secondary: "Bar B" };
-
-/** A tag's own glyph: the element's or the action's. Neutral has none, so it borrows the chip. */
-export function tagIcon(tag: ModType | ActionType): IconName {
-  return tag === "neutral" ? "chip" : tag;
-}
 
 /** `★★`: the upgrade level, independent of rarity. */
 export function starRow(stars: Stars, className = "stars"): HTMLElement {

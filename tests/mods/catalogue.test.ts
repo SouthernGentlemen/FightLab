@@ -33,14 +33,11 @@ function definition(type: ModType, index: number, shape: ShapeId): ModDefinition
   return {
     id: `${type}-${index}`,
     name: `${prefix}${index}`,
-    description: "synthetic target",
     rarity: RARITY_BY_SLOT[index],
     type,
     affinity,
     shape,
-    effects: [],
     effect: exchange(),
-    visual: { glyph: type === "neutral" ? "chip" : type },
   };
 }
 

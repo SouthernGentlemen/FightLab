@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import type { ActionType } from "../../src/battle/actions.ts";
 import type { Amount, Condition, ModEffect, Payoff, Per, Status } from "../../src/mods/effects.ts";
+import { vocabularyPerkTotal } from "../../src/mods/effectresolve.ts";
 import { EMPTY_PROGRAM, programOf } from "../../src/mods/program.ts";
 import type { ModProgram } from "../../src/mods/program.ts";
 import { REGISTRY } from "../../src/mods/registry.ts";
 import type { ModDefinition, ModId } from "../../src/mods/registry.ts";
 import { pick } from "./fixtures.ts";
-import { freshState, prepareExchange, settleExchange, staticTotal } from "../../src/mods/resolve.ts";
+import { freshState, prepareExchange, settleExchange } from "../../src/mods/resolve.ts";
 import type { ModState, Outcome } from "../../src/mods/resolve.ts";
 import type { ShapeId } from "../../src/mods/shapes.ts";
 import type { Stars } from "../../src/mods/stars.ts";
@@ -43,14 +44,11 @@ function definition(
   return {
     id,
     name: `Fixture ${id}`,
-    description: "Fixture only.",
     rarity: "common",
     type,
     affinity,
     shape,
-    effects: [],
     effect,
-    visual: { glyph: "chip" },
   };
 }
 
@@ -71,7 +69,7 @@ function fixtureProgram(...pieces: readonly Piece[]): ModProgram {
 }
 
 function state(patch: Partial<ModState> = {}): ModState {
-  return { ...freshState(EMPTY_PROGRAM), ...patch };
+  return { ...freshState(), ...patch };
 }
 
 function prepared(program: ModProgram, action: ActionType = "strike", opponent = state()) {
@@ -207,8 +205,8 @@ describe("new effect vocabulary", () => {
       { definition: definition(IDS.b, "neutral", null, { kind: "perk", perk: "free-reroll", amount: [1, 2, 3] }), x: 1, y: 0, stars: 2 },
       { definition: definition(IDS.c, "neutral", null, { kind: "perk", perk: "style", amount: [1, 2, 4] }), x: 2, y: 0, stars: 3 },
     );
-    expect(staticTotal(program, "income")).toBe(2);
-    expect(staticTotal(program, "free-reroll")).toBe(2);
-    expect(staticTotal(program, "style")).toBe(4);
+    expect(vocabularyPerkTotal(program, "income")).toBe(2);
+    expect(vocabularyPerkTotal(program, "free-reroll")).toBe(2);
+    expect(vocabularyPerkTotal(program, "style")).toBe(4);
   });
 });

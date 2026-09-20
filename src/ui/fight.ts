@@ -48,9 +48,9 @@ const DEBUFF_HINT = {
   poison: "Poison: deals half its stacks when a round ends, and stays",
 } as const;
 
-/** The engine's state for the debug panel. */
-function resources(state: ModState): string {
-  return `heat ${state.heat}  charge ${state.charge}/${state.capacity}  void ${state.voidCharge}  ·  burn ${state.burn}  shock ${state.shock}  poison ${state.poison}`;
+/** The engine's status state for the debug panel. */
+function statuses(state: ModState): string {
+  return `burn ${state.burn}  shock ${state.shock}  poison ${state.poison}`;
 }
 
 const REASONS: Readonly<Record<OutcomeReason, string>> = {
@@ -345,8 +345,8 @@ export function mountFight(root: HTMLElement, options: FightOptions): () => void
       row("opponent", 1, current?.stage === "clash" ? current.opponent : null),
       `matchup  ${current ? `${current.player} vs ${current.opponent} → ${current.result}` : "—"}`,
       `last     ${lastRecord ? `r${lastRecord.round} s${lastRecord.index + 1} ${lastRecord.player}/${lastRecord.opponent} → ${lastRecord.result}, lost ${lastRecord.damage.join("/")}, healed ${lastRecord.healing.join("/")}, physics ${lastRecord.agrees ? "agrees" : "DISAGREES"}` : "—"}`,
-      `mods     you  ${resources(match.mods.states[0])}`,
-      `         them ${resources(match.mods.states[1])}`,
+      `mods     you  ${statuses(match.mods.states[0])}`,
+      `         them ${statuses(match.mods.states[1])}`,
       `opponent ${opponent.archetype}, ${opponent.plan.mixup.kind}`,
     ].join("\n"));
     for (const { layer, input } of debugToggles) input.checked = debug?.[layer] ?? false;
