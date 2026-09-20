@@ -110,7 +110,7 @@ await evaluate(`(async () => {
   const { place, setBankSlot } = await import("/src/mods/grid.ts");
   const { writeSave } = await import("/src/run/save.ts");
   const run = newRun(13013);
-  run.bank = setBankSlot(run.bank, 0, { uid: 1, mod: "chain-circuit", stars: 1, rotation: 0 });
+  run.bank = setBankSlot(run.bank, 0, { uid: 1, mod: "pulse-line", stars: 1, rotation: 0 });
   run.grid = place(run.grid, { uid: 2, mod: "flashpoint", stars: 1, rotation: 0, x: 2, y: 2 });
   run.nextUid = 3;
   writeSave(run, null, localStorage);
