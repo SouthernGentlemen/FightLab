@@ -85,15 +85,15 @@ export function firingLine(definition: ModDefinition): string {
   return `Fires when you ${AFFINITY_LABEL[action]}; ${waits}.`;
 }
 
-function perText(amount: Amount, definition: ModDefinition, stars: Stars): string {
+function amountParts(amount: Amount, definition: ModDefinition, stars: Stars): readonly [number, string] {
   const value = scaled(amount.value, stars);
   switch (amount.per) {
-    case "flat": return String(value);
-    case "cell": return `${value} per cell`;
-    case "adjacent": return `${value} per adjacent mod`;
-    case "adjacent-same": return `${value} per adjacent ${TYPE_LABEL[definition.type]} mod`;
-    case "adjacent-other": return `${value} per adjacent other-type mod`;
-    default: return `${value} per opponent ${STATUS[amount.per]} stack`;
+    case "flat": return [value, ""];
+    case "cell": return [value, " per cell"];
+    case "adjacent": return [value, " per adjacent mod"];
+    case "adjacent-same": return [value, ` per adjacent ${TYPE_LABEL[definition.type]} mod`];
+    case "adjacent-other": return [value, " per adjacent other-type mod"];
+    default: return [value, ` per opponent ${STATUS[amount.per]} stack`];
   }
 }
 
@@ -119,18 +119,20 @@ function payoffText(
   definition: ModDefinition,
   stars: Stars,
 ): string {
-  const amount = perText(payoff.amount, definition, stars);
+  const [amount, per] = amountParts(payoff.amount, definition, stars);
   const condition = conditionText(effect.when);
   switch (payoff.kind) {
-    case "damage": return `+${amount} ${definition.affinity === "block" ? "riposte damage" : "damage"}${actionText(definition)}${condition}`;
-    case "heal": return `+${amount} parry heal${actionText(definition)}${condition}`;
+    case "damage": return `+${amount} ${definition.affinity === "block" ? "riposte damage" : "damage"}${per}${actionText(definition)}${condition}`;
+    case "heal": return `+${amount} parry heal${per}${actionText(definition)}${condition}`;
     case "status": {
       const status = definition.type === "solar" ? "Burn"
         : definition.type === "arc" ? "Shock"
-          : definition.type === "void" ? "Poison" : "Status";
-      return `${status} ${amount}${landingText(definition)}${condition}`;
+          : definition.type === "void" ? "Poison" : null;
+      return status === null
+        ? `No status${landingText(definition)}${condition}`
+        : `${status} ${amount}${per}${landingText(definition)}${condition}`;
     }
-    case "cleanse": return `Cleanse ${STATUS[payoff.status]} ${amount}${landingText(definition)}${condition}`;
+    case "cleanse": return `Cleanse ${STATUS[payoff.status]} ${amount}${per}${landingText(definition)}${condition}`;
   }
 }
 
