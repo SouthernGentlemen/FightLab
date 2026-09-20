@@ -1,6 +1,7 @@
 import type { ActionType } from "../battle/actions.ts";
 import { BASE_CHARGE_CAPACITY, burnAfterRound, burnDamage, heatAfterRound, poisonDamage, shockBonus } from "./balance.ts";
-import type { Debuff, Effect, Payoff, Resource } from "./effects.ts";
+import type { Debuff, Effect, LegacyPayoff, Resource } from "./effects.ts";
+import { vocabularyExchange, vocabularyPerkTotal } from "./effectresolve.ts";
 import type { ActiveMod, ModProgram } from "./program.ts";
 import { scaled } from "./stars.ts";
 import type { Scaled } from "./stars.ts";
@@ -72,8 +73,12 @@ type Working = { -readonly [K in keyof ModState]: number } & { bonus: number; he
 const at = (mod: ActiveMod, values: Scaled): number => scaled(values, mod.stars);
 
 export function staticTotal(program: ModProgram, kind: "capacity" | "lane-boost" | "income" | "free-reroll" | "style"): number {
-  return program.mods.reduce((sum, mod) => sum + mod.definition.effects.reduce((inner, effect) =>
+  const legacy = program.mods.reduce((sum, mod) => sum + mod.definition.effects.reduce((inner, effect) =>
     inner + (effect.kind === kind ? at(mod, effect.amount) : 0), 0), 0);
+  const bridged = kind === "income" || kind === "free-reroll" || kind === "style"
+    ? vocabularyPerkTotal(program, kind)
+    : 0;
+  return legacy + bridged;
 }
 
 export function freshState(program: ModProgram): ModState {
@@ -99,7 +104,7 @@ function add(work: Working, resource: Resource, amount: number): void {
   work[FIELD[resource]] += Math.min(amount, room(work, resource));
 }
 
-function pay(work: Working, mod: ActiveMod, payoffs: readonly Payoff[], times: number): void {
+function pay(work: Working, mod: ActiveMod, payoffs: readonly LegacyPayoff[], times: number): void {
   for (const payoff of payoffs) {
     const amount = at(mod, payoff.amount) * times;
     if (payoff.kind === "damage") work.bonus += amount;
@@ -166,6 +171,13 @@ export function prepareExchange(states: Pair<ModState>, programs: Pair<ModProgra
     }
     each(mods, "refund", (mod, effect) =>
       add(own, "charge", at(mod, effect.amount) * own.chargeSpenders.filter((uid) => mod.adjacent.includes(uid)).length));
+  });
+
+  programs.forEach((program, side) => {
+    const resolved = vocabularyExchange(program, work[1 - side], actions[side]);
+    work[side].bonus += resolved.bonus;
+    work[side].heal += resolved.heal;
+    work[side].pending.push(...resolved.pending);
   });
 
   const state = ({ heat, charge, capacity, voidCharge, burn, shock, poison }: Working): ModState => ({ heat, charge, capacity, voidCharge, burn, shock, poison });
