@@ -9,15 +9,15 @@ import {
 import type { Grid, PlacedMod } from "../../src/mods/grid.ts";
 import { ROTATIONS, SHAPES, SHAPE_IDS, cellsAt, nextRotation, normalise, orientations, shapeCells, sizeOf } from "../../src/mods/shapes.ts";
 import type { GridPoint, Rotation, ShapeId } from "../../src/mods/shapes.ts";
-import { pick, placement } from "./fixtures.ts";
+import { pick, placement, registryFixture } from "./fixtures.ts";
 
 const point = (x: number, y: number): GridPoint => ({ x, y });
 const key = ({ x, y }: GridPoint) => `${x},${y}`;
 const sorted = (cells: readonly GridPoint[]) => cells.map(key).sort();
 const SINGLE = pick({ size: 1 });
 const DOMINO = pick({ size: 2 });
-const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
-const O_MOD = DEFINITIONS.find(({ shape }) => shape === "tetromino-o")!;
+const STRAIGHT_TRIOMINO = registryFixture(DEFINITIONS.find(({ shape }) => shape === "triomino-i"));
+const O_MOD = registryFixture(DEFINITIONS.find(({ shape }) => shape === "tetromino-o"));
 
 /** A grid of single-cell blockers on exactly these cells. */
 function blockers(cells: readonly GridPoint[], firstUid = 100): PlacedMod[] {
