@@ -805,7 +805,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Done when tests, run on fixture definitions, cover every scale and condition, `boost`, the
   status-by-type rule, and the landing rules for Strike, Tech, Block and no affinity.
 
-#### tasks-030 — Rules text for the vocabulary
+#### tasks-030 — Rules text for the vocabulary · **done**
 *Spec §21.*
 - `describe.ts` writes one short sentence per payoff at a given ★, for example "+1 damage per cell on
   Strike", or "Burn 2 on a hit, +1 for each adjacent Solar mod".
@@ -1021,7 +1021,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-027 | The filter model | 9 | D8 ✓ | done |
 | tasks-028 | The filter modal | 9 | — | done |
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | done |
-| tasks-030 | Rules text for the vocabulary | 10 | — | todo |
+| tasks-030 | Rules text for the vocabulary | 10 | — | done |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | todo |
 | tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
 | tasks-033 | The catalogue validator | 10 | D11 ✓ | todo |
