@@ -1042,5 +1042,5 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-045 | C9 and determinism on the new model | 12 | — | done |
 | tasks-046 | Opponents, the bot and measurements | 12 | — | done |
 | tasks-047 | Every screen at three resolutions | 12 | — | done |
-| tasks-048 | Docs and the contract | 12 | — | todo |
+| tasks-048 | Docs and the contract | 12 | — | done |
 | tasks-049 | Final sweep | 12 | — | todo |
