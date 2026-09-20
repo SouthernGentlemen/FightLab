@@ -825,7 +825,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 - Done when compile's lane tests have become preview tests, and the opponents' lane-sum test has
   become an adjacency score.
 
-#### tasks-032 — The 4 × 4 board
+#### tasks-032 — The 4 × 4 board · **done**
 *D2, confirmed.*
 - Set `BOARD_WIDTH = BOARD_HEIGHT = 4`.
 - Re-lay Prep's mods panel for the largest cell that fits beside the bank and the bars, and update
@@ -1023,7 +1023,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-029 | The effect vocabulary | 10 | D4 ✓ | done |
 | tasks-030 | Rules text for the vocabulary | 10 | — | done |
 | tasks-031 | Retire the row lanes | 10 | D2 ✓ | done |
-| tasks-032 | The 4 × 4 board | 10 | D2 ✓ | todo |
+| tasks-032 | The 4 × 4 board | 10 | D2 ✓ | done |
 | tasks-033 | The catalogue validator | 10 | D11 ✓ | todo |
 | tasks-034 | Author Solar (16) | 10 | D11 ✓ | todo |
 | tasks-035 | Author Arc (16) | 10 | D11 ✓ | todo |
