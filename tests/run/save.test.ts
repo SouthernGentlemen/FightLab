@@ -1,15 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 import { cellsOf } from "../../src/mods/grid.ts";
+import { DEFINITIONS } from "../../src/mods/registry.ts";
+import { pick } from "../mods/fixtures.ts";
 import { beginFight, buy, finishFight, newRun, nextDay } from "../../src/run/run.ts";
 import type { RunState } from "../../src/run/run.ts";
 import { SAVE_KEY, SAVE_VERSION, clearSave, decodeSave, encodeSave, readSave, writeSave } from "../../src/run/save.ts";
+
+const SINGLE = pick({ size: 1 });
+const DOMINO = pick({ size: 2 });
+const STRAIGHT_TRIOMINO = DEFINITIONS.find(({ shape }) => shape === "triomino-i")!;
+const O_MOD = DEFINITIONS.find(({ shape }) => shape === "tetromino-o")!;
+const REROLL = pick({ type: "neutral", affinity: null, rarity: "uncommon", size: 1 });
 
 /** A run with something in every field: mods on the grid and in the bank, a payday behind it. */
 function lived(): RunState {
   const run = newRun(31337);
   run.money = 40;
-  run.shop = { ...run.shop, offers: ["solar-flare", "heat-coil", "chain-circuit", null, "coupon"] };
+  run.shop = { ...run.shop, offers: [DOMINO.id, SINGLE.id, STRAIGHT_TRIOMINO.id, null, REROLL.id] };
   buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
   buy(run, 1);
   buy(run, 2, { grid: { x: 0, y: 2, rotation: 0 } });
@@ -50,7 +58,7 @@ describe("the autosave", () => {
   it("migrates version-2 quarter turns to canonical degree rotations on the same cells", () => {
     const run = newRun(22);
     run.money = 40;
-    run.shop = { ...run.shop, offers: ["singularity", "cinder-edge", null, null, null] };
+    run.shop = { ...run.shop, offers: [O_MOD.id, DOMINO.id, null, null, null] };
     expect(buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } })).toBeNull();
     expect(buy(run, 1, { grid: { x: 2, y: 0, rotation: 90 } })).toBeNull();
     const document = JSON.parse(encodeSave(run, null));
@@ -59,9 +67,9 @@ describe("the autosave", () => {
     document.run.grid[1].rotation = 3;
     const loaded = decodeSave(JSON.stringify(document))!;
     expect(loaded.version).toBe(3);
-    expect(loaded.run.grid[0]).toMatchObject({ mod: "singularity", rotation: 0, x: 0, y: 0 });
+    expect(loaded.run.grid[0]).toMatchObject({ mod: O_MOD.id, rotation: 0, x: 0, y: 0 });
     expect(cellsOf(loaded.run.grid[0])).toEqual([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }]);
-    expect(loaded.run.grid[1]).toMatchObject({ mod: "cinder-edge", rotation: 90, x: 2, y: 0 });
+    expect(loaded.run.grid[1]).toMatchObject({ mod: DOMINO.id, rotation: 90, x: 2, y: 0 });
     expect(cellsOf(loaded.run.grid[1])).toEqual([{ x: 2, y: 0 }, { x: 2, y: 1 }]);
   });
 
