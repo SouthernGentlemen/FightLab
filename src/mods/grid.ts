@@ -4,8 +4,8 @@ import { SHAPES, cellsAt, nextRotation, normalise, normaliseRotation, orientatio
 import type { GridPoint, Rotation } from "./shapes.ts";
 import type { Stars } from "./stars.ts";
 
-export const BOARD_WIDTH = 3;
-export const BOARD_HEIGHT = 3;
+export const BOARD_WIDTH = 4;
+export const BOARD_HEIGHT = 4;
 export const BANK_SIZE = 4;
 
 /** A mod the player owns, at its star level. `uid` tells two of the same mod apart. */
