@@ -81,3 +81,50 @@ export const SOLAR_CATALOGUE: readonly ModDefinition[] = Object.freeze([
   draft("afterglow", "Afterglow", "super-rare", "solar", "block", "tetromino-t",
     exchange(damage([1, 2, 3], "cell"), status([1, 2, 3], "burn"))),
 ]);
+
+
+/**
+ * Arc sets up and bursts: cheap pieces load Shock, then top-end pieces turn the opponent's current
+ * stack into one heavy hit before the landed hit consumes all Shock.
+ */
+export const ARC_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+  // None
+  draft("primer-coil", "Primer Coil", "common", "arc", null, "domino",
+    exchange(status([1, 2, 3], "cell"))),
+  draft("static-seed", "Static Seed", "uncommon", "arc", null, "single",
+    exchange(status([1, 2, 3], "adjacent"))),
+  draft("relay-fork", "Relay Fork", "rare", "arc", null, "triomino-l",
+    exchange(status([1, 2, 3]), damage([1, 2, 3], "adjacent-same"))),
+  draft("thunder-rail", "Thunder Rail", "legendary", "arc", null, "tetromino-i",
+    exchange(damage([2, 3, 4], "shock"), status([1, 2, 3], "adjacent-same"))),
+
+  // Strike
+  draft("quick-jolt", "Quick Jolt", "common", "arc", "strike", "domino",
+    exchange(status([1, 2, 3], "cell"))),
+  draft("live-wire", "Live Wire", "uncommon", "arc", "strike", "domino",
+    exchange(damage([1, 2, 3], "cell"), status([1, 2, 3]))),
+  draft("spark-needle", "Spark Needle", "rare", "arc", "strike", "single",
+    exchange(damage([2, 3, 4]), status([1, 2, 3], "adjacent-same"))),
+  draft("surge-breaker", "Surge Breaker", "super-rare", "arc", "strike", "tetromino-z",
+    exchange(damage([1, 2, 3], "cell"), damage([2, 3, 4], "shock"))),
+
+  // Tech
+  draft("pulse-line", "Pulse Line", "common", "arc", "tech", "triomino-i",
+    exchange(status([1, 2, 3], "cell"))),
+  draft("charge-fork", "Charge Fork", "uncommon", "arc", "tech", "triomino-l",
+    exchange(damage([1, 2, 3], "cell"), status([1, 2, 3], "adjacent"))),
+  draft("cascade-gate", "Cascade Gate", "rare", "arc", "tech", "tetromino-j",
+    exchange(damage([1, 2, 3], "cell"), status([1, 2, 3], "adjacent-same"))),
+  draft("storm-engine", "Storm Engine", "legendary", "arc", "tech", "tetromino-s",
+    exchange(damage([1, 2, 3], "cell"), damage([3, 4, 5], "shock"))),
+
+  // Block
+  draft("guard-grid", "Guard Grid", "common", "arc", "block", "tetromino-o",
+    exchange(status([2, 3, 4]))),
+  draft("counter-coil", "Counter Coil", "uncommon", "arc", "block", "tetromino-t",
+    exchange(damage([2, 3, 4]), status([2, 3, 4]))),
+  draft("shock-sink", "Shock Sink", "rare", "arc", "block", "domino",
+    exchange(damage([1, 2, 3], "adjacent-same"), status([2, 3, 4]))),
+  draft("flash-guard", "Flash Guard", "super-rare", "arc", "block", "tetromino-l",
+    exchange(damage([3, 4, 5], "shock"), status([2, 3, 4]))),
+]);
