@@ -29,22 +29,22 @@ function stateSample(label: string, node: HTMLElement): HTMLElement {
 
 function stateSheet(): HTMLElement {
   const card = (state: "hover" | "selected" | "focus") => {
-    const node = catalogCardView(catalogCard(REGISTRY["cinder-edge"], 1));
+    const node = catalogCardView(catalogCard(REGISTRY["ember-edge"], 1));
     node.tabIndex = -1;
     if (state === "selected") node.setAttribute("aria-pressed", "true");
     else node.dataset.demoState = state;
     return node;
   };
   const poor = h("div", { class: "offer is-poor" },
-    h("div", { class: "offer__art" }, modArt("cinder-edge", 0, "mod--mini")),
+    h("div", { class: "offer__art" }, modArt("ember-edge", 0, "mod--mini")),
     h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, "Cinder Edge"), h("b", { class: "offer__price" }, "$4")));
   const sold = h("div", { class: "offer", "data-sold": "true" });
   const placement = (state: "valid" | "invalid") => {
-    const art = modArt("cinder-edge", 0, "piece");
+    const art = modArt("ember-edge", 0, "piece");
     art.dataset.placement = state;
     return art;
   };
-  const source = modArt("cinder-edge", 0, "piece is-source");
+  const source = modArt("ember-edge", 0, "piece is-source");
 
   return h("aside", { class: "palette-sheet__states", "aria-label": "State swatches" },
     h("h3", {}, "States"),
