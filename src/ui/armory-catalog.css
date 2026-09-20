@@ -1,0 +1,139 @@
+/* tasks-025: catalogue screen composition; shared card/detail styles remain in styles.css. */
+.armory__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2rem;
+}
+
+.armory__top-left {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  justify-self: start;
+}
+
+.armory__top-control {
+  display: inline-flex;
+  align-items: center;
+  min-height: 4.4rem;
+  padding: .7rem 1.3rem;
+  border: .25rem solid var(--border-strong);
+  border-radius: .9rem;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.armory__top-control[data-control="clear"] {
+  color: var(--text-secondary);
+}
+
+.armory__title {
+  justify-self: center;
+  color: var(--text-primary);
+  font-size: 3.8rem;
+  line-height: 1;
+  text-align: center;
+  text-shadow: none;
+}
+
+.armory__close {
+  width: 5rem;
+  height: 5rem;
+  justify-self: end;
+  padding: 0 0 .3rem;
+  border: .25rem solid var(--border-strong);
+  border-radius: 1rem;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.armory__close:hover {
+  background: var(--surface-card-hover);
+}
+
+.armory__browser {
+  gap: .8rem;
+}
+
+.armory__scroll {
+  overflow-y: scroll;
+  scrollbar-color: var(--border-strong) var(--surface-root);
+  scrollbar-width: auto;
+}
+
+.armory__scroll::-webkit-scrollbar {
+  width: 1.2rem;
+}
+
+.armory__scroll::-webkit-scrollbar-track {
+  background: var(--surface-root);
+  border-left: .2rem solid var(--border-subtle);
+}
+
+.armory__scroll::-webkit-scrollbar-thumb {
+  min-height: 5rem;
+  border: .2rem solid var(--surface-root);
+  border-radius: 99rem;
+  background: var(--border-strong);
+}
+
+.armory__scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--border-selected);
+}
+
+.armory__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.catalog-card__name[data-rarity="common"] { color: var(--rarity-common); }
+.catalog-card__name[data-rarity="uncommon"] { color: var(--rarity-uncommon); }
+.catalog-card__name[data-rarity="rare"] { color: var(--rarity-rare); }
+.catalog-card__name[data-rarity="super-rare"] { color: var(--rarity-super-rare); }
+.catalog-card__name[data-rarity="legendary"] { color: var(--rarity-legendary); }
+
+.armory__count {
+  display: grid;
+  grid-template-columns: repeat(3, max-content) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.armory__counter {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: .7rem;
+  padding: .45rem 1rem;
+  border: .25rem solid var(--border-subtle);
+  border-radius: .9rem;
+  background: var(--surface-card);
+}
+
+.armory__counter small {
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.armory__counter b {
+  color: var(--text-primary);
+  font-size: 1.9rem;
+  white-space: nowrap;
+}
+
+.armory__showing {
+  justify-self: end;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+}

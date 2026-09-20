@@ -10,55 +10,76 @@ import { ModdedArena } from "../../src/game/modded.ts";
 import { combatSide } from "../../src/game/sides.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
 import type { Build } from "../../src/mods/compile.ts";
-import { GRID_SIZE, canPlace, place } from "../../src/mods/grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, canPlace, place } from "../../src/mods/grid.ts";
 import type { Grid, Placement } from "../../src/mods/grid.ts";
-import { MOD_IDS } from "../../src/mods/registry.ts";
+import { MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
 import type { ModState } from "../../src/mods/resolve.ts";
-import { ROTATIONS } from "../../src/mods/shapes.ts";
+import { SHAPES, orientations } from "../../src/mods/shapes.ts";
 import { STARS } from "../../src/mods/stars.ts";
 import { stream } from "../../src/run/random.ts";
 
 const BUILDS = 1000;
 
-/** A grid of up to seven random registry mods, each at random stars and a random legal spot. */
+/** A 4×4 grid built from up to one random placement attempt per board cell. */
 function randomGrid(index: number): Grid {
   const random = stream(0xc9, "build", index);
   let grid: Grid = [];
-  const pieces = random.int(8);
+  const pieces = random.int(BOARD_WIDTH * BOARD_HEIGHT + 1);
   for (let piece = 0; piece < pieces; piece++) {
     const mod = random.pick(MOD_IDS);
-    const legal: Placement[] = ROTATIONS.flatMap((rotation) => Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, cell) =>
-      ({ mod, rotation, x: cell % GRID_SIZE, y: Math.floor(cell / GRID_SIZE) }))).filter((placement) => canPlace(grid, placement));
+    const legal: Placement[] = orientations(SHAPES[REGISTRY[mod].shape]).flatMap(({ rotation }) =>
+      Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, cell) =>
+        ({ mod, rotation, x: cell % BOARD_WIDTH, y: Math.floor(cell / BOARD_WIDTH) })))
+      .filter((placement) => canPlace(grid, placement));
     if (legal.length > 0) grid = place(grid, { uid: piece + 1, stars: random.pick(STARS), ...random.pick(legal) })!;
   }
   return grid;
 }
 
-/** A fighter whose mods have plenty to spend, so every payoff that can fire does. */
-function loaded(build: Build, index: number): ModState {
+/** A fighter with seeded status stacks, so status-scaled payoffs are exercised. */
+function loaded(index: number): ModState {
   const random = stream(0xc9, "state", index);
-  return { heat: random.int(12), charge: build.capacity, capacity: build.capacity, voidCharge: random.int(12), burn: random.int(9), shock: random.int(9), poison: random.int(9) };
+  return { burn: random.int(9), shock: random.int(9), poison: random.int(9) };
 }
 
 const GRIDS = Array.from({ length: BUILDS }, (_, index) => randomGrid(index));
-const BUILT: Build[] = GRIDS.map(compileBuild);
+const BUILT: Build[] = GRIDS.map((grid) => compileBuild(grid));
 const SIDES: CombatSide[] = BUILT.map((build) => combatSide(build));
+const BARE_SIDE = combatSide(compileBuild([]));
+const BARE_CONTACTS = new Map<string, readonly number[]>();
+
+function baselineContacts(player: ActionType, opponent: ActionType): readonly number[] {
+  const key = `${player}/${opponent}`;
+  const cached = BARE_CONTACTS.get(key);
+  if (cached !== undefined) return cached;
+  const arena = new CombatArena([BARE_SIDE, BARE_SIDE]);
+  arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
+  const contacts: number[] = [];
+  do {
+    arena.step();
+    for (const _contact of arena.lastReport?.contacts ?? []) contacts.push(arena.lastReport!.frame);
+  } while (arena.status() === "busy");
+  BARE_CONTACTS.set(key, contacts);
+  return contacts;
+}
 
 /** One exchange through the engine and the kernel: commit both actions, step until combat settles. */
 function exchange(pair: readonly [number, number], player: ActionType, opponent: ActionType) {
   const arena = new ModdedArena(new CombatArena([SIDES[pair[0]], SIDES[pair[1]]]), [BUILT[pair[0]].program, BUILT[pair[1]].program]);
-  arena.states = [loaded(BUILT[pair[0]], pair[0]), loaded(BUILT[pair[1]], pair[1])];
+  arena.states = [loaded(pair[0]), loaded(pair[1])];
   arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
   const damage = [0, 0];
   const healing = [0, 0];
+  const contacts: number[] = [];
   do {
     const step = arena.step();
+    for (const _contact of arena.combat.lastReport?.contacts ?? []) contacts.push(arena.combat.lastReport!.frame);
     for (const side of [0, 1]) {
       damage[side] += step.damage[side];
       healing[side] += step.healing[side];
     }
   } while (arena.status() === "busy");
-  return { damage, healing };
+  return { damage, healing, contacts };
 }
 
 describe("C9 — mods never decide an exchange", () => {
@@ -69,7 +90,7 @@ describe("C9 — mods never decide an exchange", () => {
     const placed = GRIDS.flat();
     for (const stars of STARS) expect(placed.some((piece) => piece.stars === stars), `★${stars}`).toBe(true);
     expect(new Set(placed.map((piece) => piece.mod)).size).toBe(MOD_IDS.length);
-    expect(BUILT.some((build) => build.program.mods.some((mod) => mod.links > 0))).toBe(true);
+    expect(BUILT.some((build) => build.program.mods.some((mod) => mod.adjacent.length > 0))).toBe(true);
   });
 
   it("fights on the authored frame data, untouched, whatever the build", () => {
@@ -82,8 +103,10 @@ describe("C9 — mods never decide an exchange", () => {
       const pair = [index, (index + 1) % BUILDS] as const;
       for (const player of ACTION_TYPES) {
         for (const opponent of ACTION_TYPES) {
-          const { damage, healing } = exchange(pair, player, opponent);
+          const { damage, healing, contacts } = exchange(pair, player, opponent);
           const result = resolveMatchup(player, opponent);
+          expect(contacts, `build ${index}: ${player}/${opponent} contact timing`)
+            .toEqual(baselineContacts(player, opponent));
           const [toPlayer, toOpponent] = damage;
           const agrees = result === "player" ? toOpponent > 0 && toPlayer === 0
             : result === "opponent" ? toPlayer > 0 && toOpponent === 0
@@ -100,18 +123,23 @@ describe("C9 — mods never decide an exchange", () => {
     expect(exchanges).toBe(BUILDS * 9);
   });
 
-  it("makes a stronger lane hit harder, and nothing more", () => {
+  it("keeps static build damage out of CombatSide while per-commit extras still work", () => {
     const bare = combatSide(compileBuild([]));
-    const strong = SIDES.reduce((best, side) => (side.bonus.strike > best.bonus.strike ? side : best), bare);
-    expect(strong.bonus.strike).toBeGreaterThan(0);
-    const hit = (sides: readonly [CombatSide, CombatSide]) => {
+    const built = combatSide(BUILT.find((build) => build.program.mods.length > 0)!);
+    expect(Object.keys(built).sort()).toEqual(["actions", "fighter"]);
+
+    const hit = (sides: readonly [CombatSide, CombatSide], bonus: number) => {
       const arena = new CombatArena(sides);
-      arena.commit("strike", "tech", { round: 1, mixedUp: [false, false] });
+      arena.commit("strike", "tech", { round: 1, mixedUp: [false, false] }, {
+        bonus: [bonus, 0],
+        heal: [0, 0],
+        exposure: [0, 0],
+      });
       let lost = 0;
       do lost += arena.step().damage[1]; while (arena.status() === "busy");
       return lost;
     };
-    expect(hit([strong, bare])).toBe(12 + strong.bonus.strike);
-    expect(hit([bare, bare])).toBe(12);
+    expect(hit([built, bare], 0)).toBe(12);
+    expect(hit([built, bare], 5)).toBe(17);
   });
 });

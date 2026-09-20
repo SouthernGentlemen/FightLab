@@ -5,10 +5,10 @@ import type { ActionBar } from "../battle/bars.ts";
 import { BEATS } from "../battle/matchup.ts";
 import { opponentPlan } from "../battle/mixup.ts";
 import type { MixupPlan, OpponentPlan } from "../battle/mixup.ts";
+import { adjacencyGraph } from "../mods/adjacency.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { elementsOf, isElemental } from "../mods/tags.ts";
-import { GRID_SIZE, LANES, cellsOf, fits, occupancy, place } from "../mods/grid.ts";
+import { BOARD_HEIGHT, BOARD_WIDTH, fits, occupancy, place } from "../mods/grid.ts";
 import type { Grid, Placement } from "../mods/grid.ts";
 import { ROTATIONS } from "../mods/shapes.ts";
 import { stream } from "./random.ts";
@@ -98,37 +98,53 @@ export function figureFor(seed: number, day: number): OpponentFigure {
   return stream(seed, "figure", day).pick(OPPONENT_FIGURES.filter((figure) => figure !== yesterday));
 }
 
-/** How much each lane matters to a plan: how often its action appears across both bars. */
-function laneWeights(plan: OpponentPlan): Record<ActionType, number> {
+/** How often each action appears across both bars. */
+export function affinityWeights(plan: OpponentPlan): Record<ActionType, number> {
   const weights: Record<ActionType, number> = { strike: 0, tech: 0, block: 0 };
   for (const action of [...plan.primary, ...plan.secondary]) weights[action]++;
   return weights;
 }
 
+/** How strongly this mod's affinity matches the six actions in the opponent's plan. */
+function affinityScore(mod: ModId, weights: Readonly<Record<ActionType, number>>): number {
+  const affinity = REGISTRY[mod].affinity;
+  return affinity === null
+    ? ACTION_TYPES.reduce((sum, action) => sum + weights[action], 0)
+    : weights[affinity];
+}
+
+/** Plan affinity plus one point for every same-type neighbour at this placement. */
+export function placementScore(
+  grid: Grid,
+  placement: Placement,
+  weights: Readonly<Record<ActionType, number>>,
+): number {
+  const definition = REGISTRY[placement.mod];
+  let score = affinityScore(placement.mod, weights);
+  const candidate = { uid: -1, stars: 1 as const, ...placement };
+  const graph = adjacencyGraph([...grid, candidate]);
+  const byUid = new Map(grid.map((placed) => [placed.uid, placed] as const));
+  for (const uid of graph.neighbours(candidate.uid)) {
+    const neighbour = byUid.get(uid);
+    if (neighbour && REGISTRY[neighbour.mod].type === definition.type) score++;
+  }
+  return score;
+}
+
 /**
- * Where a mod does the plan the most good: element cells in the lanes its bars use most, with a
- * nudge towards rows already holding the same element. The first best placement in reading order
- * wins a tie, so packing is deterministic.
+ * Where a mod best joins the static board. Affinity says how much the plan values the mod; adjacency
+ * breaks placement ties toward same-type clusters. Reading order keeps exact ties deterministic.
  */
 function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionType, number>>): Placement | null {
   const owners = occupancy(grid);
-  const elements = elementsOf(REGISTRY[mod].tags).filter(isElemental);
   let best: Placement | null = null;
   let bestScore = -Infinity;
   for (const rotation of ROTATIONS) {
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+      for (let x = 0; x < BOARD_WIDTH; x++) {
         const placement = { mod, rotation, x, y };
         if (!fits(owners, placement)) continue;
-        let score = 0;
-        for (const [, row] of cellsOf(placement)) {
-          if (elements.length === 0) continue;
-          score += weights[LANES[row]];
-          for (let column = 0; column < GRID_SIZE; column++) {
-            const neighbour = owners.get(`${column},${row}`);
-            if (neighbour && REGISTRY[neighbour.mod].tags.some((tag) => (elements as readonly string[]).includes(tag))) score += 1;
-          }
-        }
+        const score = placementScore(grid, placement, weights);
         if (score > bestScore) {
           best = placement;
           bestScore = score;
@@ -140,16 +156,23 @@ function bestPlacement(grid: Grid, mod: ModId, weights: Readonly<Record<ActionTy
 }
 
 function buildFor(seed: number, day: number, plan: OpponentPlan): Grid {
-  const weights = laneWeights(plan);
+  const weights = affinityWeights(plan);
   let grid: Grid = [];
   let budget = opponentBudget(day);
   let uid = 1;
   for (let roll = 0; roll < OPPONENT_SHOP_ROLLS; roll++) {
     const random = stream(seed, "opponent-shop", day, roll);
-    for (let offer = 0; offer < SHOP_SIZE; offer++) {
-      const mod = drawOffer(random, day);
-      // Money is worth nothing to an opponent, so it never buys a Neutral mod.
-      if (priceOf(mod) > budget || REGISTRY[mod].tags.includes("neutral")) continue;
+    const offers = Array.from({ length: SHOP_SIZE }, (_, offer) => ({
+      offer,
+      mod: drawOffer(random, day),
+    })).filter(({ mod }) => REGISTRY[mod].effect?.kind !== "perk")
+      .sort((left, right) =>
+        affinityScore(right.mod, weights) - affinityScore(left.mod, weights)
+        || priceOf(right.mod) - priceOf(left.mod)
+        || left.offer - right.offer);
+
+    for (const { mod } of offers) {
+      if (priceOf(mod) > budget) continue;
       const placement = bestPlacement(grid, mod, weights);
       if (placement === null) continue;
       grid = place(grid, { uid: uid++, stars: 1, ...placement })!;

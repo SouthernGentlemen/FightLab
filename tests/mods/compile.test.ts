@@ -1,95 +1,138 @@
 import { describe, expect, it } from "vitest";
 
-import { BASE_CHARGE_CAPACITY } from "../../src/mods/balance.ts";
+import type { ActionType } from "../../src/battle/actions.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
+import type { ModEffect } from "../../src/mods/effects.ts";
 import { place } from "../../src/mods/grid.ts";
 import type { Grid } from "../../src/mods/grid.ts";
-import { REGISTRY } from "../../src/mods/registry.ts";
-import type { ModId } from "../../src/mods/registry.ts";
+import type { ModDefinition } from "../../src/mods/registry.ts";
 import type { Rotation } from "../../src/mods/shapes.ts";
 import type { Stars } from "../../src/mods/stars.ts";
+import type { ModType } from "../../src/mods/types.ts";
+import { pick, placement } from "./fixtures.ts";
+
+const SOLAR_SINGLE = pick({ type: "solar", size: 1 });
+const ARC_SINGLE = pick({ type: "arc", size: 1 });
+const VOID_SINGLE = pick({ type: "void", size: 1 });
+const DOMINO = pick({ type: "solar", affinity: "strike", size: 2 });
+const NEUTRAL_SINGLE = pick({ type: "neutral", size: 1 });
 
 let uid = 0;
-/** Places each piece in order; every one of them must be legal. */
-function grid(...pieces: ReadonlyArray<readonly [ModId, number, number, Rotation?, Stars?]>): Grid {
+
+function grid(...pieces: ReadonlyArray<readonly [ModDefinition, number, number, Rotation?, Stars?]>): Grid {
   let built: Grid = [];
-  for (const [mod, x, y, rotation = 0, stars = 1] of pieces) {
-    const next = place(built, { uid: ++uid, mod, stars, rotation, x, y });
-    if (next === null) throw new Error(`${mod} does not fit at ${x},${y}`);
+  for (const [definition, x, y, rotation = 0, stars = 1] of pieces) {
+    const next = place(built, { uid: ++uid, stars, ...placement([definition, x, y, rotation]) });
+    if (next === null) throw new Error(`${definition.id} does not fit at ${x},${y}`);
     built = next;
   }
   return built;
 }
 
+function definition(
+  base: ModDefinition,
+  type: ModType,
+  affinity: ActionType | null,
+  effect: ModEffect,
+): ModDefinition {
+  return { ...base, type, affinity, effect };
+}
 describe("compiling a grid", () => {
   it("adds nothing for an empty grid", () => {
     expect(compileBuild([])).toEqual({
-      lanes: { strike: 0, tech: 0, block: 0 },
-      attuned: { strike: null, tech: null, block: null },
       program: { mods: [] },
-      capacity: BASE_CHARGE_CAPACITY,
+      preview: { strike: 0, tech: 0, block: 0 },
       income: 0,
       freeRerolls: 0,
       styleMultiplier: 1,
     });
   });
 
-  it("powers the action of the row an elemental cell sits in by one", () => {
-    expect(compileBuild(grid(["heat-coil", 0, 0])).lanes).toEqual({ strike: 1, tech: 0, block: 0 });
-    expect(compileBuild(grid(["void-tap", 2, 1])).lanes).toEqual({ strike: 0, tech: 1, block: 0 });
-    expect(compileBuild(grid(["arc-dynamo", 1, 2])).lanes).toEqual({ strike: 0, tech: 0, block: 1 });
-    // Standing up across all three rows, a three-cell piece is +1 to each.
-    expect(compileBuild(grid(["chain-circuit", 0, 0, 1])).lanes).toEqual({ strike: 1, tech: 1, block: 1 });
+  it("previews unconditional new-vocabulary damage by affinity", () => {
+    const strike = definition(SOLAR_SINGLE, "solar", "strike", {
+      kind: "exchange",
+      payoffs: [{ kind: "damage", amount: { value: [2, 3, 4], per: "flat" } }],
+    });
+    const every = definition(ARC_SINGLE, "arc", null, {
+      kind: "exchange",
+      payoffs: [{ kind: "damage", amount: { value: [1, 2, 3], per: "flat" } }],
+    });
+    const built = compileBuild(
+      grid([strike, 0, 0, 0, 2], [every, 2, 2, 0, 1]),
+      { [strike.id]: strike, [every.id]: every },
+    );
+    expect(built.preview).toEqual({ strike: 4, tech: 1, block: 1 });
   });
 
-  it("attunes a row whose three cells share an element, at two per cell — a hybrid shares both of its elements", () => {
-    const attuned = compileBuild(grid(["chain-circuit", 0, 0]));
-    expect(attuned.lanes.strike).toBe(6);
-    expect(attuned.attuned).toEqual({ strike: "arc", tech: null, block: null });
-    const mixed = compileBuild(grid(["heat-coil", 0, 1], ["void-tap", 1, 1], ["arc-dynamo", 2, 1]));
-    expect(mixed.lanes.tech).toBe(3);
-    expect(mixed.attuned.tech).toBeNull();
-    // Heat Death (Void / Solar) covers two cells of the bottom row; a Heat Coil finishes it in Solar.
-    const hybrid = compileBuild(grid(["heat-death", 0, 1], ["heat-coil", 2, 2]));
-    expect(hybrid.attuned.block).toBe("solar");
-    expect(hybrid.lanes.block).toBe(6);
-    expect(compileBuild(grid(["furnace", 0, 0])).lanes.strike).toBe(2);
+  it("evaluates static board scales, adjacency conditions and received boosts", () => {
+    const target = definition(DOMINO, "solar", "strike", {
+      kind: "exchange",
+      when: { kind: "adjacent-to", type: "neutral" },
+      payoffs: [{ kind: "damage", amount: { value: [1, 1, 1], per: "cell" } }],
+    });
+    const booster = definition(NEUTRAL_SINGLE, "neutral", null, {
+      kind: "boost",
+      amount: [1, 2, 3],
+      to: "adjacent",
+    });
+    const built = compileBuild(
+      grid([target, 0, 0], [booster, 0, 1, 0, 2]),
+      { [target.id]: target, [booster.id]: booster },
+    );
+    expect(built.preview).toEqual({ strike: 6, tech: 0, block: 0 });
+    expect(built.program.mods.find((mod) => mod.definition.id === target.id)!.adjacent).toHaveLength(1);
   });
 
-  it("gives Neutral cells no power, and lets them break a row", () => {
-    const broken = compileBuild(grid(["heat-coil", 0, 0], ["piggy-bank", 1, 0], ["heat-coil", 2, 0]));
-    expect(broken.lanes.strike).toBe(2);
-    expect(broken.attuned.strike).toBeNull();
-    expect(compileBuild(grid(["piggy-bank", 0, 0], ["coupon", 1, 0], ["amplifier", 2, 0])).lanes.strike).toBe(0);
+  it("excludes opponent-state conditions and status-scaled damage from static preview", () => {
+    const conditional = definition(SOLAR_SINGLE, "solar", "strike", {
+      kind: "exchange",
+      when: { kind: "opponent-has", status: "burn" },
+      payoffs: [{ kind: "damage", amount: { value: [5, 6, 7], per: "flat" } }],
+    });
+    const statusScaled = definition(ARC_SINGLE, "arc", "tech", {
+      kind: "exchange",
+      payoffs: [{ kind: "damage", amount: { value: [4, 5, 6], per: "shock" } }],
+    });
+    expect(compileBuild(
+      grid([conditional, 0, 0], [statusScaled, 2, 2]),
+      { [conditional.id]: conditional, [statusScaled.id]: statusScaled },
+    ).preview).toEqual({ strike: 0, tech: 0, block: 0 });
   });
 
-  it("lets an Amplifier add its stars' worth to each elemental cell of every mod touching it", () => {
-    // Furnace along the top touches the Amplifier below its right cell; the Heat Coil in the corner does not.
-    expect(compileBuild(grid(["furnace", 0, 0], ["amplifier", 1, 1], ["heat-coil", 2, 2])).lanes).toEqual({ strike: 4, tech: 0, block: 1 });
-    expect(compileBuild(grid(["heat-coil", 1, 1], ["amplifier", 0, 1], ["amplifier", 2, 1])).lanes.tech).toBe(3);
-    expect(compileBuild(grid(["heat-coil", 1, 1], ["amplifier", 0, 1, 0, 3])).lanes.tech).toBe(1 + 3);
-  });
 
-  it("hands the engine every placed mod at its stars, with the links its ports make where it stands", () => {
-    const build = compileBuild(grid(["heat-coil", 0, 0], ["cinder-edge", 1, 0, 0, 2], ["battery-cell", 0, 2, 0, 2]));
+  it("hands the engine every placed mod at its stars with adjacency facts", () => {
+    const first = definition(SOLAR_SINGLE, "solar", null, { kind: "exchange", payoffs: [] });
+    const adjacent = definition(DOMINO, "solar", "strike", { kind: "exchange", payoffs: [] });
+    const distant = definition(ARC_SINGLE, "arc", null, { kind: "exchange", payoffs: [] });
+    const build = compileBuild(
+      grid([first, 0, 0], [adjacent, 1, 0, 0, 2], [distant, 0, 2, 0, 2]),
+      { [first.id]: first, [adjacent.id]: adjacent, [distant.id]: distant },
+    );
     expect(build.program.mods.map((mod) => [mod.definition, mod.stars])).toEqual([
-      [REGISTRY["heat-coil"], 1], [REGISTRY["cinder-edge"], 2], [REGISTRY["battery-cell"], 2],
+      [first, 1],
+      [adjacent, 2],
+      [distant, 2],
     ]);
-    expect(build.program.mods[0].feeds).toEqual(["heat"]);
-    expect(build.capacity).toBe(BASE_CHARGE_CAPACITY + 3);
+    expect(build.program.mods[0].adjacent).toEqual([build.program.mods[1].uid]);
   });
 
-  it("pays the run perks by their stars", () => {
-    expect(compileBuild(grid(["piggy-bank", 0, 0], ["piggy-bank", 1, 0])).income).toBe(2);
-    expect(compileBuild(grid(["piggy-bank", 0, 0, 0, 3])).income).toBe(3);
-    expect(compileBuild(grid(["coupon", 0, 0])).freeRerolls).toBe(1);
-    expect(compileBuild(grid(["crowd-pleaser", 0, 0])).styleMultiplier).toBe(2);
-    expect(compileBuild(grid(["crowd-pleaser", 0, 0], ["crowd-pleaser", 0, 1])).styleMultiplier).toBe(3);
-    expect(compileBuild(grid(["crowd-pleaser", 0, 0, 0, 2])).styleMultiplier).toBe(3);
+  it("pays synthetic run perks by their stars", () => {
+    const income = definition(SOLAR_SINGLE, "neutral", null, { kind: "perk", perk: "income", amount: [1, 2, 3] });
+    const reroll = definition(ARC_SINGLE, "neutral", null, { kind: "perk", perk: "free-reroll", amount: [1, 2, 3] });
+    const style = definition(VOID_SINGLE, "neutral", null, { kind: "perk", perk: "style", amount: [1, 2, 3] });
+    const definitions = { [income.id]: income, [reroll.id]: reroll, [style.id]: style };
+
+    expect(compileBuild(grid([income, 0, 0], [income, 1, 0]), definitions).income).toBe(2);
+    expect(compileBuild(grid([income, 0, 0, 0, 3]), definitions).income).toBe(3);
+    expect(compileBuild(grid([reroll, 0, 0]), definitions).freeRerolls).toBe(1);
+    expect(compileBuild(grid([style, 0, 0]), definitions).styleMultiplier).toBe(2);
+    expect(compileBuild(grid([style, 0, 0], [style, 0, 1]), definitions).styleMultiplier).toBe(3);
+    expect(compileBuild(grid([style, 0, 0, 0, 2]), definitions).styleMultiplier).toBe(3);
   });
 
-  it("returns lanes, the engine's program and money: nothing that could describe timing or a bar", () => {
-    const build = compileBuild(grid(["solar-flare", 0, 0], ["storm-cell", 0, 2]));
-    expect(Object.keys(build).sort()).toEqual(["attuned", "capacity", "freeRerolls", "income", "lanes", "program", "styleMultiplier"]);
+  it("returns preview, the engine program and run values with no row-lane state", () => {
+    expect(Object.keys(compileBuild([])).sort()).toEqual([
+      "freeRerolls", "income", "preview", "program", "styleMultiplier",
+    ]);
   });
 });

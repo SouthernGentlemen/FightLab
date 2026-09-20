@@ -1,7 +1,7 @@
 # Working in FightLab
 
 FightLab is the game. A run is a string of days: each day the player buys mods in a shop, packs them
-into a 3×3 grid and programs two action bars of three actions — Strike, Tech or Block — then fights.
+into a 4 × 4 board and programs two action bars of three actions — Strike, Tech or Block — then fights.
 A fight is a series of rounds, each playing the active bar once, slot against slot, and every exchange
 is resolved by a deterministic hitbox simulation, not by a dice roll or a health subtraction. Between
 rounds the player may Mixup to the other bar. After the knockout comes payday, then the next day. The
@@ -40,9 +40,9 @@ src/run/  src/mods/    src/battle/         src/combat/             src/render/
 1. **Run** decides the day. The seeded run — days, hearts, trophies, money, the shop, opponents,
    payday, the autosave — as pure TypeScript over `src/mods/` and `src/battle/`. It never runs a
    fight; it is told how one ended.
-2. **Mods** decide the build. Tags, rarity, stars, ports, the one registry, shapes, the grid and
-   the bank, `compileBuild`, which turns a grid into lane power and a program, and the resource and
-   debuff engine that runs the program. Pure TypeScript over `src/battle/`'s vocabulary.
+2. **Mods** decide the build. Type, affinity, rarity, stars, the 11 shapes, the 4 × 4 grid and bank,
+   orthogonal adjacency, the 64-definition registry, `compileBuild`, the effect vocabulary and the
+   Burn / Shock / Poison status engine. Pure TypeScript over `src/battle/`'s vocabulary.
 3. **Battle** decides the fight. The two bars, the rounds, the cursor through them, the pause and
    Mixup, opponents' mixup plans, the matchup, the exchange cycle and style. Pure TypeScript that
    imports nothing outside `src/battle/`. It works against the `Arena` interface it declares, never
@@ -70,8 +70,10 @@ order. `boneyard.pin.json` records the Boneyard commit FightLab was last verifie
 digest of every Boneyard file FightLab reads. `check:boneyard` fails when the installed Boneyard
 differs from that digest, and `dev`, `build`, `test` and `verify` all see it, so an upstream
 change cannot silently alter the game. Accepting one is `npm run pin:boneyard`, which puts the new
-digest in a diff where someone has to look at it. Boneyard has no remote, which is why the pin is
-a digest rather than a git URL. The consumed surface is listed in
+digest in a diff where someone has to look at it. Boneyard's remote source is
+`SouthernGentlemen/Boneyard`, but FightLab still consumes it as the sibling checkout; the commit
+plus digest pin makes both remote CI and local development verify the exact consumed files instead
+of trusting a mutable branch. The consumed surface is listed in
 [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md#boneyard-dependency-contract); a new import
 from Boneyard belongs in that list and in the digest.
 
@@ -101,10 +103,11 @@ that the next landed hit adds and clears, and an affliction between ticks — kn
 `src/mods/`, `src/run/`, `src/combat/adapter.ts`, `src/game/` and `src/ui/`, and nowhere else. The
 kernel and the frame data speak moves (`jab`, `overhead`, `parry`, `riposte`); rendering speaks clips.
 A move names the clip that presents it, and every placeholder is listed beside the motion it stands in
-for (`docs/RUN_PLAN.md`, *Animation mapping*), so replacing one is a content change no battle
-rule can notice. A mod has one or two tags from two families: elements — `solar`, `arc`, `void`,
-`neutral` — which are mod properties and never name an action, and actions, which say when a mod
-fires (in an exchange where its fighter plays that action).
+for (`docs/RUN_PLAN.md`, *Animation mapping*), so replacing one is a content change no battle rule
+can notice. A mod has exactly one type — `solar`, `arc`, `void` or `neutral` — and an optional
+affinity — `strike`, `tech` or `block`. Type determines the status family (Solar → Burn, Arc →
+Shock, Void → Poison, Neutral → none); affinity only says which action makes the mod fire. A mod with
+no affinity fires every exchange.
 
 **C5 — Determinism, at every level and every speed.** A run is its seed plus the player's inputs.
 Every generated thing — shop offers and rerolls, opponents, their bars, builds and mixup plans — is
@@ -137,8 +140,9 @@ parry, and Burn, Shock and Poison to the opponent. It never changes startup, act
 frames, hitbox or parry windows, which hitboxes break guard, the order of a bar or which bar is
 active, and nothing it does reduces a hit that lands; Mixup is only ever the player's decision or an
 opponent's seeded plan. `compileBuild` is the only bridge from a grid to combat and `ModdedArena` the
-only place its engine meets the arena; a property test runs all nine pairs under a thousand random
-registry builds at random stars and rotations, with their mods firing.
+only place its engine meets the arena; the property test builds a thousand random boards from the 64
+on the 4 × 4 grid, at random stars and degree rotations with statuses loaded, and runs all nine action
+pairs without changing a winner or timing field.
 
 **C10 — One 16:9 composition.** Every screen is authored on a 1600 × 900 design grid inside the
 largest 16:9 rectangle the display allows, scaled as a whole and rendered at the device's native
@@ -147,8 +151,9 @@ too-small display gets an unsupported-state card, never a rearranged UI.
 
 **C11 — Saves are versioned.** The autosave is `{ version, run, fight }`. A document with a version
 the game does not read, or one that fails validation, is discarded whole. Changing the saved shape
-means a new version and, if old saves are to survive, a migration with a test. Version 2 came with the
-mod registry: a version-1 save names mods that no longer exist, so it is discarded.
+means a new version and, if old saves are to survive, a migration with a test. The current format is
+**version 4**, introduced with the replacement 64-mod registry; versions 1–3 are discarded because
+their mod ids and/or placement model are not the current catalogue.
 
 ## Lineage
 
@@ -177,13 +182,13 @@ autobattler, not a fork kept in sync.
 AGENTS.md, implementation_plan.md, README.md, LICENSE.md
 docs/RUN_PLAN.md    the run slice as built: rules, state machines, tests, what has been measured
 docs/RUN_DESIGN.md  the design and the record of its decisions
-docs/MODS.md        the mod system: elements, resources, debuffs, stars, rarity, ports, the Armory
+docs/MODS.md        the mod system: type, affinity, shapes, adjacency, effects, statuses, stars, rarity, colour, Armory
 boneyard.pin.json   the Boneyard commit and digest FightLab is verified against
 index.html          the one page
 pipelines/          Node only: the Boneyard pin, the dev teardown, the figure server/emitter, the tuning bot
 src/run/            seeded run: random streams, shop, economy, opponents, run state, save, collection
-src/mods/           tags, rarity, stars, ports, registry, balance, grid and bank, compile, the
-                    resource engine, the Armory's catalogue — pure rules
+src/mods/           type and affinity, rarity, stars, shapes, 4 × 4 grid and bank, adjacency,
+                    64-mod registry, effects, status engine, compile and Armory filters — pure rules
 src/battle/         actions, matchup, bars, mixup plans, director, style — pure rules
 src/combat/kernel/  the sealed simulation
 src/combat/         frame data and the adapter implementing the battle Arena
@@ -224,6 +229,7 @@ SVG built by hand.
 ## Working rules
 
 - Small branches off `main`. `verify` before merge. Merge promptly, then delete the branch.
+- The controlled lifecycle is branch → commit(s) → verify → merge → delete. `push` is transport only; a request not to push never blocks or replaces that lifecycle.
 - Never edit a file that has uncommitted changes in it. Use a separate worktree.
 - Comments explain *why*. No narration of what the code plainly does.
 - When a number is tuned — a frame count, a reach, a damage value, a price — measure it in the

@@ -4,9 +4,10 @@ import type { MatchOutcome, OutcomeReason } from "../battle/director.ts";
 import type { StyleRank } from "../battle/style.ts";
 import { BANK_SIZE, place } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
-import { isModId } from "../mods/registry.ts";
+import { REGISTRY, isModId } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { isRotation } from "../mods/shapes.ts";
+import { SHAPES, isRotation, normaliseRotation } from "../mods/shapes.ts";
+import type { Rotation } from "../mods/shapes.ts";
 import { isStars } from "../mods/stars.ts";
 import type { PaydayLabel, PaydayLine } from "./economy.ts";
 import { isSeed } from "./random.ts";
@@ -19,8 +20,8 @@ import { SHOP_SIZE } from "./shop.ts";
  * version, a missing field, an impossible value — is discarded whole, never half-loaded. Changing
  * the saved shape means a new version and, if old saves are to survive, a migration with a test.
  */
-/** 2 since the mod registry replaced the first catalogue: a version-1 save names mods that no longer exist. */
-export const SAVE_VERSION = 2;
+/** Version 4 starts with the replacement 64-mod registry; older registry saves are discarded. */
+export const SAVE_VERSION = 4;
 export const SAVE_KEY = "fightlab.run";
 
 /** The player's Mixup decisions in the fight in progress, one per pause left so far. */
@@ -109,9 +110,10 @@ function modId(value: unknown, what: string): ModId {
 
 function owned(value: unknown, what: string): OwnedMod {
   const data = record(value, what);
-  if (!isRotation(data.rotation)) fail(`${what}: rotation`);
-  if (!isStars(data.stars)) fail(`${what}: stars`);
-  return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod: modId(data.mod, `${what}: mod`), stars: data.stars, rotation: data.rotation });
+  const mod = modId(data.mod, `${what}: mod`);
+  if (!isRotation(data.rotation) || !isStars(data.stars)) fail(`${what}: rotation or stars`);
+  const rotation = normaliseRotation(SHAPES[REGISTRY[mod].shape], data.rotation as Rotation);
+  return Object.freeze({ uid: integer(data.uid, `${what}: uid`, 1), mod, stars: data.stars, rotation });
 }
 
 function readGrid(value: unknown): Grid {

@@ -3,23 +3,23 @@ import type { ActionType } from "../battle/actions.ts";
 import { BAR_IDS, BAR_LENGTH } from "../battle/bars.ts";
 import type { BarId, SlotIndex } from "../battle/bars.ts";
 import { combatSide, hitDamage } from "../game/sides.ts";
-import { BANK_SIZE, GRID_SIZE, LANES, canPlace, cellsOf, firstFit } from "../mods/grid.ts";
-import { RARITIES, RARITY, rarityLine } from "../mods/rarity.ts";
+import { BANK_SIZE, BOARD_HEIGHT, BOARD_WIDTH, canPlace, cellsOf, firstFit, turnAbout } from "../mods/grid.ts";
+import { RARITIES, RARITY } from "../mods/rarity.ts";
 import { REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { nextRotation, shapeCells, shapeSize } from "../mods/shapes.ts";
-import type { Rotation } from "../mods/shapes.ts";
-import { effectLines, portLine } from "../mods/describe.ts";
+import { shapeCells, shapeSize } from "../mods/shapes.ts";
+import type { GridPoint, Rotation } from "../mods/shapes.ts";
+import { effectLines } from "../mods/describe.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { ELEMENTAL, TAG_LABEL, elementsOf, isElemental, tagLine } from "../mods/tags.ts";
-import type { Elemental } from "../mods/tags.ts";
 import { sellValue } from "../run/economy.ts";
 import { buildOf, buy, move, rerollPrice, reroll, rotate, sell, setAction, toggleLock } from "../run/run.ts";
 import type { Destination, Refusal, RunState, Source } from "../run/run.ts";
+import type { Placement } from "../mods/grid.ts";
 import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
-import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, modIcon as modIconFor, paintChip, panel, shake, starRow, toaster } from "./kit.ts";
+import { modLabel } from "./modlabel.ts";
+import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, paintChip, panel, shake, starRow, toaster } from "./kit.ts";
 
 export interface PrepOptions {
   readonly run: RunState;
@@ -50,9 +50,9 @@ type Target =
 interface Drag {
   readonly held: Held;
   readonly mod: ModId;
-  rotation: Rotation;
-  /** Which of the mod's cells is under the pointer. */
-  readonly anchor: number;
+  placement: Placement;
+  /** The occupied board cell held under the pointer. */
+  pivot: GridPoint;
   readonly startX: number;
   readonly startY: number;
   x: number;
@@ -70,14 +70,9 @@ interface Carry {
   rotation: Rotation;
   x: number;
   y: number;
+  /** The occupied board cell the carry turns around. */
+  pivot: GridPoint;
 }
-
-/** What each element is for, in the words the design uses. */
-const ELEMENT_IDENTITY: Readonly<Record<Elemental, string>> = {
-  solar: "Heat: fast build, low sustained payoff. Burn halves every round.",
-  arc: "Charge: setup and burst. Shock waits for the next hit and all of it lands.",
-  void: "Leeched Void: slow build, persistent high payoff. Poison never fades.",
-};
 
 /**
  * The shop, box for box in Batomon's proportions: bank and grid in the centre, the two action bars
@@ -104,20 +99,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   const bank = panel("Bank", "sun", [h("small", {}, "any mod, one slot")], h("div", { class: "bank" }, ...bankSlots));
   bank.classList.add("prep__bank");
 
-  // The grid and its lanes.
-  const levels = h("div", { class: "levels" });
-  const lanes = LANES.map((lane) => {
-    const bonus = h("b", { class: "lane__bonus stroke" });
-    const attune = h("span", { class: "lane__attune" });
-    const tag = h("span", { class: "lane__tag", "data-action": lane }, icon(lane), h("span", { class: "stroke" }, ACTION_LABEL[lane]));
-    return { lane, bonus, attune, node: h("div", { class: "lane", "data-lane": lane }, attune, tag, bonus) };
-  });
-  const cells = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) =>
-    h("div", { class: "cell", "data-x": String(index % GRID_SIZE), "data-y": String(Math.floor(index / GRID_SIZE)) }));
+  // The mod grid.
+  const cells = Array.from({ length: BOARD_WIDTH * BOARD_HEIGHT }, (_, index) =>
+    h("div", { class: "cell", "data-x": String(index % BOARD_WIDTH), "data-y": String(Math.floor(index / BOARD_WIDTH)) }));
   const pieces = h("div", { class: "pieces" });
   const carried = h("div", { class: "carried", hidden: "" });
-  const gridBox = h("div", { class: "grid" }, ...cells, pieces, carried);
-  const mods = panel("Mods", "rose", [levels], h("div", { class: "board" }, h("div", { class: "lanes" }, ...lanes.map(({ node }) => node)), gridBox));
+  const gridBox = h("div", { class: "grid", style: `--board-w:${BOARD_WIDTH};--board-h:${BOARD_HEIGHT}` }, ...cells, pieces, carried);
+  const mods = panel("Mods", "rose", [], h("div", { class: "board" }, gridBox));
   mods.classList.add("prep__mods");
 
   // The two action bars, in the negative space on the right.
@@ -191,6 +179,17 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return held.kind === "bank" ? { bank: held.slot } : { piece: (held as { uid: number }).uid };
   }
 
+  function placementFor(held: Held, mod: { mod: ModId; rotation: Rotation }): Placement {
+    const piece = held.kind === "piece" ? run.grid.find((candidate) => candidate.uid === held.uid) : undefined;
+    return piece ?? firstFit(run.grid, mod.mod, mod.rotation) ?? { mod: mod.mod, rotation: mod.rotation, x: 0, y: 0 };
+  }
+
+  function pivotFor(placement: Placement, cellIndex = 0): GridPoint {
+    const local = shapeCells(REGISTRY[placement.mod].shape, placement.rotation)[cellIndex]
+      ?? shapeCells(REGISTRY[placement.mod].shape, placement.rotation)[0];
+    return { x: placement.x + local.x, y: placement.y + local.y };
+  }
+
   /** Puts what is held where it was dropped: buys an offer, moves an owned mod, or sells it. */
   function drop(held: Held, target: Target, rotation: Rotation): Refusal | null {
     if (target.kind === "sell") return held.kind === "offer" ? null : sell(run, sourceOf(held));
@@ -211,10 +210,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     bankSlots.forEach((slot, index) => {
       const owned = run.bank[index];
       slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars),
-        starRow(owned.stars, RARITY[REGISTRY[owned.mod].rarity].material, "stars slot__stars")] : []));
+        starRow(owned.stars, "stars slot__stars")] : []));
       slot.dataset.filled = owned ? "true" : "false";
-      slot.setAttribute("aria-label", owned ? `${REGISTRY[owned.mod].name} ${starText(owned.stars)}, banked` : `Empty bank slot ${index + 1}`);
-      slot.classList.toggle("is-carried", carry?.held.kind === "bank" && carry.held.slot === index);
+      slot.setAttribute("aria-label", owned ? modLabel(REGISTRY[owned.mod], owned.stars) : `Empty bank slot ${index + 1}`);
+      slot.classList.toggle("is-source", carry?.held.kind === "bank" && carry.held.slot === index);
     });
 
     pieces.replaceChildren(...run.grid.map((piece) => {
@@ -224,34 +223,27 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       art.dataset.uid = String(piece.uid);
       art.tabIndex = 0;
       art.setAttribute("role", "button");
-      art.setAttribute("aria-label", `${REGISTRY[piece.mod].name} ${starText(piece.stars)} on the grid`);
-      art.classList.toggle("is-carried", carry?.held.kind === "piece" && carry.held.uid === piece.uid);
+      art.setAttribute("aria-label", modLabel(REGISTRY[piece.mod], piece.stars));
+      art.classList.toggle("is-source", carry?.held.kind === "piece" && carry.held.uid === piece.uid);
       return art;
     }));
 
-    lanes.forEach(({ lane, bonus, attune, node }) => {
-      setText(bonus, `+${build.lanes[lane]}`);
-      const element = build.attuned[lane];
-      attune.replaceChildren(...(element ? [icon(element)] : []));
-      node.dataset.attuned = element ?? "";
-    });
-    levels.replaceChildren(...ELEMENTAL.map((element) => h("span", { class: "level", "data-affinity": element, "data-element": element },
-      icon(element), h("b", {}, String(run.grid.filter((piece) => REGISTRY[piece.mod].tags.includes(element)).length)))));
-
     BAR_IDS.forEach((bar, index) => barSlots[index].forEach(({ node, chip, damage }, slot) => {
       const action = run.loadout[bar][slot];
-      const hit = hitDamage(side, action);
+      const hit = hitDamage(side, action, build.preview[action]);
       node.dataset.action = action;
       paintChip(chip, action);
       setText(damage, String(hit));
       node.setAttribute("aria-label", `${BAR_NAME[bar]} slot ${slot + 1}: ${ACTION_LABEL[action]}, ${hit} damage. Change it.`);
     }));
-    const extras = [`♥ ${side.fighter.maxHealth} health`, `Charge holds ${build.capacity}`];
-    setText(stats, extras.join(" · "));
+    setText(stats, `♥ ${side.fighter.maxHealth} health`);
 
     const rank = shopRank(run.day);
-    odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => chance === 0 ? []
-      : [h("span", { class: "odds__rarity", title: RARITY[RARITIES[index]].label }, h("i", { class: "gem", "data-material": RARITY[RARITIES[index]].material }), `${chance}%`)]));
+    odds.replaceChildren(h("b", {}, `Rank ${rank}`), ...RARITY_ODDS[rank].flatMap((chance, index) => {
+      if (chance === 0) return [];
+      const rarity = RARITIES[index];
+      return [h("span", { class: "odds__rarity", "data-rarity": rarity }, `${RARITY[rarity].label} ${chance}%`)];
+    }));
     setText(money, `$${run.money}`);
     lock.setAttribute("aria-pressed", String(run.shop.locked));
     setText(lock.firstElementChild!, run.shop.locked ? "Locked" : "Lock");
@@ -264,55 +256,48 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const mod = run.shop.offers[index];
       node.replaceChildren();
       node.dataset.sold = mod === null ? "true" : "false";
+      node.classList.remove("is-poor");
+      delete node.dataset.type;
+      delete node.dataset.rarity;
       if (mod === null) {
         node.setAttribute("aria-label", "Sold");
         return;
       }
       const definition = REGISTRY[mod];
-      node.dataset.affinity = definition.tags[0];
+      node.dataset.type = definition.type;
+      node.dataset.rarity = definition.rarity;
       node.classList.toggle("is-poor", priceOf(mod) > run.money);
       node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
         h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
-      node.setAttribute("aria-label", `${definition.name}, ${tagLine(definition.tags)}, $${priceOf(mod)}. Buy it.`);
+      node.setAttribute("aria-label", modLabel(definition, 1));
     });
     drawCarry();
   }
 
-  // The carried piece: shown snapped onto the grid, green where it would fit and red where not.
-
-  function markCells(placement: { mod: ModId; rotation: Rotation; x: number; y: number } | null, legal: boolean): void {
-    const covered = new Set(placement ? cellsOf(placement).map(([x, y]) => `${x},${y}`) : []);
-    for (const cell of cells) {
-      const hit = covered.has(`${cell.dataset.x},${cell.dataset.y}`);
-      cell.classList.toggle("is-ok", hit && legal);
-      cell.classList.toggle("is-bad", hit && !legal);
-    }
-  }
+  // The carried piece keeps its type colour; the piece itself carries valid/invalid placement state.
 
   function drawCarry(): void {
     if (carry === null) {
       carried.hidden = true;
-      if (drag?.target?.kind !== "grid") markCells(null, false);
       return;
     }
     const placement = { mod: carry.mod, rotation: carry.rotation, x: carry.x, y: carry.y };
     const legal = canPlace(run.grid, placement, carry.held.kind === "piece" ? carry.held.uid : null);
     const art = modArt(carry.mod, carry.rotation, "piece piece--ghost");
+    art.dataset.placement = legal ? "valid" : "invalid";
     art.style.left = `calc(var(--cell) * ${carry.x})`;
     art.style.top = `calc(var(--cell) * ${carry.y})`;
     carried.replaceChildren(art);
     carried.hidden = false;
-    markCells(placement, legal);
   }
 
-  function startCarry(held: Held): void {
+  function startCarry(held: Held, pivot?: GridPoint): void {
     const found = heldMod(held);
     if (found === null) return;
     closePicker();
-    const piece = held.kind === "piece" ? run.grid.find((candidate) => candidate.uid === held.uid) : undefined;
-    const spot = piece ?? firstFit(run.grid, found.mod, found.rotation) ?? { x: 0, y: 0, rotation: found.rotation };
-    carry = { held, mod: found.mod, rotation: spot.rotation, x: spot.x, y: spot.y };
-    toast("Arrows move · R turns · Enter places · B banks · S sells");
+    const spot = placementFor(held, found);
+    carry = { held, mod: found.mod, rotation: spot.rotation, x: spot.x, y: spot.y, pivot: pivot ?? pivotFor(spot) };
+    toast("Click to place · right-click or R to turn · Esc to cancel");
     render();
   }
 
@@ -335,23 +320,36 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function moveCarry(dx: number, dy: number): void {
     if (carry === null) return;
     const [width, height] = shapeSize(shapeCells(REGISTRY[carry.mod].shape, carry.rotation));
-    carry.x = Math.min(GRID_SIZE - width, Math.max(0, carry.x + dx));
-    carry.y = Math.min(GRID_SIZE - height, Math.max(0, carry.y + dy));
+    const nextX = Math.min(BOARD_WIDTH - width, Math.max(0, carry.x + dx));
+    const nextY = Math.min(BOARD_HEIGHT - height, Math.max(0, carry.y + dy));
+    carry.pivot = { x: carry.pivot.x + nextX - carry.x, y: carry.pivot.y + nextY - carry.y };
+    carry.x = nextX;
+    carry.y = nextY;
+    drawCarry();
+  }
+
+  function followCarry(x: number, y: number): void {
+    if (carry === null) return;
+    const point = boardPointAt(x, y);
+    if (point === null || (point.x === carry.pivot.x && point.y === carry.pivot.y)) return;
+    carry.x += point.x - carry.pivot.x;
+    carry.y += point.y - carry.pivot.y;
+    carry.pivot = point;
     drawCarry();
   }
 
   // Dragging.
 
-  function heldAt(target: EventTarget | null): { held: Held; origin: HTMLElement; anchor: number } | null {
+  function heldAt(target: EventTarget | null): { held: Held; origin: HTMLElement; cell: number } | null {
     if (!(target instanceof Element)) return null;
     const offer = target.closest<HTMLElement>(".offer[data-offer]");
-    if (offer && offer.dataset.sold !== "true") return { held: { kind: "offer", offer: Number(offer.dataset.offer) }, origin: offer, anchor: 0 };
+    if (offer && offer.dataset.sold !== "true") return { held: { kind: "offer", offer: Number(offer.dataset.offer) }, origin: offer, cell: Number(target.closest<HTMLElement>(".mod__cell")?.dataset.index ?? 0) };
     const slot = target.closest<HTMLElement>(".slot[data-bank]");
-    if (slot && slot.dataset.filled === "true") return { held: { kind: "bank", slot: Number(slot.dataset.bank) }, origin: slot, anchor: 0 };
+    if (slot && slot.dataset.filled === "true") return { held: { kind: "bank", slot: Number(slot.dataset.bank) }, origin: slot, cell: Number(target.closest<HTMLElement>(".mod__cell")?.dataset.index ?? 0) };
     const piece = target.closest<HTMLElement>(".piece[data-uid]");
     if (piece && !piece.classList.contains("piece--ghost")) {
       const cell = target.closest<HTMLElement>(".mod__cell");
-      return { held: { kind: "piece", uid: Number(piece.dataset.uid) }, origin: piece, anchor: Number(cell?.dataset.index ?? 0) };
+      return { held: { kind: "piece", uid: Number(piece.dataset.uid) }, origin: piece, cell: Number(cell?.dataset.index ?? 0) };
     }
     return null;
   }
@@ -360,14 +358,29 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
   }
 
-  function targetAt(x: number, y: number, current: Drag): Target | null {
+  function boardPointAt(x: number, y: number): GridPoint | null {
     const grid = gridBox.getBoundingClientRect();
-    if (inside(grid, x, y)) {
-      const size = grid.width / GRID_SIZE;
-      const [ax, ay] = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-      const origin = { x: Math.floor((x - grid.left) / size) - ax, y: Math.floor((y - grid.top) / size) - ay };
+    if (!inside(grid, x, y)) return null;
+    return {
+      x: Math.floor((x - grid.left) / (grid.width / BOARD_WIDTH)),
+      y: Math.floor((y - grid.top) / (grid.height / BOARD_HEIGHT)),
+    };
+  }
+
+  function targetAt(x: number, y: number, current: Drag): Target | null {
+    const boardPoint = boardPointAt(x, y);
+    if (boardPoint !== null) {
+      const dx = boardPoint.x - current.pivot.x;
+      const dy = boardPoint.y - current.pivot.y;
+      current.placement = { ...current.placement, x: current.placement.x + dx, y: current.placement.y + dy };
+      current.pivot = boardPoint;
       const except = current.held.kind === "piece" ? current.held.uid : null;
-      return { kind: "grid", ...origin, legal: canPlace(run.grid, { mod: current.mod, rotation: current.rotation, ...origin }, except) };
+      return {
+        kind: "grid",
+        x: current.placement.x,
+        y: current.placement.y,
+        legal: canPlace(run.grid, current.placement, except),
+      };
     }
     for (const [slot, node] of bankSlots.entries()) {
       if (inside(node.getBoundingClientRect(), x, y)) {
@@ -380,9 +393,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   }
 
   function drawGhost(current: Drag): void {
-    const size = gridBox.getBoundingClientRect().width / GRID_SIZE;
-    const ghost = modArt(current.mod, current.rotation, "ghost");
-    ghost.style.setProperty("--cell", `${size}px`);
+    const grid = gridBox.getBoundingClientRect();
+    const cellWidth = grid.width / BOARD_WIDTH;
+    const ghost = modArt(current.mod, current.placement.rotation, "ghost");
+    ghost.style.setProperty("--cell", `${cellWidth}px`);
     current.ghost?.remove();
     current.ghost = ghost;
     screen.append(ghost);
@@ -392,13 +406,16 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function placeGhost(current: Drag): void {
     if (current.ghost === null) return;
     const bounds = screen.getBoundingClientRect();
-    const size = gridBox.getBoundingClientRect().width / GRID_SIZE;
-    const [ax, ay] = shapeCells(REGISTRY[current.mod].shape, current.rotation)[current.anchor];
-    current.ghost.style.left = `${current.x - bounds.left - (ax + 0.5) * size}px`;
-    current.ghost.style.top = `${current.y - bounds.top - (ay + 0.5) * size}px`;
+    const grid = gridBox.getBoundingClientRect();
+    const cellWidth = grid.width / BOARD_WIDTH;
+    const cellHeight = grid.height / BOARD_HEIGHT;
     current.target = targetAt(current.x, current.y, current);
+    const anchor = { x: current.pivot.x - current.placement.x, y: current.pivot.y - current.placement.y };
+    current.ghost.style.left = `${current.x - bounds.left - (anchor.x + 0.5) * cellWidth}px`;
+    current.ghost.style.top = `${current.y - bounds.top - (anchor.y + 0.5) * cellHeight}px`;
     const target = current.target;
-    markCells(target?.kind === "grid" ? { mod: current.mod, rotation: current.rotation, x: target.x, y: target.y } : null, target?.kind === "grid" && target.legal);
+    if (target?.kind === "grid") current.ghost.dataset.placement = target.legal ? "valid" : "invalid";
+    else delete current.ghost.dataset.placement;
     bankSlots.forEach((slot, index) => slot.classList.toggle("is-target", target?.kind === "bank" && target.slot === index));
     shop.classList.toggle("is-sell", target?.kind === "sell");
     if (current.held.kind !== "offer") {
@@ -410,7 +427,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function endDrag(): void {
     if (drag === null) return;
     drag.ghost?.remove();
-    drag.origin.classList.remove("is-lifted");
+    drag.origin.classList.remove("is-source");
     bankSlots.forEach((slot) => slot.classList.remove("is-target"));
     shop.classList.remove("is-sell", "is-selling");
     drag = null;
@@ -431,7 +448,21 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (mod === null) return;
     event.preventDefault();
     hideTip();
-    drag = { held: found.held, mod: mod.mod, rotation: mod.rotation, anchor: found.anchor, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, moved: false, ghost: null, target: null, origin: found.origin };
+    const placement = placementFor(found.held, mod);
+    drag = {
+      held: found.held,
+      mod: mod.mod,
+      placement,
+      pivot: pivotFor(placement, found.cell),
+      startX: event.clientX,
+      startY: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+      ghost: null,
+      target: null,
+      origin: found.origin,
+    };
     if (found.held.kind !== "offer") shop.classList.add("is-selling");
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
@@ -445,7 +476,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (!drag.moved && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) > 6) {
       drag.moved = true;
       carry = null;
-      drag.origin.classList.add("is-lifted");
+      drag.origin.classList.add("is-source");
       drawGhost(drag);
     }
     if (drag.moved) placeGhost(drag);
@@ -454,12 +485,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   function onPointerUp(): void {
     const finished = drag;
     if (finished === null) return;
-    const { held, moved, target, rotation, origin } = finished;
+    const { held, moved, target, placement, pivot, origin } = finished;
     endDrag();
     if (!moved) {
-      // A tap: buy an offer into the bank, or pick up an owned mod to place it by tapping or keys.
-      if (held.kind === "offer") apply(buy(run, held.offer), origin);
-      else startCarry(held);
+      startCarry(held, pivot);
       return;
     }
     if (target === null) return;
@@ -467,7 +496,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       apply("blocked", origin);
       return;
     }
-    apply(drop(held, target, rotation), origin);
+    apply(drop(held, target, placement.rotation), origin);
   }
 
   function onPointerCancel(): void {
@@ -480,11 +509,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     const held = carry.held;
     const cell = event.target.closest<HTMLElement>(".cell, .grid");
     if (cell && gridBox.contains(cell)) {
-      const grid = gridBox.getBoundingClientRect();
-      const size = grid.width / GRID_SIZE;
-      const [ax, ay] = shapeCells(REGISTRY[carry.mod].shape, carry.rotation)[0];
-      carry.x = Math.floor((event.clientX - grid.left) / size) - ax;
-      carry.y = Math.floor((event.clientY - grid.top) / size) - ay;
+      const boardPoint = boardPointAt(event.clientX, event.clientY);
+      if (boardPoint === null) return false;
+      carry.x += boardPoint.x - carry.pivot.x;
+      carry.y += boardPoint.y - carry.pivot.y;
+      carry.pivot = boardPoint;
       event.preventDefault();
       placeCarry();
       return true;
@@ -508,33 +537,40 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     return false;
   }
 
-  // Turning: R, right-click or the wheel while a piece is in hand; right-click on a placed piece turns it in place.
+  // Turning: right-click or R while a piece is in hand; right-click on a placed piece turns it in place.
 
   function turnHeld(): void {
     if (drag?.moved) {
-      drag.rotation = nextRotation(drag.rotation);
+      const turned = turnAbout(drag.placement, drag.pivot);
+      if (turned !== null) drag.placement = turned;
       drawGhost(drag);
     } else if (carry !== null) {
-      carry.rotation = nextRotation(carry.rotation);
-      moveCarry(0, 0);
+      const turned = turnAbout({ mod: carry.mod, rotation: carry.rotation, x: carry.x, y: carry.y }, carry.pivot);
+      if (turned === null) return;
+      carry.rotation = turned.rotation;
+      carry.x = turned.x;
+      carry.y = turned.y;
+      drawCarry();
     }
   }
 
   function onContextMenu(event: MouseEvent): void {
     event.preventDefault();
-    if (drag?.moved) {
+    if (drag?.moved || carry !== null) {
       turnHeld();
       return;
     }
     const found = heldAt(event.target);
     if (found === null || found.held.kind === "offer") return;
+    if (found.held.kind === "piece") {
+      const uid = found.held.uid;
+      const piece = run.grid.find((candidate) => candidate.uid === uid);
+      const pivot = boardPointAt(event.clientX, event.clientY);
+      if (piece === undefined || pivot === null || !cellsOf(piece).some(({ x, y }) => x === pivot.x && y === pivot.y)) return;
+      apply(rotate(run, sourceOf(found.held), pivot), found.origin);
+      return;
+    }
     apply(rotate(run, sourceOf(found.held)), found.origin);
-  }
-
-  function onWheel(event: WheelEvent): void {
-    if (!drag?.moved) return;
-    event.preventDefault();
-    turnHeld();
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -580,8 +616,11 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const found = heldAt(document.activeElement);
       if (found === null) return;
       event.preventDefault();
-      if (found.held.kind === "offer") apply(buy(run, found.held.offer), found.origin);
-      else startCarry(found.held);
+      const mod = heldMod(found.held);
+      if (mod !== null) {
+        const spot = placementFor(found.held, mod);
+        startCarry(found.held, pivotFor(spot, found.cell));
+      }
     }
   }
 
@@ -626,31 +665,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const mod = heldMod(found.held);
       if (mod === null) return null;
       const definition = REGISTRY[mod.mod];
-      const elemental = elementsOf(definition.tags).some(isElemental);
       return [
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
-        h("span", { class: "tip__meta", "data-affinity": definition.tags[0] }, icon(modIconFor(mod.mod)), `${tagLine(definition.tags)} · ${rarityLine(definition.rarity)}`),
-        h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
-        ...(portLine(definition) ? [h("small", {}, portLine(definition)!)] : []),
-        h("small", {}, elemental ? "Each cell powers its row's action +1 (+2 in a row of one element)" : "Powers no row"),
-        h("small", {}, found.held.kind === "offer" ? `$${priceOf(mod.mod)} · tap to bank it, drag to place it`
-          : `Sells for $${sellValue(mod)} · drag to move, right-click or R to turn`),
+        h("small", {}, found.held.kind === "offer" ? `${priceOf(mod.mod)} · click to carry, drag to place`
+          : `Sells for ${sellValue(mod)} · click to carry, drag to move`),
+        h("small", {}, "While carried: click to place · right-click or R to turn · Esc to cancel"),
       ];
-    }
-    const lane = target.closest<HTMLElement>("[data-lane]");
-    if (lane) {
-      const action = lane.dataset.lane as ActionType;
-      const build = buildOf(run);
-      const attuned = build.attuned[action];
-      return [h("b", {}, `${ACTION_LABEL[action]} lane +${build.lanes[action]}`),
-        h("span", {}, `Every cell in this row powers ${ACTION_LABEL[action]} ${action === "block" ? "(the riposte)" : ""}`),
-        h("small", {}, attuned ? `Attuned to ${TAG_LABEL[attuned]}: each cell +2` : "Fill it with one element to attune it: +2 a cell")];
-    }
-    const level = target.closest<HTMLElement>("[data-element]");
-    if (level) {
-      const element = level.dataset.element as Elemental;
-      return [h("b", {}, TAG_LABEL[element]), h("span", {}, ELEMENT_IDENTITY[element]), h("small", {}, "Mods on your grid that carry it")];
     }
     return null;
   }
@@ -659,6 +680,10 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     if (drag?.moved) return;
     const lines = describe(target);
     if (lines === null) return;
+    const found = heldAt(target);
+    const mod = found === null ? null : heldMod(found.held);
+    if (mod === null) delete tip.dataset.rarity;
+    else tip.dataset.rarity = REGISTRY[mod.mod].rarity;
     tip.replaceChildren(...lines);
     tip.hidden = false;
     const bounds = screen.getBoundingClientRect();
@@ -675,7 +700,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
 
   function onPointerOver(event: PointerEvent): void {
     if (event.pointerType === "touch" || !(event.target instanceof Element)) return;
-    const describable = event.target.closest(".offer, .slot, .piece, [data-lane], [data-element]");
+    const describable = event.target.closest(".offer, .slot, .piece, [data-lane]");
     if (describable) showTip(describable);
     else hideTip();
   }
@@ -686,11 +711,13 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
   }
 
   screen.addEventListener("pointerdown", onPointerDown);
+  screen.addEventListener("pointermove", (event) => {
+    if (drag === null && carry !== null) followCarry(event.clientX, event.clientY);
+  });
   screen.addEventListener("pointerover", onPointerOver);
   screen.addEventListener("pointerleave", hideTip);
   screen.addEventListener("focusin", onFocusIn);
   screen.addEventListener("contextmenu", onContextMenu);
-  screen.addEventListener("wheel", onWheel, { passive: false });
   window.addEventListener("keydown", onKeyDown);
 
   render();

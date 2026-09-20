@@ -123,6 +123,59 @@ describe("vocabulary", () => {
   });
 });
 
+describe("mod presentation", () => {
+  it("uses one type fill and one optional action icon, with no split-colour bridge", () => {
+    const css = readFileSync(join(ROOT, "src/ui/styles.css"), "utf8");
+    const kit = readFileSync(join(ROOT, "src/ui/kit.ts"), "utf8");
+    const catalog = readFileSync(join(ROOT, "src/ui/catalogcardview.ts"), "utf8");
+
+    expect(css).not.toMatch(/--c[12]\b|135deg|data-c[12]/);
+    expect(kit).not.toMatch(/\bpaintTags\b|\bmodIcon\b/);
+    expect(kit).toContain('"data-type": definition.type');
+    expect(kit).toContain('"data-affinity": definition.affinity ?? undefined');
+    expect(catalog).toContain('"data-type": model.type');
+    expect(catalog).toContain('"data-affinity": model.affinity ?? undefined');
+    expect(catalog).toContain("model.affinity !== null");
+  });
+});
+
+describe("retired mod vocabulary", () => {
+  const modCode = ["src/mods", "src/ui", "src/run", "src/game"].flatMap((directory) =>
+    filesUnder(join(ROOT, directory)).filter((path) => [".ts", ".css"].includes(extname(path))));
+
+  it("keeps ports, tags, material identifiers, tiers and retired resources out", () => {
+    expect(existsSync(join(ROOT, "src/mods/ports.ts"))).toBe(false);
+    expect(existsSync(join(ROOT, "src/mods/tags.ts"))).toBe(false);
+
+    const forbidden = [
+      /\bports?\b|data-port|\b(?:north|south|east|west)Port\b/i,
+      /\btags\b|\bModTags?\b|\bMAX_TAGS\b|data-tag/i,
+      /\bMATERIALS\b|data-material/,
+      /\bT[1-3]\b/,
+      /\b(?:heat|charge|voidCharge|capacity|leech|refund|accrue)\b/i,
+    ];
+    for (const path of modCode) {
+      const source = readFileSync(path, "utf8");
+      const file = relative(ROOT, path);
+      for (const pattern of forbidden) expect(source, `${file} contains retired mod vocabulary`).not.toMatch(pattern);
+    }
+  });
+
+  it("keeps multiplicity counts off mod cards", () => {
+    // These are multiplication readouts, not mod-card ownership counts.
+    const allowed = new Map<string, readonly string[]>([
+      ["src/ui/kit.ts", ["×${meter.chain}"]],
+      ["src/ui/payday.ts", ["×${build.styleMultiplier}"]],
+    ]);
+    for (const path of sources("src/ui")) {
+      const file = relative(ROOT, path).split(sep).join("/");
+      let source = readFileSync(path, "utf8");
+      for (const snippet of allowed.get(file) ?? []) source = source.replaceAll(snippet, "");
+      expect(source, `${file} contains a × count`).not.toMatch(/×\s*(?:\d+|\$\{)/);
+    }
+  });
+});
+
 describe("the dependency direction", () => {
   it("has Boneyard know nothing about FightLab", () => {
     const upstream = [...filesUnder(join(BONEYARD_ROOT, "src")), ...filesUnder(join(BONEYARD_ROOT, "pipelines")), join(BONEYARD_ROOT, "package.json")];

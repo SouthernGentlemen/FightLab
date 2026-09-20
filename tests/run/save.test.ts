@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
 
+import { pick } from "../mods/fixtures.ts";
 import { beginFight, buy, finishFight, newRun, nextDay } from "../../src/run/run.ts";
 import type { RunState } from "../../src/run/run.ts";
 import { SAVE_KEY, SAVE_VERSION, clearSave, decodeSave, encodeSave, readSave, writeSave } from "../../src/run/save.ts";
+
+const SINGLE = pick({ size: 1 });
+const DOMINO = pick({ size: 2 });
+const TRIOMINO = pick({ size: 3 });
+const REROLL = pick({ type: "neutral", affinity: null, rarity: "uncommon", size: 1 });
 
 /** A run with something in every field: mods on the grid and in the bank, a payday behind it. */
 function lived(): RunState {
   const run = newRun(31337);
   run.money = 40;
-  run.shop = { ...run.shop, offers: ["solar-flare", "heat-coil", "chain-circuit", null, "coupon"] };
+  run.shop = { ...run.shop, offers: [DOMINO.id, SINGLE.id, TRIOMINO.id, null, REROLL.id] };
   buy(run, 0, { grid: { x: 0, y: 0, rotation: 0 } });
   buy(run, 1);
   buy(run, 2, { grid: { x: 0, y: 2, rotation: 0 } });
@@ -36,19 +42,21 @@ function memory() {
 }
 
 describe("the autosave", () => {
-  it("is versioned, and moved to version 2 when the mod registry replaced the first catalogue", () => {
-    expect(SAVE_VERSION).toBe(2);
-    expect(JSON.parse(encodeSave(newRun(1), null))).toMatchObject({ version: 2, fight: null });
+  it("is versioned for the replacement 64-mod registry", () => {
+    expect(SAVE_VERSION).toBe(4);
+    expect(JSON.parse(encodeSave(newRun(1), null))).toMatchObject({ version: 4, fight: null });
   });
 
-  it("discards a version-1 save whole: its mods no longer exist", () => {
-    const old = { version: 1, run: { ...JSON.parse(encodeSave(lived(), null)).run }, fight: null };
-    expect(decodeSave(JSON.stringify(old))).toBeNull();
+  it("discards versions 2 and 3 whole", () => {
+    const current = JSON.parse(encodeSave(lived(), null));
+    for (const version of [2, 3]) {
+      expect(decodeSave(JSON.stringify({ ...current, version })), `version ${version}`).toBeNull();
+    }
   });
 
   it("round-trips a run exactly", () => {
     const run = lived();
-    expect(decodeSave(encodeSave(run, null))).toEqual({ version: 2, run, fight: null });
+    expect(decodeSave(encodeSave(run, null))).toEqual({ version: 4, run, fight: null });
     const fresh = newRun(0);
     expect(decodeSave(encodeSave(fresh, null))!.run).toEqual(fresh);
   });
@@ -66,7 +74,7 @@ describe("the autosave", () => {
 
   it("refuses any other version", () => {
     const run = lived();
-    for (const version of [0, 1, 3, "2", null, undefined]) {
+    for (const version of [0, 1, 2, 3, 5, "4", null, undefined]) {
       expect(decodeSave(tampered(run, (document) => { document.version = version; })), String(version)).toBeNull();
     }
   });
@@ -83,8 +91,8 @@ describe("the autosave", () => {
       "an unknown phase": (document) => { document.run.phase = "shopping"; },
       "an unknown mod": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].mod = "laser"; },
       "overlapping mods": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].y = 0; },
-      "a mod off the board": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].x = 1; },
-      "a bad rotation": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].rotation = 4; },
+      "a mod off the board": (document) => { (document.run.grid as Array<Record<string, unknown>>)[1].x = 2; },
+      "a bad rotation": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].rotation = 45; },
       "four stars": (document) => { (document.run.grid as Array<Record<string, unknown>>)[0].stars = 4; },
       "no stars": (document) => { delete (document.run.bank as Array<Record<string, unknown> | null>)[0]!.stars; },
       "a short bank": (document) => { document.run.bank = [null, null, null]; },

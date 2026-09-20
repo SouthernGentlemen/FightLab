@@ -1,74 +1,117 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
-import { EVERYTHING, armoryList, collected } from "../../src/mods/armory.ts";
-import type { Owned } from "../../src/mods/armory.ts";
-import { profileOf, scaleRows } from "../../src/mods/describe.ts";
+import {
+  NO_FILTER,
+  armoryList,
+  collected,
+  filterSummary,
+  toggle,
+} from "../../src/mods/armory.ts";
+import type { CatalogAffinity, CatalogFilter, Owned, SizeClass } from "../../src/mods/armory.ts";
 import { place } from "../../src/mods/grid.ts";
 import { RARITIES } from "../../src/mods/rarity.ts";
 import { DEFINITIONS, MOD_IDS, REGISTRY } from "../../src/mods/registry.ts";
-import { ELEMENTS } from "../../src/mods/tags.ts";
+import { SHAPES } from "../../src/mods/shapes.ts";
+import { MOD_TYPES } from "../../src/mods/types.ts";
 import { DEV_MAX_COPIES, seededCollection } from "../../src/run/collection.ts";
+import { pick, placement } from "./fixtures.ts";
 
 const NONE: Owned = () => 0;
-const names = (list: ReturnType<typeof armoryList>) => list.map((definition) => definition.name);
+const ids = (filter: CatalogFilter) => armoryList(filter).map((definition) => definition.id);
 
 describe("the Armory's catalogue", () => {
   it("lists every registered mod, in registry order, as the very records combat runs on", () => {
-    const listed = armoryList(EVERYTHING, NONE);
+    const listed = armoryList(NO_FILTER);
+    expect(listed).toHaveLength(64);
+    expect(listed.length / 4).toBe(16);
     expect(listed.map((definition) => definition.id)).toEqual([...MOD_IDS]);
     listed.forEach((definition, index) => expect(definition).toBe(REGISTRY[MOD_IDS[index]]));
-    // A compiled grid hands the engine the same object the Armory shows.
-    const build = compileBuild(place([], { uid: 1, mod: "cinder-edge", stars: 2, rotation: 0, x: 0, y: 0 })!);
-    expect(build.program.mods[0].definition).toBe(listed.find((definition) => definition.id === "cinder-edge"));
+
+    const chosen = pick({ type: "solar", affinity: "strike", size: 2 });
+    const build = compileBuild(place([], { uid: 1, stars: 2, ...placement([chosen, 0, 0]) })!);
+    expect(build.program.mods[0].definition).toBe(listed.find((definition) => definition.id === chosen.id));
   });
 
-  it("filters by element, hybrids included, and by action", () => {
-    for (const element of ELEMENTS) {
-      const listed = armoryList({ ...EVERYTHING, element }, NONE);
-      expect(listed.length, element).toBeGreaterThan(0);
-      expect(listed.every((definition) => definition.tags.includes(element)), element).toBe(true);
+  it("filters each group alone, with OR inside the group", () => {
+    for (const type of MOD_TYPES) {
+      const filter = toggle(NO_FILTER, "types", type);
+      const listed = armoryList(filter);
+      expect(listed.length, type).toBeGreaterThan(0);
+      expect(listed.every((definition) => definition.type === type), type).toBe(true);
     }
-    expect(names(armoryList({ ...EVERYTHING, element: "solar" }, NONE))).toContain("Heat Death");
-    expect(names(armoryList({ ...EVERYTHING, element: "neutral" }, NONE))).toEqual(["Piggy Bank", "Coupon", "Crowd Pleaser", "Amplifier"]);
-    for (const action of ACTION_TYPES) {
-      expect(armoryList({ ...EVERYTHING, action }, NONE).every((definition) => definition.tags.includes(action)), action).toBe(true);
+
+    for (const affinity of ["none", "strike", "tech", "block"] as const satisfies readonly CatalogAffinity[]) {
+      const filter = toggle(NO_FILTER, "affinities", affinity);
+      const listed = armoryList(filter);
+      expect(listed.length, affinity).toBeGreaterThan(0);
+      expect(listed.every((definition) => (definition.affinity ?? "none") === affinity), affinity).toBe(true);
     }
-    expect(names(armoryList({ ...EVERYTHING, element: "solar", action: "strike" }, NONE))).toEqual(["Cinder Edge", "Afterburner", "Solar Flare"]);
+
+    for (const size of [1, 2, 3, 4] as const satisfies readonly SizeClass[]) {
+      const filter = toggle(NO_FILTER, "sizes", size);
+      const listed = armoryList(filter);
+      expect(listed.length, String(size)).toBeGreaterThan(0);
+      expect(listed.every((definition) => SHAPES[definition.shape].cells.length === size), String(size)).toBe(true);
+    }
+
+    for (const rarity of RARITIES) {
+      const filter = toggle(NO_FILTER, "rarities", rarity);
+      const listed = armoryList(filter);
+      expect(listed.length, rarity).toBeGreaterThan(0);
+      expect(listed.every((definition) => definition.rarity === rarity), rarity).toBe(true);
+    }
+
+    let filter = toggle(NO_FILTER, "types", "solar");
+    filter = toggle(filter, "types", "arc");
+    expect(armoryList(filter).every((definition) =>
+      definition.type === "solar" || definition.type === "arc")).toBe(true);
   });
 
-  it("filters by rarity, by ownership and by text", () => {
-    for (const rarity of RARITIES) expect(armoryList({ ...EVERYTHING, rarity }, NONE).every((definition) => definition.rarity === rarity)).toBe(true);
-    expect(armoryList({ ...EVERYTHING, rarity: "legendary" }, NONE)).toHaveLength(6);
-    const owned: Owned = (mod) => (mod === "furnace" || mod === "coupon" ? 2 : 0);
-    expect(names(armoryList({ ...EVERYTHING, ownedOnly: true }, owned))).toEqual(["Furnace", "Coupon"]);
-    expect(names(armoryList({ ...EVERYTHING, text: "cinder" }, NONE))).toEqual(["Cinder Edge"]);
-    expect(armoryList({ ...EVERYTHING, text: "SILVER" }, NONE).every((definition) => definition.rarity === "rare")).toBe(true);
-    expect(names(armoryList({ ...EVERYTHING, text: "void / tech" }, NONE))).toEqual(["Event Horizon", "Singularity"]);
-    expect(armoryList({ ...EVERYTHING, text: "nothing like this" }, NONE)).toEqual([]);
+  it("ANDs two and three groups together", () => {
+    let two = toggle(NO_FILTER, "types", "solar");
+    two = toggle(two, "affinities", "strike");
+    expect(ids(two)).toEqual(DEFINITIONS.filter((definition) =>
+      definition.type === "solar" && definition.affinity === "strike").map(({ id }) => id));
+
+    let three = toggle(two, "sizes", 3);
+    expect(ids(three)).toEqual(DEFINITIONS.filter((definition) =>
+      definition.type === "solar" && definition.affinity === "strike" && SHAPES[definition.shape].cells.length === 3)
+      .map(({ id }) => id));
+
+    three = toggle(three, "rarities", "super-rare");
+    expect(ids(three)).toEqual(DEFINITIONS.filter((definition) =>
+      definition.type === "solar" && definition.affinity === "strike"
+      && SHAPES[definition.shape].cells.length === 3 && definition.rarity === "super-rare").map(({ id }) => id));
+  });
+
+  it("can produce an empty result", () => {
+    let filter = toggle(NO_FILTER, "types", "neutral");
+    filter = toggle(filter, "affinities", "strike");
+    filter = toggle(filter, "sizes", 3);
+    expect(armoryList(filter)).toEqual([]);
+  });
+
+  it("toggles choices off again, and clearing brings back every mod", () => {
+    let filter = toggle(NO_FILTER, "types", "void");
+    filter = toggle(filter, "sizes", 4);
+    filter = toggle(filter, "rarities", "legendary");
+    expect(filterSummary(filter)).toBe("3");
+    expect(armoryList(filter).length).toBeLessThan(DEFINITIONS.length);
+
+    filter = toggle(filter, "types", "void");
+    expect(filter.types.size).toBe(0);
+    expect(filterSummary(filter)).toBe("2");
+
+    expect(filterSummary(NO_FILTER)).toBe("NONE");
+    expect(armoryList(NO_FILTER)).toEqual(DEFINITIONS);
   });
 
   it("counts how much of the catalogue is collected", () => {
     expect(collected(NONE)).toEqual({ owned: 0, total: DEFINITIONS.length });
-    expect(collected((mod) => (mod === "heat-coil" ? 6 : 0))).toEqual({ owned: 1, total: DEFINITIONS.length });
-  });
-});
-
-describe("the Armory's numbers", () => {
-  it("give a row for every number a mod scales, at all three stars", () => {
-    expect(scaleRows(REGISTRY["cinder-edge"])).toEqual([
-      { label: "Heat spent", values: [1, 1, 1] },
-      { label: "Damage", values: [2, 3, 4] },
-      { label: "Burn applied", values: [2, 3, 5] },
-    ]);
-    expect(scaleRows(REGISTRY["capacitor-guard"]).map((row) => row.label)).toEqual(["Charge spent", "Parry heal", "Riposte damage"]);
-    for (const definition of DEFINITIONS) expect(scaleRows(definition).length, definition.id).toBeGreaterThan(0);
-  });
-
-  it("sum up what a mod makes, spends, applies and cleanses", () => {
-    expect(profileOf(REGISTRY["heat-death"])).toEqual({ makes: ["void"], spends: ["heat", "void"], applies: ["poison"], cleanses: [] });
-    expect(profileOf(REGISTRY["cooling-array"])).toEqual({ makes: [], spends: ["heat"], applies: [], cleanses: ["burn"] });
+    const owned = pick();
+    expect(collected((mod) => (mod === owned.id ? 6 : 0)))
+      .toEqual({ owned: 1, total: DEFINITIONS.length });
   });
 });
 

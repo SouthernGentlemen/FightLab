@@ -5,14 +5,14 @@ import type { MatchOutcome, OutcomeReason } from "../battle/director.ts";
 import type { StyleRank } from "../battle/style.ts";
 import { compileBuild } from "../mods/compile.ts";
 import type { Build } from "../mods/compile.ts";
-import { BANK_SIZE, canPlace, emptyBank, firstFreeBankSlot, place, removeFromGrid, rotateInPlace, setBankSlot } from "../mods/grid.ts";
+import { BANK_SIZE, canPlace, cellsOf, emptyBank, firstFreeBankSlot, place, removeFromGrid, rotateInPlace, setBankSlot, turnAbout } from "../mods/grid.ts";
 import type { Bank, Grid, OwnedMod } from "../mods/grid.ts";
-import { MOD_IDS, priceOf } from "../mods/registry.ts";
+import { MOD_IDS, REGISTRY, priceOf } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { nextRotation } from "../mods/shapes.ts";
+import { SHAPES, normaliseRotation } from "../mods/shapes.ts";
 import { RECIPES } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import type { Rotation } from "../mods/shapes.ts";
+import type { GridPoint, Rotation } from "../mods/shapes.ts";
 import { STARTING_MONEY, payday, sellValue, total } from "./economy.ts";
 import type { PaydayLine } from "./economy.ts";
 import { opponentFor } from "./opponents.ts";
@@ -240,7 +240,9 @@ export function move(run: RunState, from: Source, to: Destination): Refusal | nu
   const owned = ownedAt(run, from);
   if (owned === null) return "missing";
   if ("bank" in from && "bank" in to && from.bank === to.bank) return null;
-  const rotated = "grid" in to ? { ...owned, rotation: to.grid.rotation } : owned;
+  const rotated = "grid" in to
+    ? { ...owned, rotation: normaliseRotation(SHAPES[REGISTRY[owned.mod].shape], to.grid.rotation) }
+    : owned;
   const before = { grid: run.grid, bank: run.bank };
   take(run, from);
   const refused = put(run, rotated, to, null);
@@ -255,16 +257,20 @@ export function move(run: RunState, from: Source, to: Destination): Refusal | nu
  * Turns an owned mod a quarter clockwise. In the bank that always works; on the grid it works only
  * if the turned piece still fits where it stands, and otherwise nothing moves.
  */
-export function rotate(run: RunState, source: Source): Refusal | null {
+export function rotate(run: RunState, source: Source, pivot?: GridPoint): Refusal | null {
   if (run.phase !== "prep") return "wrong-phase";
   if ("bank" in source) checkBankSlot(source.bank);
   const owned = ownedAt(run, source);
   if (owned === null) return "missing";
   if ("bank" in source) {
-    run.bank = setBankSlot(run.bank, source.bank, { ...owned, rotation: nextRotation(owned.rotation) });
+    const placement = { mod: owned.mod, rotation: owned.rotation, x: 0, y: 0 };
+    const anchor = cellsOf(placement)[0];
+    const turned = turnAbout(placement, anchor);
+    if (turned === null) return "blocked";
+    run.bank = setBankSlot(run.bank, source.bank, { ...owned, rotation: turned.rotation });
     return null;
   }
-  const turned = rotateInPlace(run.grid, source.piece);
+  const turned = rotateInPlace(run.grid, source.piece, pivot);
   if (turned === null) return "blocked";
   run.grid = turned;
   return null;

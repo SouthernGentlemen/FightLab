@@ -3,7 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,
@@ -13,7 +17,17 @@
     "noUncheckedIndexedAccess": false,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "vite/client"]
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "noUnusedLocals": true
   },
-  "include": ["src/**/*", "pipelines/**/*", "tests/**/*", "vite.config.ts", "vitest.config.ts"]
+  "include": [
+    "src/**/*",
+    "pipelines/**/*",
+    "tests/**/*",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
 }

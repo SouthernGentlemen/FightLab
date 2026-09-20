@@ -1,116 +1,153 @@
-import { ACTION_TYPES } from "../battle/actions.ts";
-import type { ActionType } from "../battle/actions.ts";
-import { EVERYTHING, armoryList, collected } from "../mods/armory.ts";
-import type { ArmoryFilter, Owned } from "../mods/armory.ts";
-import { MATERIAL_LABEL, RARITIES, RARITY } from "../mods/rarity.ts";
-import type { Rarity } from "../mods/rarity.ts";
+import "./armory-catalog.css";
+
+import { NO_FILTER, armoryList, collected, filterSummary } from "../mods/armory.ts";
+import type { CatalogFilter, Owned } from "../mods/armory.ts";
 import { MOD_IDS } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { bestStars, copiesIn } from "../mods/stars.ts";
-import { ELEMENTS, TAG_LABEL } from "../mods/tags.ts";
-import type { Element } from "../mods/tags.ts";
+import { copiesIn } from "../mods/stars.ts";
 import type { CollectionRepository } from "../run/collection.ts";
 import { armoryCard } from "./armorycard.ts";
-import { button, h, icon } from "./dom.ts";
-import { iconButton, tagIcon } from "./kit.ts";
-import { modTile } from "./modtile.ts";
+import { catalogCard } from "./catalogcard.ts";
+import { catalogCardView } from "./catalogcardview.ts";
+import { button, h, setText } from "./dom.ts";
+import { armoryFilterModal } from "./armoryfilter.ts";
+import { paletteDebugSheet } from "./palette-debug.ts";
 
 export interface ArmoryOptions {
   readonly collection: CollectionRepository;
+  readonly debug?: boolean;
   back(): void;
 }
 
-interface Segments {
-  readonly node: HTMLElement;
-  refresh(): void;
+function counter(label: string, value: number, total: number): HTMLElement {
+  return h("span", { class: "armory__counter" },
+    h("small", {}, label),
+    h("b", {}, `${value} / ${total}`));
 }
 
-/**
- * The Armory: the whole mod catalogue on one screen. The card on the left says everything about the
- * selected mod; the filters, the tiles and the collection count sit on the right, Batomon's
- * collection screen box for box. It reads the same registry a fight runs on.
- */
 export function mountArmory(root: HTMLElement, options: ArmoryOptions): () => void {
   const owned: Owned = (mod) => options.collection.ownedCopies(mod);
-  let filter: ArmoryFilter = EVERYTHING;
+  let filter: CatalogFilter = NO_FILTER;
   let selected: ModId = MOD_IDS[0];
-  const card = armoryCard(owned);
-
-  function segments<T extends string>(label: string, values: readonly T[], current: () => T, set: (value: T) => void, text: (value: T) => Array<Node | string>): Segments {
-    const buttons = values.map((value) => button(h("span", {}, ...text(value)), "segment", () => {
-      set(value);
-      render();
-    }, { "data-value": value }));
-    return {
-      node: h("div", { class: "segments armory__segments", role: "group", "aria-label": label }, ...buttons),
-      refresh: () => buttons.forEach((node, index) => node.setAttribute("aria-pressed", String(values[index] === current()))),
-    };
-  }
-
-  const elements = segments<Element | "all">("Element", ["all", ...ELEMENTS], () => filter.element, (element) => { filter = { ...filter, element }; },
-    (value) => (value === "all" ? ["All"] : [icon(tagIcon(value)), TAG_LABEL[value]]));
-  const actions = segments<ActionType | "all">("Action", ["all", ...ACTION_TYPES], () => filter.action, (action) => { filter = { ...filter, action }; },
-    (value) => (value === "all" ? ["All"] : [icon(value), TAG_LABEL[value]]));
-  const rarities = segments<Rarity | "all">("Rarity", ["all", ...RARITIES], () => filter.rarity, (rarity) => { filter = { ...filter, rarity }; },
-    (value) => (value === "all" ? ["All"] : [h("i", { class: "gem", "data-material": RARITY[value].material }), MATERIAL_LABEL[RARITY[value].material]]));
-  const ownedOnly = button("Owned only", "segment armory__owned", () => {
-    filter = { ...filter, ownedOnly: !filter.ownedOnly };
-    render();
-  });
-  const search = h("input", { class: "armory__search", type: "search", placeholder: "Search", "aria-label": "Search the Armory", spellcheck: "false" });
-  search.addEventListener("input", () => {
-    filter = { ...filter, text: search.value };
-    render();
-  });
+  const detail = armoryCard(owned);
 
   const grid = h("div", { class: "armory__grid" });
   const empty = h("p", { class: "armory__empty", hidden: "" }, "No mod matches these filters.");
-  const count = h("footer", { class: "armory__count" });
-  const screen = h("main", { class: "screen armory teal" },
-    h("header", { class: "armory__top" }, h("h1", { class: "armory__title stroke" }, "Armory"), iconButton("exit", "Back to the title", options.back, "rose")),
-    card.node,
+  const footer = h("footer", { class: "armory__count" });
+
+  const filterModal = armoryFilterModal({
+    getFilter: () => filter,
+    setFilter(next) {
+      filter = next;
+      render();
+    },
+  });
+
+  const filterButton = button("FILTER: NONE", "armory__top-control", () => {
+    filterModal.show(filterButton);
+  }, {
+    "data-control": "filter",
+    "aria-haspopup": "dialog",
+  });
+  const clearButton = button("CLEAR", "armory__top-control", () => {
+    filter = NO_FILTER;
+    render();
+  }, { "data-control": "clear" });
+
+  const screen = h("main", { class: `screen armory teal${options.debug ? " armory--debug" : ""}` },
+    h("header", { class: "armory__top" },
+      h("div", { class: "armory__top-left", "aria-label": "Catalogue controls" },
+        filterButton,
+        clearButton),
+      h("h1", { class: "armory__title" }, "MOD CATALOG"),
+      button("×", "armory__close", options.back, { "aria-label": "Close catalogue" })),
+    detail.node,
     h("section", { class: "armory__browser", "aria-label": "Catalogue" },
-      h("div", { class: "armory__filters" }, elements.node, actions.node),
-      h("div", { class: "armory__filters" }, rarities.node, ownedOnly, search),
       h("div", { class: "armory__scroll" }, grid, empty),
-      count));
+      footer),
+    filterModal.node,
+    ...(options.debug ? [paletteDebugSheet()] : []));
   root.replaceChildren(screen);
+
+  function cards(): HTMLButtonElement[] {
+    return [...grid.querySelectorAll<HTMLButtonElement>(".catalog-card")];
+  }
 
   function select(mod: ModId): void {
     selected = mod;
-    for (const tile of grid.children) tile.setAttribute("aria-pressed", String((tile as HTMLElement).dataset.mod === mod));
-    card.show(mod);
+    for (const node of cards()) node.setAttribute("aria-pressed", String(node.dataset.mod === mod));
+    detail.show(mod);
   }
 
   function render(): void {
-    for (const group of [elements, actions, rarities]) group.refresh();
-    ownedOnly.setAttribute("aria-pressed", String(filter.ownedOnly));
-    const listed = armoryList(filter, owned);
+    filterModal.refresh(filter);
+    setText(filterButton, `FILTER: ${filterSummary(filter)}`);
+    const listed = armoryList(filter);
     grid.replaceChildren(...listed.map((definition) => {
       const id = definition.id as ModId;
-      const tile = modTile(definition, bestStars(owned(id)), owned(id));
-      tile.addEventListener("click", () => select(id));
-      return tile;
+      const node = catalogCardView(catalogCard(definition, owned(id)));
+      node.addEventListener("click", () => select(id));
+      return node;
     }));
     empty.hidden = listed.length > 0;
     select(selected);
+
     const { owned: have, total } = collected(owned);
     const ready = (copies: number) => MOD_IDS.filter((id) => owned(id) >= copies).length;
-    count.replaceChildren(
-      h("span", { class: "pill armory__pill stroke" }, `${have} / ${total}`), h("span", {}, "collected"),
-      h("span", { class: "armory__ready" }, `★★ ready: ${ready(copiesIn(2))}`), h("span", { class: "armory__ready" }, `★★★ ready: ${ready(copiesIn(3))}`),
-      h("small", {}, `Showing ${listed.length}`));
+    footer.replaceChildren(
+      counter("Owned", have, total),
+      counter("★★ ready", ready(copiesIn(2)), total),
+      counter("★★★ ready", ready(copiesIn(3)), total),
+      h("small", { class: "armory__showing" }, `Showing ${listed.length}`),
+    );
+  }
+
+  function moveFocus(offset: number): void {
+    const visible = cards();
+    if (visible.length === 0) return;
+    const activeIndex = document.activeElement instanceof HTMLButtonElement
+      ? visible.indexOf(document.activeElement)
+      : -1;
+    const selectedIndex = visible.findIndex((node) => node.dataset.mod === selected);
+    const origin = activeIndex >= 0 ? activeIndex : Math.max(selectedIndex, 0);
+    const next = Math.min(visible.length - 1, Math.max(0, origin + offset));
+    visible[next].focus();
+    visible[next].scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
   const onKey = (event: KeyboardEvent): void => {
-    if (event.key !== "Escape") return;
-    if (document.activeElement === search && search.value !== "") return;
-    event.preventDefault();
-    options.back();
+    if (filterModal.open) {
+      filterModal.handleKey(event);
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      options.back();
+      return;
+    }
+
+    const movement: Readonly<Record<string, number>> = {
+      ArrowLeft: -1, ArrowRight: 1, ArrowUp: -4, ArrowDown: 4,
+    };
+    const offset = movement[event.key];
+    if (offset !== undefined) {
+      event.preventDefault();
+      moveFocus(offset);
+      return;
+    }
+    if (event.key === "Enter" && document.activeElement instanceof HTMLButtonElement) {
+      const mod = document.activeElement.dataset.mod as ModId | undefined;
+      if (mod !== undefined) {
+        event.preventDefault();
+        select(mod);
+      }
+    }
   };
+
   window.addEventListener("keydown", onKey);
   render();
-  (grid.firstElementChild as HTMLElement | null)?.focus();
+  cards()[0]?.focus();
+
   return () => {
     window.removeEventListener("keydown", onKey);
     root.replaceChildren();

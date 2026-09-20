@@ -1,77 +1,76 @@
+import { ACTION_TYPES } from "../battle/actions.ts";
 import type { ActionType } from "../battle/actions.ts";
-import { ATTUNED_LANE_POWER, LANE_POWER } from "./balance.ts";
-import { GRID_SIZE, LANES, cellsOf, occupancy } from "./grid.ts";
-import type { Grid, PlacedMod } from "./grid.ts";
+import type { Per } from "./effects.ts";
+import { vocabularyPerkTotal } from "./effectresolve.ts";
 import { programOf } from "./program.ts";
-import type { ModProgram } from "./program.ts";
-import { REGISTRY } from "./registry.ts";
-import { freshState, staticTotal } from "./resolve.ts";
+import type { ActiveMod, ModProgram } from "./program.ts";
+import type { ModDefinition, ModId } from "./registry.ts";
 import { scaled } from "./stars.ts";
-import { ELEMENTAL, elementsOf, isElemental } from "./tags.ts";
-import type { Elemental } from "./tags.ts";
+
+type DefinitionOverrides = Readonly<Partial<Record<ModId, ModDefinition>>>;
 
 /**
- * A grid as what the rest of the game needs: the lane power each action's row gives it, the
- * program the resource engine runs in a fight, and the run's perks. This is the only thing that
- * reads a placed grid, and nothing in it can describe a frame, an action order or a bar.
+ * A grid as what the rest of the game needs: the program the mod engine runs, an action-bar damage
+ * preview from unconditional new-vocabulary damage, and the run's perks.
  */
 export interface Build {
-  /** What each action's row adds to every hit of that action. Block's reaches the riposte. */
-  readonly lanes: Readonly<Record<ActionType, number>>;
-  /** The element a lane is attuned to, when every one of its three cells carries it. */
-  readonly attuned: Readonly<Record<ActionType, Elemental | null>>;
-  /** The placed mods at their stars, with the links their ports make, as the engine runs them. */
   readonly program: ModProgram;
-  /** How much Charge the fighter can hold. */
-  readonly capacity: number;
-  /** Dollars added to every payday. */
+  readonly preview: Readonly<Record<ActionType, number>>;
   readonly income: number;
   readonly freeRerolls: number;
-  /** How many times the style payout is paid. */
   readonly styleMultiplier: number;
 }
 
-function elementalOf(placed: PlacedMod): Elemental[] {
-  return elementsOf(REGISTRY[placed.mod].tags).filter(isElemental);
+function staticScale(per: Per, mod: ActiveMod): number {
+  switch (per) {
+    case "flat": return 1;
+    case "cell": return mod.cells;
+    case "adjacent": return mod.adjacent.length;
+    case "adjacent-same": return mod.adjacentSame;
+    case "adjacent-other": return mod.adjacentOther;
+    default: return 0;
+  }
 }
 
-/** What the Amplifiers touching `placed` add to each of its elemental cells. */
-function boostOn(placed: PlacedMod, owners: ReadonlyMap<string, PlacedMod>): number {
-  const touching = new Map<number, PlacedMod>();
-  for (const [x, y] of cellsOf(placed)) {
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const other = owners.get(`${x + dx},${y + dy}`);
-      if (other && other.uid !== placed.uid) touching.set(other.uid, other);
-    }
-  }
-  let boost = 0;
-  for (const other of touching.values()) {
-    for (const effect of REGISTRY[other.mod].effects) if (effect.kind === "lane-boost") boost += scaled(effect.amount, other.stars);
-  }
-  return boost;
+function staticCondition(mod: ActiveMod, program: ModProgram): boolean {
+  const effect = mod.definition.effect;
+  if (effect.kind !== "exchange" || effect.when === undefined) return true;
+  const when = effect.when;
+  if (when.kind === "opponent-has") return false;
+  const byUid = new Map(program.mods.map((entry) => [entry.uid, entry] as const));
+  return mod.adjacent.some((uid) => byUid.get(uid)?.definition.type === when.type);
 }
 
-export function compileBuild(grid: Grid): Build {
-  const owners = occupancy(grid);
-  const lanes: Record<ActionType, number> = { strike: 0, tech: 0, block: 0 };
-  const attuned: Record<ActionType, Elemental | null> = { strike: null, tech: null, block: null };
-  for (let y = 0; y < GRID_SIZE; y++) {
-    const lane = LANES[y];
-    const row = Array.from({ length: GRID_SIZE }, (_, x) => owners.get(`${x},${y}`) ?? null);
-    attuned[lane] = ELEMENTAL.find((element) => row.every((placed) => placed !== null && elementalOf(placed).includes(element))) ?? null;
-    for (const placed of row) {
-      if (placed === null || elementalOf(placed).length === 0) continue;
-      lanes[lane] += (attuned[lane] ? ATTUNED_LANE_POWER : LANE_POWER) + boostOn(placed, owners);
+function previewFor(program: ModProgram, action: ActionType): number {
+  let total = 0;
+  for (const mod of program.mods) {
+    const effect = mod.definition.effect;
+    if (effect.kind !== "exchange") continue;
+    if (mod.definition.affinity !== null && mod.definition.affinity !== action) continue;
+    if (!staticCondition(mod, program)) continue;
+    for (const payoff of effect.payoffs) {
+      if (payoff.kind !== "damage") continue;
+      const scale = staticScale(payoff.amount.per, mod);
+      if (scale === 0) continue;
+      total += (scaled(payoff.amount.value, mod.stars) + mod.boost[action]) * scale;
     }
   }
-  const program = programOf(grid);
+  return total;
+}
+
+export function compileBuild(
+  grid: import("./grid.ts").Grid,
+  definitions: DefinitionOverrides = {},
+): Build {
+  const program = programOf(grid, definitions);
+  const preview = Object.fromEntries(
+    ACTION_TYPES.map((action) => [action, previewFor(program, action)]),
+  ) as Record<ActionType, number>;
   return {
-    lanes,
-    attuned,
     program,
-    capacity: freshState(program).capacity,
-    income: staticTotal(program, "income"),
-    freeRerolls: staticTotal(program, "free-reroll"),
-    styleMultiplier: 1 + staticTotal(program, "style"),
+    preview: Object.freeze(preview),
+    income: vocabularyPerkTotal(program, "income"),
+    freeRerolls: vocabularyPerkTotal(program, "free-reroll"),
+    styleMultiplier: 1 + vocabularyPerkTotal(program, "style"),
   };
 }

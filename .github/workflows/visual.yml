@@ -1,0 +1,104 @@
+name: visual
+
+on:
+  pull_request:
+    paths:
+      - "src/ui/**"
+      - "src/mods/**"
+      - ".github/workflows/visual.yml"
+      - "pipelines/capture-armory-prep-evidence.mjs"
+      - "pipelines/capture-turn-evidence.mjs"
+      - "pipelines/capture-palette-evidence.mjs"
+      - "pipelines/capture-runend-evidence.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out FightLab
+        uses: actions/checkout@v4
+        with:
+          path: FightLab
+
+      - name: Read pinned Boneyard commit
+        id: boneyard
+        shell: bash
+        run: echo "commit=$(node -p "require('./FightLab/boneyard.pin.json').commit")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Boneyard
+        uses: actions/checkout@v4
+        with:
+          repository: SouthernGentlemen/Boneyard
+          ref: ${{ steps.boneyard.outputs.commit }}
+          path: Boneyard
+          token: ${{ secrets.BONEYARD_READ_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: FightLab/package-lock.json
+
+      - name: Install FightLab
+        working-directory: FightLab
+        run: npm ci
+
+      - name: Start FightLab preview
+        shell: bash
+        run: |
+          cd FightLab
+          npm run dev -- --port 5192 > "$RUNNER_TEMP/fightlab-5192.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/fightlab-5192.pid"
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:5192/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/fightlab-5192.log"
+          exit 1
+
+      - name: Capture Armory and Prep at 1920x1080
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars             --remote-debugging-port=9222 --window-size=1920,1080 about:blank             > "$RUNNER_TEMP/chrome.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/chrome.pid"
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:9222/json > /dev/null; then break; fi
+            sleep 1
+          done
+          mkdir -p FightLab/screenshots
+          cd FightLab
+          node pipelines/capture-armory-prep-evidence.mjs
+
+      - name: Capture palette sheet at 1920x1080
+        working-directory: FightLab
+        run: node pipelines/capture-palette-evidence.mjs
+
+      - name: Capture Run End at 1920x1080
+        working-directory: FightLab
+        run: node pipelines/capture-runend-evidence.mjs
+
+      - name: Capture straight-I turn evidence at 1920x1080
+        working-directory: FightLab
+        run: node pipelines/capture-turn-evidence.mjs
+
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: fightlab-visual-1920x1080
+          path: FightLab/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop FightLab preview
+        if: always()
+        shell: bash
+        run: |
+          if test -f "$RUNNER_TEMP/chrome.pid"; then kill "$(cat "$RUNNER_TEMP/chrome.pid")" 2>/dev/null || true; fi
+          if test -f "$RUNNER_TEMP/fightlab-5192.pid"; then kill "$(cat "$RUNNER_TEMP/fightlab-5192.pid")" 2>/dev/null || true; fi

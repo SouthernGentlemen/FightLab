@@ -16,8 +16,8 @@ export function program(...pieces: ReadonlyArray<readonly [ModId, number, number
 
 export const NOTHING = EMPTY_PROGRAM;
 
-export function state(patch: Partial<ModState> = {}, of: ModProgram = EMPTY_PROGRAM): ModState {
-  return { ...freshState(of), ...patch };
+export function state(patch: Partial<ModState> = {}): ModState {
+  return { ...freshState(), ...patch };
 }
 
 /** Nobody hurt: guards against guards, or a parry. */

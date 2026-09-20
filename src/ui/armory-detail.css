@@ -1,0 +1,102 @@
+/* tasks-026: selected catalogue detail. */
+.detail-pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 1.2rem;
+  padding: 0 1.6rem 1.4rem;
+}
+
+.detail-pane__head {
+  margin: 0 -1.6rem;
+  padding: 1.2rem 1.6rem;
+  border-bottom: .3rem solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+
+.detail-pane__name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 3.2rem;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.detail-pane__name[data-rarity="common"] { color: var(--rarity-common); }
+.detail-pane__name[data-rarity="uncommon"] { color: var(--rarity-uncommon); }
+.detail-pane__name[data-rarity="rare"] { color: var(--rarity-rare); }
+.detail-pane__name[data-rarity="super-rare"] { color: var(--rarity-super-rare); }
+.detail-pane__name[data-rarity="legendary"] { color: var(--rarity-legendary); }
+
+.detail-pane__art {
+  --catalog-cell: 7.2rem;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  border: .25rem solid var(--border-subtle);
+  border-radius: 1.2rem;
+  background: var(--surface-panel);
+  cursor: context-menu;
+}
+
+.detail-pane__art .catalog-card__cell {
+  border-width: .4rem;
+}
+
+.detail-pane__art .catalog-card__action {
+  border-width: .3rem;
+}
+
+.detail-pane__pips {
+  display: flex;
+  justify-content: center;
+  gap: .8rem;
+}
+
+.detail-pane__pip {
+  min-width: 7.4rem;
+  height: 4.2rem;
+  padding: .2rem .8rem;
+  border: .25rem solid var(--border-subtle);
+  border-radius: 99rem;
+  background: var(--surface-panel);
+  color: var(--star-off);
+  font: 900 1.8rem/1 var(--font);
+  letter-spacing: -.08em;
+  cursor: pointer;
+}
+
+.detail-pane__pip:hover {
+  background: var(--surface-card-hover);
+}
+
+.detail-pane__pip[aria-pressed="true"] {
+  border-color: var(--border-selected);
+  background: var(--surface-selected);
+  color: var(--star-on);
+}
+
+.detail-pane__rules {
+  display: grid;
+  gap: .5rem;
+  padding: 1rem 1.2rem;
+  border: .25rem solid var(--border-subtle);
+  border-radius: 1rem;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font-size: 1.7rem;
+}
+
+.detail-pane__rules p:first-child {
+  color: var(--text-secondary);
+}
+
+.detail-pane__copies {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 1.55rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

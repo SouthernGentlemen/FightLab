@@ -10,13 +10,15 @@ from the simulation; every other number is a starting value to tune.
 ## The pitch in one paragraph
 
 A run is a string of days. Each day you walk into a shop laid out like Batomon Showdown's: you buy
-**mods** — Tetris-shaped pieces with an affinity — pack them into your fighter's 3×3 grid, and
-program **two action bars** of three actions each. Then you fight. A fight is a series of rounds; each
-round plays your active bar once, slot against slot, and hitboxes decide how every exchange lands.
-Between rounds the fight pauses and you make one decision: stay on the bar your opponent just saw, or
-**Mixup** to the other one. At the knockout you get paid — base income, interest, a victory bonus and
-a **style** payout for the combos you strung together — and the next day starts. Ten trophies wins
-the run; lose five hearts and it ends.
+**mods** — coloured polyominoes with one type and an optional action affinity — pack them into your
+fighter's **4 × 4 board**, and program **two action bars** of three actions each. Shape, rotation and
+orthogonal adjacency make the build spatial; type determines Burn, Shock or Poison, while affinity
+says which action fires a mod. Then you fight. A fight is a series of rounds; each round plays your
+active bar once, slot against slot, and hitboxes decide how every exchange lands. Between rounds the
+fight pauses and you make one decision: stay on the bar your opponent just saw, or **Mixup** to the
+other one. At the knockout you get paid — base income, interest, a victory bonus and a **style**
+payout for the combos you strung together — and the next day starts. Ten trophies wins the run; lose
+five hearts and it ends.
 
 What stays sacred: **a mod changes how hard you hit, never who wins an exchange.** The
 Strike › Tech › Block cycle, the frame timing that enforces it physically and the determinism tests
@@ -24,23 +26,35 @@ all carry over untouched.
 
 ## Decisions
 
+The numbered rows are the run decisions; D2–D11 are the confirmed decisions from the 64-mod rebuild.
+
 | # | Question | Decision |
 | --- | --- | --- |
 | 1 | Hearts | **Five.** A defeat costs one. Fighter health is drawn as five hearts too, with partial fill over the granular health values, so a +1 or +2 damage mod visibly moves a heart (§5). |
-| 2 | Style's reach | **Money only.** No damage bonus at any rank. Style is a parallel reward that never makes the winning fighter snowball. Other S-rank rewards can come later if it feels underpowered. |
-| 3 | Opponent information | **Nothing is telegraphed before the fight.** The first answer — composition free, slot positions bought — was withdrawn by the shop rework: the next-opponent card, the scouting mod and the scouting item are gone. An opponent is read by fighting it (§3). |
-| 4 | Merging duplicates | ~~None in v1.~~ **Superseded by row 11:** copies combine into ★★ and ★★★. |
-| 5 | Player figure | **The authored fighter.** No picker until figures have gameplay identity or the core run is proven fun. |
-| 6 | Combat | **Two three-action bars and discrete rounds** replace the five-action loop, with a Mixup decision between rounds (§3). |
-| 7 | Mod colours | **Solar, Void, Arc and Neutral** replace the action colours. An affinity is never an action (§6). |
+| 2 | Style's reach | **Money only.** No damage bonus at any rank. Style is a parallel reward that never makes the winning fighter snowball. |
+| 3 | Opponent information | **Nothing is telegraphed before the fight.** The next opponent is read by fighting it (§3). |
+| 4 | Merging duplicates | **Superseded by row 11:** copies combine into ★★ and ★★★. |
+| 5 | Player figure | **The authored fighter.** No picker until fighters have gameplay identity or the core run is proven fun. |
+| 6 | Combat | **Two three-action bars and discrete rounds** with a Mixup decision between rounds (§3). |
+| 7 | Mod colours | **Type owns the piece colour; affinity owns the action icon; rarity owns the name colour.** |
 | 8 | Display | **One fullscreen 16:9 composition,** scaled to the device (§1). |
-| 9 | Shop layout | **Batomon's proportions.** The action bars sit in the right-hand negative space; there is no fighter card and no intel panel (§10). |
-| 10 | What a mod is | **A build system, not a stat bonus.** One registry of data records ([`MODS.md`](MODS.md)): one or two tags, a rarity, a shape, directional ports, and effects on three elemental resources and three debuffs. It replaces affinity levels, tiers, perks and the Mixup surge; lane power stays. |
-| 11 | Upgrades | **Stars, ★ / ★★ / ★★★.** Three ★ copies combine into ★★, two ★★ into ★★★, automatically on purchase. A star is the upgrade level and nothing else; there is no T1 / T2 / T3 anywhere. |
-| 12 | Rarity | **Five rarities, separate from stars:** Common · Iron, Uncommon · Bronze, Rare · Silver, Super Rare · Gold, Legendary · Diamond. Rarity sets price and shop odds, and is the material the stars are cast in. |
-| 13 | Damage outside contact | **Burn and Poison hurt at the end of a round.** Damage still exists only inside the kernel: by hitbox contact, or as an affliction the arena applies after slot 3 — a reported kernel event that can knock a fighter out. Nothing reduces a landed hit, so no mod can flip an exchange (C9). |
-| 14 | Action tags | **A mod may carry an action tag** (Strike, Tech, Block): it fires in exchanges where its fighter plays that action. An element still never means an action. |
-| 15 | Title and Armory | **Play / Armory / Settings.** The Armory browses the whole registry. Ownership reads through a repository; until it persists, a seeded development collection. The save moved to version 2 — version-1 saves name mods that no longer exist and are discarded. |
+| 9 | Shop layout | **Batomon's proportions.** The action bars sit in the right-hand negative space; there is no fighter card or intel panel (§10). |
+| 10 | What a mod is | **One data definition:** id, name, rarity, type, optional affinity, one of 11 shapes and one effect. Placement and orthogonal adjacency are the build relationships. |
+| 11 | Upgrades | **Stars, ★ / ★★ / ★★★.** Three ★ copies combine into ★★, two ★★ into ★★★. A star is the upgrade level and nothing else. |
+| 12 | Rarity | **Five rarities, separate from stars:** Common, Uncommon, Rare, Super Rare, Legendary. Rarity sets price, shop odds, vocabulary complexity and the name colour. |
+| 13 | Damage outside contact | **Burn and Poison hurt at the end of a round.** Damage still exists only inside the kernel: by hitbox contact, exposure or an affliction reported by the arena. |
+| 14 | Affinity | **A mod may have Strike, Tech or Block affinity.** It fires on that action; no affinity means every exchange. Type never means an action. |
+| 15 | Title, Armory and save | **Play / Armory / Settings.** The Armory browses the live 64-definition registry. Save version 4 discards older registry formats. |
+| D2 | Board and action rows | **4 × 4 board.** Action rows and their lane power retired; action preview comes from the placed mods' effects. |
+| D3 | Energy economy | **Retired.** Burn, Shock and Poison remain as statuses; resource pools, capacity and routing do not. |
+| D4 | Type and status | **Exactly one type per mod.** Solar → Burn, Arc → Shock, Void → Poison, Neutral → none. Affinity is optional. |
+| D5 | Rarity presentation | **Material rarity retired.** Rarity colours the name/chips; stars are neutral pips. |
+| D6 | Mod surfaces | **Dark.** Catalogue, board, bank, offers and tooltip use the shared dark mod palette. |
+| D7 | Registry and persistence | **Fresh 64-mod registry with new ids; save version 4.** Older registry saves are discarded. |
+| D8 | Catalogue filters | **Type, Action (including None), Size and Rarity.** OR within a group, AND across groups; Clear empties all. |
+| D9 | Rotation | **Degrees and cursor pivot.** Stored as 0/90/180/270, normalised to distinct orientations; turns pivot about the occupied cell under the cursor. |
+| D10 | Catalogue UI tests | **happy-dom.** DOM rendering, selection, rotation and filtering are tested in Vitest. |
+| D11 | Shape weight | **28 / 12 / 16 / 8 by size.** Every type has one of each tetromino; tetrominoes are deliberately more common on the 4 × 4 board. |
 
 Constraints every rule below is held to:
 
@@ -53,7 +67,7 @@ Constraints every rule below is held to:
 - Style derives from resolved exchange wins, never from damage totals.
 - The combo streak is defined exactly (§4) and tested exhaustively.
 - Rotating a placed mod succeeds only when the rotated placement is legal.
-- The registry is the catalogue: twenty-nine mods ([`MODS.md`](MODS.md)). The shop shows five offers at a time.
+- The registry is the catalogue: exactly 64 mods ([`MODS.md`](MODS.md)). The shop shows five offers at a time.
 - Everything the run generates — opponents, their switching, shops, rerolls — is a pure function of
   the run seed.
 - The autosave format is versioned from the first release.
@@ -88,7 +102,7 @@ Title ─► New run ─► ┌─► Prep (DAY n) ─► Fight ─► Payday �
 | Hearts | 5. A defeat costs one. |
 | Trophies | 10 win the run. A victory earns one. |
 | Draw (double knockout, stalemate, round limit) | No trophy, no heart. |
-| Fighter health | Full at the start of every fight; carried from round to round within it. Maximum health is 100 plus mods. |
+| Fighter health | Full at the start of every fight; carried from round to round within it. Maximum health is 100. |
 | Starting money | $10 |
 | Run length | 10–14 days. |
 
@@ -239,7 +253,7 @@ other combat number.
 
 ## 5. Health on screen
 
-Health stays granular underneath: 100 plus mods, integer damage from the kernel, exactly as now. On
+Health stays granular underneath: 100, with integer damage from the kernel. On
 screen each fighter's health is **five hearts**, each worth a fifth of that fighter's maximum health,
 filled in proportion — a heart is not a unit of damage. A 12-damage jab against 100 health empties 60%
 of one heart; with one +1 mod it empties 65%. The exact number is printed under the hearts.
@@ -251,36 +265,34 @@ the fight. The two never share a screen.
 
 A fighter's build is its two bars (§3) and its **mod grid**, both edited only on the prep screen.
 
-### Grid and lanes
+### Board and adjacency
+
+The active build lives on a **4 × 4 board**. Only placed mods are active.
 
 ```
-            ┌───┬───┬───┐
-  STRIKE ▸  │   │   │   │   powers the jab
-            ├───┼───┼───┤
-  TECH   ▸  │   │   │   │   powers the overhead
-            ├───┼───┼───┤
-  BLOCK  ▸  │   │   │   │   powers the riposte
-            └───┴───┴───┘
+┌───┬───┬───┬───┐
+│   │   │   │   │
+├───┼───┼───┼───┤
+│   │   │   │   │
+├───┼───┼───┼───┤
+│   │   │   │   │
+├───┼───┼───┼───┤
+│   │   │   │   │
+└───┴───┴───┴───┘
 ```
 
-The grid's rows are the three actions' **lanes**. Only placed mods are active.
+A placement is legal when every occupied cell is on the board and empty. Two mods are adjacent when
+their turned footprints share at least one horizontal or vertical cell edge; corner contact does not
+count. Effects can scale from occupied cells, all neighbours, same-type neighbours or other-type
+neighbours, and boosts can affect adjacent mods. The board has no action rows: Strike, Tech and Block
+remain in the two action bars, while the build's per-action preview is compiled from the effects that
+can fire for that action.
 
-- Every **Solar, Void or Arc** cell powers the action of its row by **+1** damage.
-- A row whose three cells all share one affinity is **attuned**: each of its cells powers **+2**
-  instead, +6 for the row.
-- **Neutral** cells power nothing and never attune a row; they trade space for utility.
+### Types and status
 
-So a Solar I-piece laid along the Strike row attunes it (+6 on every jab), while the same piece
-standing up across all three rows is +1 to each. Where a piece goes matters, and so does what sits
-next to it in the row.
-
-### Elements
-
-A mod's element is a property of the mod, never an action. The three elements are three different
-ways to build ([`MODS.md`](MODS.md)): **Solar** — fast build, low sustained payoff (Heat, Burn);
-**Arc** — setup and burst (Charge, Shock); **Void** — slow build, persistent high payoff (leeched
-Void, Poison). **Neutral** has no resource and powers no lane; it is the home of the run's utility
-mods. Solar is not Strike, Void is not Block and Arc is not Tech: any element can power any lane.
+A mod has exactly one type: **Solar, Arc, Void or Neutral**. Type is never an action. Solar status
+payoffs apply Burn, Arc applies Shock, Void applies Poison and Neutral applies none. An optional
+Strike, Tech or Block affinity says which exchange fires the mod; no affinity means every exchange.
 
 ### Bank
 
@@ -289,45 +301,46 @@ its shape; pulled out, it blooms back to full size. Rotation is kept either way.
 
 ## 7. Mods
 
-A mod is data — tags, a rarity, a shape, ports and effects — and has no code of its own. Compile turns
-a grid into lane power and a program; the engine runs the program around every exchange (§11).
+A mod is data: `{ id, name, rarity, type, affinity, shape, effect }`. There is no per-mod code.
+The live registry contains 64 definitions and is the same source read by the shop, Armory, compile
+and combat integration.
 
 ### Shapes and rotation
 
-Polyominoes of one to four cells that fit a 3×3 board (the I-tetromino does not, so it is not in the
-set). Mods rotate in 90° steps; there is no flipping.
+The shape library has eleven canonical footprints: I/O/T/S/Z/J/L tetrominoes, straight and L
+triominoes, domino and single. Rotation is stored as degrees — 0, 90, 180 or 270 — and symmetrical
+duplicates normalise to the first distinct orientation. A clockwise turn pivots about an occupied
+board cell; if the turned footprint would overlap or leave the 4 × 4 board, it is refused.
 
-```
-MONO  ▪        DUO  ▪▪        I3  ▪▪▪        L3  ▪·
-                                                  ▪▪
-O4  ▪▪        T4  ▪▪▪         L4  ▪··
-    ▪▪            ·▪·             ▪▪▪
-```
+### Adjacency and effects
 
-- A placement is legal when every cell is on the board and empty.
-- While dragging, R, right-click or the wheel rotates the piece freely; the ghost is green where the
-  drop would be legal and red where it would not, and an illegal drop returns the piece.
-- A placed mod rotates in place — clockwise, keeping the top-left of its bounding box — **only if the
-  rotated placement is legal.** Otherwise nothing moves and the piece shakes.
+Orthogonal adjacency is the only relationship between placed mods. The program records each mod's
+cell count, neighbours, same-type neighbours and other-type neighbours, then applies adjacent boost
+effects before an exchange.
+
+The effect vocabulary is deliberately small: exchange payoffs (damage, heal, the mod type's status,
+cleanse), scales (flat, cell, adjacency or opponent status), two conditions (adjacent type or opponent
+status), adjacent boosts, and three run perks (income, free reroll, style). Strike/Tech payoffs that
+need contact land when the move hurts; Block payoffs land when its guard holds.
 
 ### Rarity, stars and the catalogue
 
-Rarity (Iron to Diamond) sets a mod's price — $3, $4, $5, $7, $8 — and its shop odds; stars
-(★ to ★★★) are its upgrade level, made by combining copies. Selling returns half of every copy
-inside a mod, rounded down, at least $1. The catalogue is the registry — the spec's twenty-five
-mods and four Neutral utility mods — listed with every number at every star in
-[`MODS.md`](MODS.md#the-seed-catalogue).
+Rarity sets price, shop odds and vocabulary complexity: Common $3, Uncommon $4, Rare $5, Super Rare
+$7, Legendary $8. Rarity colours the name and filter/odds chips only.
+
+Stars are the upgrade level: three ★ combine into ★★, two ★★ into ★★★. Stars use neutral pips. Selling
+returns half the price of every ★ copy inside the mod, rounded down, at least $1.
+
+The catalogue is exactly 64 mods: 16 of every type, 16 in every affinity bucket (None included), and
+four of every type × affinity pair. Its size split is 28 tetrominoes / 12 triominoes / 16 dominoes /
+8 singles. [`MODS.md`](MODS.md) is the full model, matrix, vocabulary and palette.
 
 ### What a mod can never do (C9)
 
-Compile may change damage, maximum health, parry healing and riposte damage. It never changes startup,
-active or recovery frames, hitbox or parry windows, which hitboxes break guard, the order of a bar, or
-which bar is active. A property test compiles random builds and fights all nine pairs for each; every
-exchange must still agree with the matrix, and the compiled frame data must match the authored frame
-data in every timing field.
-
-Post-contact hitstun is also permitted, but no v1 mod uses it: every exchange ends before hitstun
-could matter, so it would change pacing and nothing else.
+Mods may change bonus damage, parry healing and statuses. They never change startup, active or
+recovery frames, hitbox or parry windows, guard-break rules, bar order or the active bar. The C9
+property test builds a thousand random boards from the 64 on 4 × 4 at random stars and degree
+rotations, loads statuses, and checks all nine action pairs without changing a winner or timing field.
 
 ## 8. Shop and economy
 
@@ -341,9 +354,9 @@ could matter, so it would change pacing and nothing else.
 | Lock | Keeps today's unsold offers into tomorrow; sold slots are refilled. Rerolling unlocks. |
 
 Five offers, drawn with replacement from the registry by rarity. The odds rise with the day and are
-shown on the screen the way Batomon shows its rank line, each rarity as its material's gem:
+shown on the screen the way Batomon shows its rank line, each rarity as a labelled colour chip:
 
-| Rank (days) | Common · Iron | Uncommon · Bronze | Rare · Silver | Super Rare · Gold | Legendary · Diamond |
+| Rank (days) | Common | Uncommon | Rare | Super Rare | Legendary |
 | --- | --- | --- | --- | --- | --- |
 | 1 (1–2) | 70% | 30% | — | — | — |
 | 2 (3–4) | 45% | 35% | 20% | — | — |
@@ -377,7 +390,7 @@ Day *n*'s opponent is a pure function of the run seed and *n*:
   (Block-heavy) or Trickster (whose secondary bar beats whatever beats its primary).
 - **A mixup plan** (§3), weighted by archetype.
 - **A build** bought from the same catalogue and odds a player would see that day, with a budget that
-  grows by day, packed greedily into the lanes its bars use most.
+  grows by day, packed greedily by affinity weight and same-type adjacency.
 
 The archetype is never shown; it is only how the opponent was made. No networking and no ghosts of
 other players: asynchronous multiplayer stays out of scope.
@@ -389,44 +402,20 @@ bevelled buttons — built from original art. Every screen is a 1600 × 900 comp
 
 ### Prep — `DAY n`
 
-The shop takes Batomon's proportions box for box. The left-hand card is gone; the action bars fill the
-negative space on the right.
+The shop keeps Batomon's broad proportions: top status bar, bank and board in the centre, the two
+action bars in the right-hand negative space, then rarity odds / money / Lock and the five-offer shop
+strip along the bottom.
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                          ♥ 5      DAY 4      🏆 3/10                   ⚙  ⏏   │
-│                 ┌─ BANK ───────────────────────────┐                          │
-│                 │  [ ▪ ]  [ ▪▪ ]  [    ]  [    ]    │  ┌─ ACTION BARS ──────┐  │
-│                 └───────────────────────────────────┘  │ BAR A  starts       │  │
-│                  ┌─ MODS ─────────── ☀1  ◐0  ⚡0 ─┐     │ [STRIKE][TECH][BLOCK]│ │
-│                  │ STRIKE +4 ▸ ▪ ▪ ·               │     │    16    16    14   │  │
-│                  │ TECH   +0 ▸ · · ·               │     │ BAR B               │  │
-│                  │ BLOCK  +2 ▸ ▪ · ·               │     │ [BLOCK][BLOCK][STRIKE]│ │
-│                  └──────────────────────────────────┘     │ HEALTH 100          │  │
-│      RANK 2  ◆55%  ◆35%  ◆10%      ( $14 )                 [LOCK]               │
-│ ┌────────┐ ┌─────────────────────────────────────────────┐ ┌────────┐           │
-│ │ REROLL │ │  [mod]   [mod]   [mod]   [mod]   [mod]       │ │ FIGHT! │           │
-│ └────────┘ └─────────────────────────────────────────────┘ └────────┘           │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-| Region | Batomon (of 526 × 296) | FightLab (of 1600 × 900) |
-| --- | --- | --- |
-| Top bar: hearts, day, trophies; settings and leave on the right | y 0–30 | y 0–92 |
-| Left card | x 5–100 | removed — negative space |
-| Bank (Batomon's "Box"), 1×4 | x 140–380, y 35–95 | x 425–1155, y 100–260 |
-| Grid (Batomon's "My Team"), 3×3 with lane labels | x 170–350, y 100–210 | x 470–1110, y 272–660 |
-| **Action bars** in the right negative space | x 385–526, y 35–215 (empty) | x 1175–1585, y 100–660 |
-| Rank odds, money pill, Lock | y 213–235 | y 668–720 |
-| Reroll, five offers, Fight | y 240–296 | y 730–892 |
-
-- **Grid:** lane labels in the action colours with each lane's live total (`STRIKE +4`), an attuned
-  lane marked with its element; how many placed mods carry each element in the panel header.
-- **Action bars:** Bar A over Bar B, three slots each; each slot shows its action and the damage the
-  grid gives it (Block shows the riposte). Clicking a slot opens the Strike / Tech / Block picker. The
-  panel ends with the fighter's maximum health.
-- **Shop strip:** Reroll on the left in orange, five offers, Fight on the right in red, money in a pink
-  pill and Lock in yellow above — Batomon's arrangement, kept deliberately.
+- **Board:** a dark 4 × 4 surface with the largest cells that fit. Pieces keep their saturated type
+  colour. A valid carried placement gets a thin valid outline; an invalid one keeps its silhouette
+  under the invalid hatch/outline.
+- **Bank:** four dark slots above the board. Rotation is preserved.
+- **Action bars:** Bar A over Bar B, three slots each. Each slot shows its action and the build's
+  compiled unconditional damage preview for that action.
+- **Shop strip:** Reroll on the left, five offers, Fight on the right, with money and Lock above.
+  Offers show the shape, optional affinity icon, rarity-coloured name and price.
+- **Controls:** left click/tap picks up and places; right click turns clockwise about the cell under
+  the pointer; R is the keyboard turn; Escape cancels the carry. Illegal placement is refused.
 - Nothing on this screen describes the next opponent.
 
 ### Fight
@@ -481,19 +470,21 @@ while a run is saved. Settings: battle speed 1× / 2× / 4×, reset, return.
 
 ### Armory
 
-The whole mod catalogue on one screen, Batomon's collection layout: a detail card on the left, and
-on the right the filters (element, action, rarity, owned only, search), the tiles and the collection
-count. [`MODS.md`](MODS.md#the-armory) says what each part shows.
+The whole 64-mod catalogue on one screen: a selected detail pane on the left and a four-column,
+scrolling card grid on the right. `FILTER: NONE` opens Type, Action (including None), Size and
+Rarity groups; choices are OR inside a group and AND across groups. Cards are shape-first: type
+colour fills the cells, at most one affinity icon sits on the centroid-nearest occupied cell, and the
+name alone takes the rarity colour. The detail pane previews ★ / ★★ / ★★★ and can turn through the
+shape's distinct orientations. [`MODS.md`](MODS.md#catalogue-ui) is the contract.
 
 ### Interaction and access
 
-- Everything a drag does has a tap and keyboard path: tap an offer to bank it; tap an owned mod (or
-  focus it and press Enter) to pick it up, then tap a cell to put its icon cell there — or arrows to
-  move it, R to rotate, Enter to place, B to bank, S to sell, Escape to cancel. Hovering or focusing
-  any mod shows its name and stars, type, rarity, rules at its stars, ports, lane effect and sell price.
-- Colour is never the only signal: lanes are labelled, actions carry icons (fist, hammer, shield),
-  elements carry icons (sun, bolt, crescent), and a dual-typed mod is split between two colours with
-  both tags written out; stars are cast in the rarity's material.
+- Every drag has a click/tap and keyboard path. Pick a piece up, move it, rotate with R, place with
+  Enter, bank with B, sell with S, or cancel with Escape.
+- Every card, piece, offer and bank slot has a `modLabel` naming type, affinity, shape, rarity and
+  stars. Filter chips carry text; keyboard focus reaches the complete catalogue and modal.
+- Colour is never the only signal: pieces have accessible labels, actions carry icons, rarity is
+  labelled in filters, and placement validity uses outline/pattern as well as colour.
 - Dragging uses pointer events, so touch works.
 
 ## 11. Architecture
@@ -510,26 +501,26 @@ src/game/    composition: a compiled build becomes a combat side; one fight; clo
 src/ui/      the screens, in one 16:9 composition
 ```
 
-**Compile is the only bridge from a grid to combat.** `compileBuild(grid)` returns each lane's power,
-the run perks and a *program* — every placed mod at its stars, with the links its ports make. The
-game layer turns the lanes into a `CombatSide` and runs the program in `ModdedArena`, which resolves
-the resource engine around every commit, every settled exchange and every round's end
-([`MODS.md`](MODS.md#one-deterministic-resolution-order)). The kernel still only ever hears move
-names, bonuses, heals, exposure and afflictions.
+**Compile is the only bridge from a board to combat.** `compileBuild(grid)` returns the active
+program, an unconditional per-action damage preview and the run perks. The program contains each
+placed mod at its stars with its occupied-cell and adjacency counts; boosts are resolved from that
+graph. `ModdedArena` runs the status engine around each combat exchange and round end. The kernel
+still only ever hears move names, bonuses, heals, exposure and afflictions.
 
 **Kernel additions, all generic and sealed:** a move command may carry an integer damage bonus that
 every hit of that move — and the counter its parry starts — adds, and an integer heal its parry
 adds; a fighter may carry *exposure* that the next hit landing on it adds and clears; and an
 *affliction* takes health between ticks, reported as an event, and can knock a fighter out. The
-kernel never learns what a mod, a lane, an element, a debuff or a round is.
+kernel never learns what a mod, type, affinity, adjacency relationship, status rule or round is.
 
 **Determinism.** One integer PRNG, seeded per purpose: every draw is keyed by the run seed, a purpose
 and its indices — `shop / day / reroll`, `opponent / day` — so rerolling the shop can never shift
 tomorrow's opponent, and nothing depends on the order things were generated in. The fight itself has
 no randomness at all.
 
-**Persistence.** The run autosaves to `localStorage` after every change, as a versioned document:
-`{ version: 1, run, fight }`, where `fight` holds the player's Mixup decisions in the fight in progress.
+**Persistence.** The run autosaves to `localStorage` after every change as
+`{ version: 4, run, fight }`, where `fight` holds the player's Mixup decisions in the fight in
+progress. Version 4 is the 64-mod registry format; older registry saves are discarded whole.
 Resuming a fight replays those decisions headlessly to the same pause, so reloading cannot re-roll a
 fight. A save that fails validation, or has a version the game does not read, is discarded rather
 than half-loaded. Nothing leaves the machine.
@@ -551,8 +542,8 @@ Headless, before any combat UI changes:
 - The same seed, loadouts, mods and player Mixups produce the same fight, byte for byte, at 1×, 2× and
   4×.
 - The style rules above, checked against every sequence of outcomes up to length eight.
-- Rotating a placed mod succeeds exactly when the rotated placement is legal, for every mod, rotation,
-  position and neighbour.
+- Every canonical shape and degree rotation is legal exactly where its turned cells fit; pivoted turns
+  keep the occupied cursor cell fixed, and adjacency uses the turned footprint.
 - Opponents, shops and rerolls are pure functions of the seed; a recorded run replays to the same
   paydays; a save round-trips, and anything malformed or of another version is refused.
 

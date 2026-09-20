@@ -1,57 +1,27 @@
 import { describe, expect, it } from "vitest";
 
-import { boardPorts, links, turnSide } from "../../src/mods/ports.ts";
-import type { Port, PortedPiece } from "../../src/mods/ports.ts";
-import { RARITIES, RARITY, rarityLine } from "../../src/mods/rarity.ts";
+import { RARITIES, RARITY } from "../../src/mods/rarity.ts";
 import { RECIPES, STARS, bestStars, combineAll, copiesIn, recipeFor, scaled } from "../../src/mods/stars.ts";
-import { ELEMENTS, MAX_TAGS, actionOf, elementsOf, tagLine, tagProblem, tileFill } from "../../src/mods/tags.ts";
-import { ROTATIONS } from "../../src/mods/shapes.ts";
+import { AFFINITY_LABEL, MOD_TYPES, TYPE_LABEL, isModType } from "../../src/mods/types.ts";
 
-describe("tags", () => {
-  it("allow one or two tags and never more", () => {
-    expect(MAX_TAGS).toBe(2);
-    expect(tagProblem([])).toMatch(/one or two/);
-    expect(tagProblem(["solar", "strike", "arc"])).toMatch(/one or two/);
+describe("mod type and affinity", () => {
+  it("defines the four mod types and their labels", () => {
+    expect(MOD_TYPES).toEqual(["solar", "arc", "void", "neutral"]);
+    for (const type of MOD_TYPES) expect(isModType(type), type).toBe(true);
+    expect(isModType("strike")).toBe(false);
+    expect(isModType("fire")).toBe(false);
+    expect(TYPE_LABEL).toEqual({ solar: "Solar", arc: "Arc", void: "Void", neutral: "Neutral" });
   });
 
-  it("accept an element alone, an element with one action, or two different elements", () => {
-    for (const element of ELEMENTS) expect(tagProblem([element]), element).toBeNull();
-    expect(tagProblem(["solar", "strike"])).toBeNull();
-    expect(tagProblem(["arc", "block"])).toBeNull();
-    expect(tagProblem(["void", "tech"])).toBeNull();
-    expect(tagProblem(["neutral", "strike"])).toBeNull();
-    expect(tagProblem(["void", "arc"])).toBeNull();
-    expect(tagProblem(["void", "solar"])).toBeNull();
-  });
-
-  it("refuse an action alone, two actions, a repeat, Neutral with an element, and unknown tags", () => {
-    expect(tagProblem(["strike"])).toMatch(/needs an element/);
-    expect(tagProblem(["strike", "tech"])).toMatch(/needs an element/);
-    expect(tagProblem(["solar", "solar"])).toMatch(/twice/);
-    expect(tagProblem(["neutral", "solar"])).toMatch(/Neutral/);
-    expect(tagProblem(["fire"])).toMatch(/not a tag/);
-  });
-
-  it("say which elements a mod has, which action it fires on, and how its type is written", () => {
-    expect(elementsOf(["void", "arc"])).toEqual(["void", "arc"]);
-    expect(actionOf(["solar", "strike"])).toBe("strike");
-    expect(actionOf(["solar"])).toBeNull();
-    expect(tagLine(["solar", "strike"])).toBe("SOLAR / STRIKE");
-  });
-
-  it("split a dual-typed tile between both colours, element first, and fill a single-typed one", () => {
-    expect(tileFill(["solar", "strike"])).toEqual({ split: true, colors: ["solar", "strike"] });
-    expect(tileFill(["void", "arc"])).toEqual({ split: true, colors: ["void", "arc"] });
-    expect(tileFill(["arc"])).toEqual({ split: false, colors: ["arc"] });
+  it("labels the optional action affinity independently of type", () => {
+    expect(AFFINITY_LABEL).toEqual({ strike: "Strike", tech: "Tech", block: "Block" });
   });
 });
 
 describe("rarity", () => {
-  it("is five materials from Iron to Diamond, each dearer than the last", () => {
-    expect(RARITIES.map((rarity) => RARITY[rarity].material)).toEqual(["iron", "bronze", "silver", "gold", "diamond"]);
+  it("defines five rarity labels with ascending prices", () => {
+    expect(RARITIES.map((rarity) => RARITY[rarity].label)).toEqual(["Common", "Uncommon", "Rare", "Super Rare", "Legendary"]);
     expect(RARITIES.map((rarity) => RARITY[rarity].price)).toEqual([3, 4, 5, 7, 8]);
-    expect(rarityLine("rare")).toBe("RARE · SILVER");
-    expect(rarityLine("super-rare")).toBe("SUPER RARE · GOLD");
   });
 });
 
@@ -80,37 +50,5 @@ describe("stars", () => {
 
   it("read a scaled number at each level, independent of rarity", () => {
     expect(STARS.map((stars) => scaled([2, 3, 5], stars))).toEqual([2, 3, 5]);
-  });
-});
-
-describe("ports", () => {
-  const piece = (uid: number, ports: readonly Port[], x: number, y: number, rotation: 0 | 1 | 2 | 3 = 0, shape: PortedPiece["shape"] = "mono"): PortedPiece =>
-    ({ uid, shape, rotation, x, y, ports });
-  const heatOut: Port = { cell: 0, side: "e", flow: "out", resource: "heat" };
-  const heatIn: Port = { cell: 0, side: "w", flow: "in", resource: "heat" };
-
-  it("turn clockwise with the piece and come back after four turns", () => {
-    expect(ROTATIONS.map((rotation) => turnSide("n", rotation))).toEqual(["n", "e", "s", "w"]);
-    // A duo standing up carries its right-hand cell underneath, facing down.
-    expect(boardPorts(piece(1, [{ ...heatOut, cell: 1 }], 0, 0, 1, "duo"))).toEqual([{ uid: 1, at: [0, 1], side: "s", flow: "out", resource: "heat" }]);
-    expect(boardPorts(piece(1, [heatOut], 1, 1, 0))).toEqual(boardPorts(piece(1, [heatOut], 1, 1, 0)));
-  });
-
-  it("link an out-port to a matching in-port across a shared edge", () => {
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [heatIn], 1, 0)])).toEqual([{ from: 1, to: 2, resource: "heat" }]);
-  });
-
-  it("stop linking when either piece turns away, or the resources differ, or the cells do not touch", () => {
-    expect(links([piece(1, [heatOut], 0, 0, 2), piece(2, [heatIn], 1, 0)])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [heatIn], 1, 0, 1)])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [{ ...heatIn, resource: "charge" }], 1, 0)])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0), piece(2, [heatIn], 2, 0)])).toEqual([]);
-  });
-
-  it("link again when the turn points the port at a neighbour: rotation is behaviour, not decoration", () => {
-    // The producer sits above the consumer; facing east it misses, turned a quarter it faces south.
-    const consumer = piece(2, [{ ...heatIn, side: "n" }], 0, 1);
-    expect(links([piece(1, [heatOut], 0, 0, 0), consumer])).toEqual([]);
-    expect(links([piece(1, [heatOut], 0, 0, 1), consumer])).toEqual([{ from: 1, to: 2, resource: "heat" }]);
   });
 });

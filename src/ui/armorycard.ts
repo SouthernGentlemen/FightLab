@@ -1,102 +1,103 @@
-import { effectLines, portLine, profileOf, scaleRows } from "../mods/describe.ts";
-import { RARITY, rarityLine } from "../mods/rarity.ts";
+import "./armory-detail.css";
+
+import { effectLines } from "../mods/describe.ts";
 import { REGISTRY } from "../mods/registry.ts";
 import type { ModId } from "../mods/registry.ts";
-import { nextRotation } from "../mods/shapes.ts";
-import type { Rotation } from "../mods/shapes.ts";
-import { RECIPES, STARS, bestStars, copiesIn, starText } from "../mods/stars.ts";
+import { SHAPES, orientations } from "../mods/shapes.ts";
+import { STARS, bestStars, copiesIn, starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
+import { catalogShape } from "./catalogcard.ts";
+import { catalogShapeView } from "./catalogcardview.ts";
 import { button, h, setText } from "./dom.ts";
-import { bevel, modArt, starRow, tagChips } from "./kit.ts";
-import { modSquare } from "./modtile.ts";
+import { modLabel } from "./modlabel.ts";
 
 export interface ArmoryCard {
   readonly node: HTMLElement;
   show(mod: ModId): void;
 }
 
-const WORD = { heat: "Heat", charge: "Charge", void: "Void", burn: "Burn", shock: "Shock", poison: "Poison" } as const;
-
-function list(words: readonly (keyof typeof WORD)[]): string {
-  return words.map((word) => WORD[word]).join(", ");
+function compactRules(lines: readonly string[]): string[] {
+  const compact = [...lines];
+  while (compact.length > 3) compact.splice(0, 2, `${compact[0]} ${compact[1]}`);
+  return compact;
 }
 
-/**
- * The Armory's left-hand card: everything about one mod. Its star level can be previewed at ★, ★★
- * and ★★★ whatever the player owns, and its piece turned, to watch its ports move with it.
- */
+/** Selected catalogue detail: shape, star preview, generated rules and collection progress only. */
 export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   let mod: ModId | null = null;
   let stars: Stars = 1;
-  let rotation: Rotation = 0;
+  let orientation = 0;
 
-  const name = h("h2", { class: "card__name" });
-  const rarity = h("span", { class: "card__rarity" });
-  const square = h("div", { class: "card__square" });
-  const chips = h("div", { class: "card__chips" });
-  const description = h("p", { class: "card__description" });
-  const starButtons = STARS.map((level) => button(starText(level), "segment card__star", () => {
+  const name = h("h2", { class: "detail-pane__name" });
+  const art = h("div", {
+    class: "detail-pane__art",
+    tabindex: "0",
+    "aria-keyshortcuts": "R",
+  });
+  const starButtons = STARS.map((level) => button(starText(level), "detail-pane__pip", () => {
     stars = level;
-    render();
+    renderRules();
   }, { "aria-label": `Preview at ${level} star${level === 1 ? "" : "s"}` }));
-  const rules = h("div", { class: "card__rules" });
-  const table = h("table", { class: "card__table" });
-  const profile = h("p", { class: "card__profile" });
-  const piece = h("div", { class: "card__piece" });
-  const facing = h("b", { class: "card__facing" });
-  const ports = h("small", { class: "card__porttext" });
-  const rotate = bevel("Rotate", "sky", () => {
-    rotation = nextRotation(rotation);
-    render();
-  }, "btn--sm card__rotate");
-  const copies = h("p", { class: "card__copies" });
+  const rules = h("div", { class: "detail-pane__rules" });
+  const copies = h("p", { class: "detail-pane__copies" });
 
-  const node = h("section", { class: "card", "aria-label": "Mod details" },
-    h("header", { class: "card__head" }, name, rarity),
-    h("div", { class: "card__hero" }, square, h("div", { class: "card__about" }, chips, description)),
-    h("div", { class: "segments card__stars", role: "group", "aria-label": "Star level" }, ...starButtons),
-    rules, table, profile,
-    h("div", { class: "card__ports" }, piece, h("div", { class: "card__portinfo" }, facing, ports, rotate)),
+  const node = h("section", { class: "card detail-pane", "aria-label": "Mod details" },
+    h("header", { class: "detail-pane__head" }, name),
+    art,
+    h("div", { class: "detail-pane__pips", role: "group", "aria-label": "Star level" }, ...starButtons),
+    rules,
     copies);
 
-  function numbers(definitionId: ModId): HTMLTableSectionElement[] {
-    const material = RARITY[REGISTRY[definitionId].rarity].material;
-    const head = h("tr", {}, h("th", {}, ""), ...STARS.map((level) => {
-      const cell = h("th", { class: level === stars ? "is-on" : "" }, starRow(level, material));
-      return cell;
-    }));
-    const rows = scaleRows(REGISTRY[definitionId]).map((row) => h("tr", {}, h("td", {}, row.label),
-      ...STARS.map((level) => h("td", { class: level === stars ? "is-on" : "" }, String(row.values[level - 1])))));
-    return [h("thead", {}, head), h("tbody", {}, ...rows)];
+  function turn(): void {
+    if (mod === null) return;
+    const available = orientations(SHAPES[REGISTRY[mod].shape]);
+    orientation = (orientation + 1) % available.length;
+    renderArt();
+  }
+
+  art.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    turn();
+  });
+  art.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() !== "r") return;
+    event.preventDefault();
+    turn();
+  });
+
+  function renderArt(): void {
+    if (mod === null) return;
+    const definition = REGISTRY[mod];
+    const available = orientations(SHAPES[definition.shape]);
+    const shown = available[orientation] ?? available[0];
+    art.dataset.rotation = String(shown.rotation);
+    art.setAttribute("aria-label", `${definition.name} shape preview; press R or right click to rotate`);
+    art.replaceChildren(catalogShapeView(catalogShape(definition, shown.cells)));
+  }
+
+  function renderRules(): void {
+    if (mod === null) return;
+    const definition = REGISTRY[mod];
+    node.setAttribute("aria-label", modLabel(definition, stars));
+    starButtons.forEach((node, index) =>
+      node.setAttribute("aria-pressed", String(STARS[index] === stars)));
+    rules.replaceChildren(...compactRules(effectLines(definition, stars)).map((line) => h("p", {}, line)));
   }
 
   function render(): void {
     if (mod === null) return;
     const definition = REGISTRY[mod];
-    const material = RARITY[definition.rarity].material;
-    node.dataset.material = material;
+    name.dataset.rarity = definition.rarity;
     setText(name, definition.name);
-    setText(rarity, rarityLine(definition.rarity));
-    square.replaceChildren(modSquare(definition, "square card__big"), starRow(stars, material, "stars card__bigstars"));
-    chips.replaceChildren(tagChips(definition.tags));
-    setText(description, definition.description);
-    starButtons.forEach((node, index) => node.setAttribute("aria-pressed", String(STARS[index] === stars)));
-    rules.replaceChildren(...effectLines(definition, stars).map((line) => h("p", {}, line)));
-    table.replaceChildren(...numbers(mod));
-    const { makes, spends, applies, cleanses } = profileOf(definition);
-    const parts = [
-      ...(makes.length ? [`makes ${list(makes)}`] : []), ...(spends.length ? [`spends ${list(spends)}`] : []),
-      ...(applies.length ? [`applies ${list(applies)}`] : []), ...(cleanses.length ? [`removes ${list(cleanses)}`] : []),
-    ];
-    const summary = parts.join(" · ");
-    setText(profile, summary ? `${summary[0].toUpperCase()}${summary.slice(1)}.` : "No resources and no debuffs: it works on the run.");
-    piece.replaceChildren(modArt(mod, rotation, "card__art", stars));
-    setText(facing, `Orientation ${rotation * 90}°`);
-    setText(ports, portLine(definition) ?? "No ports: nothing links to it, whichever way it faces.");
+    renderArt();
+    renderRules();
+
     const count = owned(mod);
-    const [toTwo, toThree] = [copiesIn(RECIPES[0].to), copiesIn(RECIPES[1].to)];
-    const next = count >= toThree ? "enough for ★★★" : count >= toTwo ? `enough for ★★; ${toThree - count} more for ★★★` : `${toTwo - count} more for ★★`;
-    setText(copies, `Owned: ${count} · ${RECIPES[0].count} ★ make ★★, ${RECIPES[1].count} ★★ make ★★★ · ${next}`);
+    const toTwo = copiesIn(2);
+    const toThree = copiesIn(3);
+    const two = count >= toTwo ? "★★ ready" : `★★ ${toTwo - count} more`;
+    const three = count >= toThree ? "★★★ ready" : `★★★ ${toThree - count} more`;
+    setText(copies, `Owned ${count} · ${two} · ${three}`);
   }
 
   return {
@@ -105,7 +106,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
       if (next !== mod) {
         mod = next;
         stars = bestStars(owned(next));
-        rotation = 0;
+        orientation = 0;
       }
       render();
     },

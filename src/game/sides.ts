@@ -7,23 +7,23 @@ import { compileBuild } from "../mods/compile.ts";
 import type { Build } from "../mods/compile.ts";
 
 /**
- * The static bridge from mods to combat: the authored frame data, untouched, and the damage each
- * action's lane adds. Everything a mod does exchange by exchange runs in the engine around the
- * arena (`ModdedArena`) and reaches the kernel as damage, healing and exposure — never as timing.
+ * The static bridge from a build to combat now carries only authored fighter/action data. Mod damage,
+ * healing and exposure reach the kernel per exchange through ModdedArena.
  */
-export function combatSide(build: Build, base: FighterDefinition = FIGHTLAB_FIGHTER, actions: ActionTable = DEFAULT_ACTIONS): CombatSide {
-  return { fighter: base, actions, bonus: { ...build.lanes } };
+export function combatSide(
+  _build: Build,
+  base: FighterDefinition = FIGHTLAB_FIGHTER,
+  actions: ActionTable = DEFAULT_ACTIONS,
+): CombatSide {
+  return { fighter: base, actions };
 }
 
 /** A fighter with nothing on its grid. */
 export const BARE_SIDE: CombatSide = combatSide(compileBuild([]));
 
-/**
- * What one hit of `action` does for this side before its mods fire: the move's own hitbox, or for
- * an action that parries, the counter it answers with, plus the lane.
- */
-export function hitDamage(side: CombatSide, action: ActionType): number {
+/** One hit's authored damage plus the build preview shown on an action bar. */
+export function hitDamage(side: CombatSide, action: ActionType, preview = 0): number {
   const move = side.fighter.moves[side.actions[action].move];
   const hitter = move.parry === null ? move : side.fighter.moves[move.parry.counter];
-  return hitter.hitboxes[0].damage + side.bonus[action];
+  return hitter.hitboxes[0].damage + preview;
 }
