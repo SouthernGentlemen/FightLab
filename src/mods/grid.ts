@@ -1,4 +1,3 @@
-import type { ActionType } from "../battle/actions.ts";
 import { REGISTRY } from "./registry.ts";
 import type { ModId } from "./registry.ts";
 import { SHAPES, cellsAt, nextRotation, normalise, normaliseRotation, orientations } from "./shapes.ts";
@@ -8,10 +7,6 @@ import type { Stars } from "./stars.ts";
 export const BOARD_WIDTH = 3;
 export const BOARD_HEIGHT = 3;
 export const BANK_SIZE = 4;
-
-/** Row y of the grid is the lane of `LANES[y]`: a cell powers the action of the row it sits in. */
-export const LANES: readonly ActionType[] = Object.freeze(["strike", "tech", "block"]);
-if (BOARD_HEIGHT !== LANES.length) throw new Error("BOARD_HEIGHT must match LANES until tasks-031 retires row lanes.");
 
 /** A mod the player owns, at its star level. `uid` tells two of the same mod apart. */
 export interface OwnedMod {
