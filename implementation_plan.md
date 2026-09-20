@@ -849,7 +849,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
 #### tasks-034 — Author Solar (16) · **done**
 #### tasks-035 — Author Arc (16) · **done**
 #### tasks-036 — Author Void (16) · **done**
-#### tasks-037 — Author Neutral (16)
+#### tasks-037 — Author Neutral (16) · **done**
 *Spec §6–§12, §36, §37 · D11, confirmed.*
 - Each task fills one type's slots in §6.1 in `src/mods/catalogue.ts`, with names and effects written
   under §6.3–§6.5.
@@ -1028,7 +1028,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-034 | Author Solar (16) | 10 | D11 ✓ | done |
 | tasks-035 | Author Arc (16) | 10 | D11 ✓ | done |
 | tasks-036 | Author Void (16) | 10 | D11 ✓ | done |
-| tasks-037 | Author Neutral (16) | 10 | D11 ✓ | todo |
+| tasks-037 | Author Neutral (16) | 10 | D11 ✓ | done |
 | tasks-038 | Tests stop naming mods | 10 | — | todo |
 | tasks-039 | Swap to the 64 | 10 | D7 ✓ | todo |
 | tasks-040 | Delete the energy model | 10 | D3 ✓, D7 ✓ | todo |
