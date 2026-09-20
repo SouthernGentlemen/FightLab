@@ -1,7 +1,7 @@
 import type { ActionType } from "../../src/battle/actions.ts";
 import type { Placement } from "../../src/mods/grid.ts";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
-import type { ModDefinition } from "../../src/mods/registry.ts";
+import type { ModDefinition, ModId } from "../../src/mods/registry.ts";
 import { SHAPES } from "../../src/mods/shapes.ts";
 import type { Rotation } from "../../src/mods/shapes.ts";
 import type { Rarity } from "../../src/mods/rarity.ts";
@@ -14,20 +14,22 @@ export interface PickCriteria {
   readonly rarity?: Rarity;
 }
 
+export type PickedMod = ModDefinition & { readonly id: ModId };
+
 /** First registry record matching stable attributes shared by the old and replacement catalogues. */
-export function pick(criteria: PickCriteria = {}): ModDefinition {
+export function pick(criteria: PickCriteria = {}): PickedMod {
   const found = DEFINITIONS.find((definition) =>
     (criteria.type === undefined || definition.type === criteria.type)
     && (!Object.hasOwn(criteria, "affinity") || definition.affinity === criteria.affinity)
     && (criteria.size === undefined || SHAPES[definition.shape].cells.length === criteria.size)
     && (criteria.rarity === undefined || definition.rarity === criteria.rarity));
   if (found === undefined) throw new Error(`no registry mod matches ${JSON.stringify(criteria)}`);
-  return found;
+  return found as PickedMod;
 }
 
 /** Compact placement fixture: [definition, x, y, rotation]. */
 export function placement(
   [definition, x, y, rotation = 0]: readonly [ModDefinition, number, number, Rotation?],
 ): Placement {
-  return { mod: definition.id, x, y, rotation };
+  return { mod: definition.id as ModId, x, y, rotation };
 }
