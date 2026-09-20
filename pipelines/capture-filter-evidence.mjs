@@ -113,7 +113,7 @@ if (!modal
 
 const selected = await evaluate(`(() => {
   const click = (group, value) => {
-    const node = document.querySelector(`[data-group="${group}"][data-value="${value}"]`);
+    const node = document.querySelector('[data-group="' + group + '"][data-value="' + value + '"]');
     if (!(node instanceof HTMLButtonElement)) return false;
     node.click();
     return true;
