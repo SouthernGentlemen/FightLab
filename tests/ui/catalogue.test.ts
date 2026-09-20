@@ -7,13 +7,18 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import { SHAPES, orientations } from "../../src/mods/shapes.ts";
+import { bestStars } from "../../src/mods/stars.ts";
 import { seededCollection } from "../../src/run/collection.ts";
+import type { CollectionRepository } from "../../src/run/collection.ts";
 import { mountArmory } from "../../src/ui/armory.ts";
+import { modLabel } from "../../src/ui/modlabel.ts";
 
 const STYLES = readFileSync(resolve(process.cwd(), "src/ui/styles.css"), "utf8");
 
 let root: HTMLDivElement;
 let dispose: () => void;
+let collection: CollectionRepository;
+let backs: number;
 
 function cards(): HTMLButtonElement[] {
   return [...root.querySelectorAll<HTMLButtonElement>(".catalog-card")];
@@ -34,7 +39,9 @@ function cssBody(selector: RegExp): string {
 beforeEach(() => {
   root = document.createElement("div");
   document.body.append(root);
-  dispose = mountArmory(root, { collection: seededCollection(), back() {} });
+  collection = seededCollection();
+  backs = 0;
+  dispose = mountArmory(root, { collection, back() { backs++; } });
 });
 
 afterEach(() => {
@@ -64,6 +71,7 @@ describe("Armory catalogue DOM", () => {
       expect(rarityNodes, definition.id).toHaveLength(1);
       expect(rarityNodes[0].classList.contains("catalog-card__name"), definition.id).toBe(true);
       expect(rarityNodes[0].dataset.rarity, definition.id).toBe(definition.rarity);
+      expect(card.getAttribute("aria-label"), definition.id).toBe(modLabel(definition));
     }
   });
 
@@ -116,6 +124,52 @@ describe("Armory catalogue DOM", () => {
     second.click();
     expect(first.getAttribute("aria-pressed")).toBe("false");
     expect(second.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("exposes complete detail and filter labels and supports the keyboard contract", () => {
+    const [first, second, , , , sixth] = cards();
+    const firstDefinition = definitionFor(first);
+    const detail = root.querySelector<HTMLElement>(".detail-pane");
+    if (detail === null) throw new Error("detail pane is missing");
+
+    expect(detail.getAttribute("aria-label"))
+      .toBe(modLabel(firstDefinition, bestStars(collection.ownedCopies(firstDefinition.id))));
+
+    const threeStars = root.querySelector<HTMLButtonElement>('.detail-pane__pip[aria-label="Preview at 3 stars"]');
+    if (threeStars === null) throw new Error("three-star detail control is missing");
+    threeStars.click();
+    expect(detail.getAttribute("aria-label")).toBe(modLabel(firstDefinition, 3));
+
+    const filterButton = root.querySelector<HTMLButtonElement>('[data-control="filter"]');
+    if (filterButton === null) throw new Error("filter button is missing");
+    filterButton.click();
+
+    const chips = [...root.querySelectorAll<HTMLButtonElement>(".filter-chip")];
+    expect(chips.length).toBeGreaterThan(0);
+    for (const chip of chips) {
+      expect(chip.textContent?.trim().length).toBeGreaterThan(0);
+      expect(chip.getAttribute("aria-pressed")).toMatch(/^(?:true|false)$/);
+    }
+
+    const firstChip = chips[0];
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(firstChip);
+    firstChip.click();
+    expect(firstChip.getAttribute("aria-pressed")).toBe("true");
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(filterButton);
+
+    first.focus();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(second);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(sixth);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    expect(sixth.getAttribute("aria-pressed")).toBe("true");
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    expect(backs).toBe(1);
   });
 
   it("combines filter groups and CLEAR restores the full catalogue", () => {
