@@ -15,16 +15,24 @@ const status = (value: Scaled, per: Per = "flat"): Payoff =>
   ({ kind: "status", amount: amount(value, per) });
 const exchange = (...payoffs: readonly Payoff[]): ModEffect => ({ kind: "exchange", payoffs });
 
-function draft(
-  id: string,
+function frozen<T>(value: T): T {
+  if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
+    for (const inner of Object.values(value)) frozen(inner);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+function draft<const I extends string>(
+  id: I,
   name: string,
   rarity: Rarity,
   type: ModType,
   affinity: ActionType | null,
   shape: ShapeId,
   effect: ModEffect,
-): ModDefinition {
-  return {
+): ModDefinition & { readonly id: I } {
+  return frozen({
     id,
     name,
     description: "Target catalogue draft.",
@@ -35,14 +43,14 @@ function draft(
     effects: [],
     effect,
     visual: { glyph: type === "neutral" ? "chip" : type },
-  };
+  });
 }
 
 /**
  * Solar is fast and fading: reliable damage up front, with Burn multiplying through nearby Solar
  * pieces or the opponent's current Burn before the round-end halving erodes it.
  */
-export const SOLAR_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+export const SOLAR_CATALOGUE = Object.freeze([
   // None
   draft("kindler", "Kindler", "common", "solar", null, "domino",
     exchange(damage([1, 2, 3], "cell"))),
@@ -54,7 +62,7 @@ export const SOLAR_CATALOGUE: readonly ModDefinition[] = Object.freeze([
     exchange(damage([1, 2, 3], "burn"), status([1, 2, 3], "adjacent-same"))),
 
   // Strike
-  draft("cinder-edge", "Cinder Edge", "common", "solar", "strike", "domino",
+  draft("ember-edge", "Cinder Edge", "common", "solar", "strike", "domino",
     exchange(damage([1, 2, 3], "cell"))),
   draft("searpoint", "Searpoint", "uncommon", "solar", "strike", "domino",
     exchange(damage([2, 3, 4]), status([1, 2, 3], "adjacent"))),
@@ -89,7 +97,7 @@ export const SOLAR_CATALOGUE: readonly ModDefinition[] = Object.freeze([
  * Arc sets up and bursts: cheap pieces load Shock, then top-end pieces turn the opponent's current
  * stack into one heavy hit before the landed hit consumes all Shock.
  */
-export const ARC_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+export const ARC_CATALOGUE = Object.freeze([
   // None
   draft("primer-coil", "Primer Coil", "common", "arc", null, "domino",
     exchange(status([1, 2, 3], "cell"))),
@@ -103,7 +111,7 @@ export const ARC_CATALOGUE: readonly ModDefinition[] = Object.freeze([
   // Strike
   draft("quick-jolt", "Quick Jolt", "common", "arc", "strike", "domino",
     exchange(status([1, 2, 3], "cell"))),
-  draft("live-wire", "Live Wire", "uncommon", "arc", "strike", "domino",
+  draft("spark-wire", "Live Wire", "uncommon", "arc", "strike", "domino",
     exchange(damage([1, 2, 3], "cell"), status([1, 2, 3]))),
   draft("spark-needle", "Spark Needle", "rare", "arc", "strike", "single",
     exchange(damage([2, 3, 4]), status([1, 2, 3], "adjacent-same"))),
@@ -136,7 +144,7 @@ export const ARC_CATALOGUE: readonly ModDefinition[] = Object.freeze([
  * Void grows over rounds: lower tiers keep adding Poison, while top-end pieces turn the opponent's
  * persistent Poison into damage without replacing the long-term stack engine.
  */
-export const VOID_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+export const VOID_CATALOGUE = Object.freeze([
   // None
   draft("mire-seed", "Mire Seed", "common", "void", null, "domino",
     exchange(status([1, 2, 3], "cell"))),
@@ -183,15 +191,15 @@ export const VOID_CATALOGUE: readonly ModDefinition[] = Object.freeze([
  * Neutral carries no status: its None row changes the run/build economy, while its action rows add
  * direct damage or parry healing without creating another elemental engine.
  */
-export const NEUTRAL_CATALOGUE: readonly ModDefinition[] = Object.freeze([
+export const NEUTRAL_CATALOGUE = Object.freeze([
   // None
-  draft("piggy-bank", "Piggy Bank", "common", "neutral", null, "domino",
+  draft("nest-egg", "Piggy Bank", "common", "neutral", null, "domino",
     { kind: "perk", perk: "income", amount: [2, 3, 4] }),
-  draft("coupon", "Coupon", "uncommon", "neutral", null, "single",
+  draft("reroll-coupon", "Coupon", "uncommon", "neutral", null, "single",
     { kind: "perk", perk: "free-reroll", amount: [1, 2, 3] }),
-  draft("crowd-pleaser", "Crowd Pleaser", "rare", "neutral", null, "triomino-l",
+  draft("crowd-favorite", "Crowd Pleaser", "rare", "neutral", null, "triomino-l",
     { kind: "perk", perk: "style", amount: [1, 2, 3] }),
-  draft("amplifier", "Amplifier", "legendary", "neutral", null, "tetromino-i",
+  draft("boost-spine", "Amplifier", "legendary", "neutral", null, "tetromino-i",
     { kind: "boost", amount: [1, 2, 3], to: "adjacent" }),
 
   // Strike
@@ -223,4 +231,13 @@ export const NEUTRAL_CATALOGUE: readonly ModDefinition[] = Object.freeze([
     exchange(damage([1, 2, 3], "adjacent-same"), heal([2, 3, 4]))),
   draft("bastion-core", "Bastion Core", "legendary", "neutral", "block", "tetromino-s",
     exchange(damage([2, 3, 4], "adjacent-other"), heal([4, 5, 6]))),
+]);
+
+
+/** Live catalogue order: type, then affinity, then rarity (§6.2). */
+export const CATALOGUE = Object.freeze([
+  ...SOLAR_CATALOGUE,
+  ...ARC_CATALOGUE,
+  ...VOID_CATALOGUE,
+  ...NEUTRAL_CATALOGUE,
 ]);
