@@ -15,28 +15,26 @@ export interface CatalogPip {
   readonly filled: boolean;
 }
 
-export interface CatalogCardModel {
-  readonly id: string;
+export interface CatalogShapeModel {
   readonly type: ModType;
   readonly affinity: ActionType | null;
   readonly cells: readonly GridPoint[];
   readonly width: number;
   readonly height: number;
+  readonly iconCell: GridPoint;
+}
+
+export interface CatalogCardModel extends CatalogShapeModel {
+  readonly id: string;
   /** Logical card-grid units. Every catalogue card uses the same physical CSS cell size. */
   readonly cellSize: number;
-  /** The action icon sits on the occupied cell nearest the footprint centroid. */
-  readonly iconCell: GridPoint;
   readonly name: string;
   readonly rarity: Rarity;
   readonly label: string;
   readonly pips: readonly CatalogPip[];
 }
 
-function flatCells(definition: ModDefinition): {
-  readonly cells: readonly GridPoint[];
-  readonly width: number;
-  readonly height: number;
-} {
+function flatCells(definition: ModDefinition): readonly GridPoint[] {
   const candidates = orientations(SHAPES[definition.shape])
     .map(({ rotation, cells }) => {
       const [width, height] = shapeSize(cells);
@@ -48,7 +46,7 @@ function flatCells(definition: ModDefinition): {
 
   const chosen = candidates[0];
   if (chosen === undefined) throw new Error(`${definition.id}: shape does not fit the 4 x 2 catalogue box`);
-  return chosen;
+  return chosen.cells;
 }
 
 /** Chosen in tasks-024: nearest occupied cell to the centroid; equal distances read top-left first. */
@@ -65,19 +63,27 @@ export function iconAnchorCell(cells: readonly GridPoint[]): GridPoint {
   })[0];
 }
 
-/** Pure presentation model for one catalogue card; it never creates or reads DOM state. */
-export function catalogCard(definition: ModDefinition, owned: number): CatalogCardModel {
-  const { cells, width, height } = flatCells(definition);
-  const pips = STARS.map((stars) => Object.freeze({ stars, filled: owned >= copiesIn(stars) }));
+/** Shared shape model so cards and the selected detail use exactly the same piece renderer. */
+export function catalogShape(definition: ModDefinition, cells: readonly GridPoint[]): CatalogShapeModel {
+  const [width, height] = shapeSize(cells);
   return Object.freeze({
-    id: definition.id,
     type: definition.type,
     affinity: definition.affinity,
     cells,
     width,
     height,
-    cellSize: CATALOG_CARD_BOX.cellSize,
     iconCell: iconAnchorCell(cells),
+  });
+}
+
+/** Pure presentation model for one catalogue card; it never creates or reads DOM state. */
+export function catalogCard(definition: ModDefinition, owned: number): CatalogCardModel {
+  const shape = catalogShape(definition, flatCells(definition));
+  const pips = STARS.map((stars) => Object.freeze({ stars, filled: owned >= copiesIn(stars) }));
+  return Object.freeze({
+    ...shape,
+    id: definition.id,
+    cellSize: CATALOG_CARD_BOX.cellSize,
     name: definition.name,
     rarity: definition.rarity,
     label: modLabel(definition),
