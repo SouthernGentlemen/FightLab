@@ -147,6 +147,69 @@ const entered = await evaluate(`(() => {
 })()`);
 if (!entered) throw new Error("Enter did not select the focused catalogue card");
 
+const detail = await evaluate(`(() => {
+  const selected = document.querySelector('[data-mod="thunderhead"]');
+  if (!(selected instanceof HTMLButtonElement)) return null;
+  selected.click();
+  selected.scrollIntoView({ block: "center" });
+  const pane = document.querySelector(".detail-pane");
+  const art = pane?.querySelector(".detail-pane__art");
+  const catalogCell = document.querySelector(".catalog-card:not([data-mod=thunderhead]) .catalog-card__cell");
+  const detailCell = art?.querySelector(".catalog-card__cell");
+  if (!(pane instanceof HTMLElement) || !(art instanceof HTMLElement) || !catalogCell || !detailCell) return null;
+  const filled = [...selected.querySelectorAll(".catalog-card__pip")]
+    .filter((node) => node.getAttribute("data-filled") === "true")
+    .map((node) => node.textContent?.trim() ?? "");
+  const expectedStars = filled.at(-1) || "★";
+  return {
+    name: pane.querySelector(".detail-pane__name")?.textContent?.trim(),
+    rarity: pane.dataset.rarity,
+    cells: art.querySelectorAll(".catalog-card__cell").length,
+    actions: art.querySelectorAll(".catalog-card__action").length,
+    pips: pane.querySelectorAll(".detail-pane__pip").length,
+    selectedStars: pane.querySelector('.detail-pane__pip[aria-pressed="true"]')?.textContent?.trim(),
+    expectedStars,
+    rules: pane.querySelectorAll(".detail-pane__rules p").length,
+    copies: pane.querySelector(".detail-pane__copies")?.textContent?.trim() ?? "",
+    copiesWhiteSpace: getComputedStyle(pane.querySelector(".detail-pane__copies")).whiteSpace,
+    detailCell: parseFloat(getComputedStyle(detailCell).width),
+    catalogCell: parseFloat(getComputedStyle(catalogCell).width),
+    rotation: art.dataset.rotation,
+    forbidden: pane.querySelectorAll(".card__description, .card__rarity, .tagchips, .card__table, .card__profile, .card__ports").length,
+    rotateButtons: [...pane.querySelectorAll("button")].filter((node) => /rotate/i.test(node.textContent ?? "")).length,
+  };
+})()`);
+if (!detail
+    || detail.name !== "Thunderhead"
+    || detail.rarity !== "legendary"
+    || detail.cells !== 4
+    || detail.actions !== 1
+    || detail.pips !== 3
+    || detail.selectedStars !== detail.expectedStars
+    || detail.rules < 1 || detail.rules > 3
+    || !/^Owned \\d+ · ★★ (?:ready|\\d+ more) · ★★★ (?:ready|\\d+ more)$/.test(detail.copies)
+    || detail.copiesWhiteSpace !== "nowrap"
+    || !(detail.detailCell > detail.catalogCell)
+    || detail.rotation !== "0"
+    || detail.forbidden !== 0
+    || detail.rotateButtons !== 0) {
+  throw new Error(`Detail pane contract failed: ${JSON.stringify(detail)}`);
+}
+const rotated = await evaluate(`(() => {
+  const art = document.querySelector(".detail-pane__art");
+  if (!(art instanceof HTMLElement)) return null;
+  art.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+  const afterContext = art.dataset.rotation;
+  art.dispatchEvent(new KeyboardEvent("keydown", { key: "r", bubbles: true, cancelable: true }));
+  return { afterContext, afterR: art.dataset.rotation };
+})()`);
+if (!rotated || rotated.afterContext !== "90" || rotated.afterR !== "180") {
+  throw new Error(`Detail rotation failed: ${JSON.stringify(rotated)}`);
+}
+await evaluate(`document.querySelector('.detail-pane__pip[aria-label="Preview at 3 stars"]')?.click()`);
+await sleep(100);
+await shot("screenshots/catalogue-detail.png");
+
 const hoverTarget = await evaluate(`(() => {
   const cards = [...document.querySelectorAll(".catalog-card")];
   const selected = cards.find((node) => node.getAttribute("data-mod") === "cinder-edge");
