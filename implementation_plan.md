@@ -742,7 +742,7 @@ the Armory has no Size filter. All downstream tasks and the task index reflect t
   top-left. It keeps the disc on a solid cell instead of straddling seams and junctions.
 - The bounding-box-centre variant and its comparison flag are deleted; `docs/MODS.md` records why.
 
-#### tasks-025 — The catalogue screen
+#### tasks-025 — The catalogue screen · **done**
 *Spec §22, §42.*
 - The top bar has `FILTER: NONE` and `CLEAR` on the left, `MOD CATALOG` in the middle, and close (×)
   on the right.
@@ -1015,7 +1015,7 @@ them. There are no directories for them (`AGENTS.md`).
 | tasks-022 | The card's view model | 7 | — | done |
 | tasks-023 | The card | 7 | — | done |
 | tasks-024 | Icon placement: centre or anchor | 7 | — | done |
-| tasks-025 | The catalogue screen | 7 | — | todo |
+| tasks-025 | The catalogue screen | 7 | — | done |
 | tasks-026 | The detail pane | 8 | — | todo |
 | tasks-027 | The filter model | 9 | D8 ✓ | todo |
 | tasks-028 | The filter modal | 9 | — | todo |
