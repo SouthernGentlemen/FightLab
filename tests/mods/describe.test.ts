@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import type { ActionType } from "../../src/battle/actions.ts";
 import { effectLines, firingLine } from "../../src/mods/describe.ts";
-import type { Amount, Condition, ModEffect, Payoff, Per, Status } from "../../src/mods/effects.ts";
-import { DEFINITIONS, REGISTRY } from "../../src/mods/registry.ts";
+import { burn as legacyBurn, capacity, damage as legacyDamage, generate, heal as legacyHeal, leech, sink, spend } from "../../src/mods/effects.ts";
+import type { Amount, Condition, Effect, ModEffect, Payoff, Per, Status } from "../../src/mods/effects.ts";
+import { DEFINITIONS } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import { STARS } from "../../src/mods/stars.ts";
 import type { ModType } from "../../src/mods/tags.ts";
@@ -37,6 +38,25 @@ function fixture(
     shape: "single",
     effects: [],
     effect,
+    visual: { glyph: "chip" },
+  };
+}
+
+function legacyFixture(
+  type: ModType,
+  affinity: ActionType | null,
+  effects: readonly Effect[],
+): ModDefinition {
+  fixtureId++;
+  return {
+    id: `fixture-${fixtureId}`,
+    name: `Fixture ${fixtureId}`,
+    description: "Fixture only.",
+    rarity: "common",
+    type,
+    affinity,
+    shape: "single",
+    effects,
     visual: { glyph: "chip" },
   };
 }
@@ -151,18 +171,20 @@ describe("rules text", () => {
   });
 
   it("keeps every legacy effect sentence until tasks-040", () => {
-    expect(effectLines(REGISTRY["cinder-edge"], 2).join(" ")).toContain(
-      "Spends 1 Heat: +3 damage, 3 Burn on the opponent.",
-    );
-    expect(effectLines(REGISTRY["chain-circuit"], 1).join(" ")).toContain(
-      "Makes 1 Charge, +1 for every adjacent mod.",
-    );
-    expect(effectLines(REGISTRY["void-tap"], 1).join(" ")).toContain(
-      "Drains 1 of the opponent's Heat or Charge, whichever they hold more of, into Void.",
-    );
-    expect(firingLine(REGISTRY["basic-sink"]))
-      .toBe("Fires when you Block; its payoffs land if your guard holds.");
-    expect(firingLine(REGISTRY["battery-cell"])).toBe("Always on.");
+    const spender = legacyFixture("solar", "strike", [
+      spend("heat", [1, 1, 1], legacyDamage([2, 3, 4]), legacyBurn([2, 3, 5])),
+    ]);
+    const generator = legacyFixture("arc", "tech", [generate("charge", [1, 1, 2], [1, 2, 3])]);
+    const leecher = legacyFixture("void", null, [leech("either", [1, 2, 3])]);
+    const blocker = legacyFixture("solar", "block", [sink("heat", [2, 3, 5], legacyHeal([1, 1, 1]))]);
+    const passive = legacyFixture("arc", null, [capacity([2, 3, 5])]);
+
+    expect(effectLines(spender, 2).join(" ")).toContain("Spends 1 Heat: +3 damage, 3 Burn on the opponent.");
+    expect(effectLines(generator, 1).join(" ")).toContain("Makes 1 Charge, +1 for every adjacent mod.");
+    expect(effectLines(leecher, 1).join(" "))
+      .toContain("Drains 1 of the opponent's Heat or Charge, whichever they hold more of, into Void.");
+    expect(firingLine(blocker)).toBe("Fires when you Block; its payoffs land if your guard holds.");
+    expect(firingLine(passive)).toBe("Always on.");
   });
 
   it("fits every registry mod and tasks-029 fixture in three 60-character lines at every star", () => {
