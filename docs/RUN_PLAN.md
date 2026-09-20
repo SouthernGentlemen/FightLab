@@ -438,12 +438,15 @@ so a change to frame data, the rules or the reference opponent shows up in a dif
   healing without a parry.
 - Opponent generation takes about 0.25 ms; the 729 fights simulate in about 0.4 s.
 - The tuning bot (`npm run tune 1000`: fresh random bars every day, buys the dearest affordable
-  non-Neutral mod that fits, Mixups after a lost round, never sells), on the mod registry: wins
-  **17%** of runs (9% on the first catalogue); runs last a median 11 days (5–18); it wins about half
-  its fights on every day, because it now meets opponents' grids with resource engines of its own and
-  combines copies it happens to buy. It never sells, so from day 7 it banks money it cannot place
-  ($30 on day 7, $95 by day 14). Peak style: **C 57%, B 26%, A 8%, S 8%**. Fights last 3.1–3.8
-  rounds on average. Every mod number and rarity odd is still a first guess.
+  non-perk mod that fits, Mixups after a lost round, never sells), after opponents began prioritising
+  buys by affinity and placing for same-type adjacency: **13%** champion runs; median 10 days (5–19);
+  peak style **C 61%, B 25%, A 8%, S 7%**. Fight win rate by fielded mod type is Solar **48%**, Arc
+  **48%**, Void **48%**, Neutral **47%**; by affinity None **49%**, Strike **47%**, Tech **47%**,
+  Block **47%**; by occupied-cell size 1 **49%**, 2 **47%**, 3 **47%**, 4 **46%**. Day-one win rate
+  is 42%; later populated days sit mostly in the mid-to-high 40s/low 50s. The bot still banks money it
+  cannot place: $28.3 entering day 7 and $89.3 entering day 14 on average. The 3-point size spread is
+  too small, and too confounded by rarity/effect selection, to justify re-authoring shape factors or
+  registry amounts from this sample, so tasks-046 leaves those numbers unchanged.
 
 ## Out of scope
 
