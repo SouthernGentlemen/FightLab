@@ -1,0 +1,162 @@
+/* tasks-028: compact catalogue filter modal. */
+.filter-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: #080c12cc;
+}
+
+.filter-modal__panel {
+  width: 64rem;
+  max-height: 74rem;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: .35rem solid var(--border-strong);
+  border-radius: 1.4rem;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  box-shadow: 0 .7rem 0 var(--cell-edge);
+}
+
+.filter-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.4rem;
+  border-bottom: .3rem solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+
+.filter-modal__head h2 {
+  font-size: 3rem;
+  letter-spacing: .05em;
+}
+
+.filter-modal__close {
+  width: 4.5rem;
+  height: 4.5rem;
+  padding: 0 0 .25rem;
+  border: .25rem solid var(--border-strong);
+  border-radius: .9rem;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 3.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.filter-modal__body {
+  display: grid;
+  gap: 1.4rem;
+  overflow-y: auto;
+  padding: 1.4rem;
+}
+
+.filter-modal__group {
+  display: grid;
+  gap: .7rem;
+}
+
+.filter-modal__group h3 {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.35rem;
+  letter-spacing: .08em;
+}
+
+.filter-modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .7rem;
+}
+
+.filter-chip {
+  --chip-color: var(--border-strong);
+  min-height: 4.1rem;
+  padding: .45rem .9rem;
+  border: .25rem solid var(--chip-color);
+  border-radius: 99rem;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.filter-chip:hover {
+  background: var(--surface-card-hover);
+}
+
+.filter-chip[aria-pressed="true"] {
+  background: var(--surface-selected);
+  box-shadow: inset 0 0 0 .15rem var(--chip-color);
+}
+
+.filter-chip__content {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.filter-chip .icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--chip-color);
+}
+
+.filter-chip__swatch,
+.filter-chip__rarity-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: .2rem solid var(--cell-edge);
+  border-radius: 50%;
+  background: var(--chip-color);
+}
+
+.filter-chip[data-group="types"][data-value="solar"] { --chip-color: var(--mod-solar); }
+.filter-chip[data-group="types"][data-value="arc"] { --chip-color: var(--mod-arc); }
+.filter-chip[data-group="types"][data-value="void"] { --chip-color: var(--mod-void); }
+.filter-chip[data-group="types"][data-value="neutral"] { --chip-color: var(--mod-neutral); }
+
+.filter-chip[data-group="affinities"][data-value="strike"] { --chip-color: var(--action-strike); }
+.filter-chip[data-group="affinities"][data-value="tech"] { --chip-color: var(--action-tech); }
+.filter-chip[data-group="affinities"][data-value="block"] { --chip-color: var(--action-block); }
+
+.filter-chip[data-group="rarities"][data-value="common"] { --chip-color: var(--rarity-common); }
+.filter-chip[data-group="rarities"][data-value="uncommon"] { --chip-color: var(--rarity-uncommon); }
+.filter-chip[data-group="rarities"][data-value="rare"] { --chip-color: var(--rarity-rare); }
+.filter-chip[data-group="rarities"][data-value="super-rare"] { --chip-color: var(--rarity-super-rare); }
+.filter-chip[data-group="rarities"][data-value="legendary"] { --chip-color: var(--rarity-legendary); }
+
+.filter-chip__footprint {
+  display: inline-flex;
+  gap: .15rem;
+}
+
+.filter-chip__footprint i {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: .15rem solid var(--cell-edge);
+  border-radius: .2rem;
+  background: var(--mod-neutral);
+}
+
+.filter-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.4rem;
+  border-top: .3rem solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+
+.filter-modal__clear {
+  padding: .65rem 1.2rem;
+  border: .25rem solid var(--border-strong);
+  border-radius: .9rem;
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font-weight: 900;
+  letter-spacing: .05em;
+  cursor: pointer;
+}
