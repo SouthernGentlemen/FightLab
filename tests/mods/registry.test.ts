@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ACTION_TYPES } from "../../src/battle/actions.ts";
 import { generate } from "../../src/mods/effects.ts";
 import { RARITIES, RARITY } from "../../src/mods/rarity.ts";
-import { DEFINITIONS, MOD_IDS, REGISTRY, definitionProblems, isModId, priceOf, registryProblems } from "../../src/mods/registry.ts";
+import { DEFINITIONS, MOD_IDS, REGISTRY, catalogueProblems, definitionProblems, isModId, priceOf, registryProblems } from "../../src/mods/registry.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
 import { MOD_TYPES } from "../../src/mods/tags.ts";
 import { pick } from "./fixtures.ts";
@@ -14,7 +14,10 @@ describe("the mod registry", () => {
     for (const id of MOD_IDS) expect(REGISTRY[id]).toBe(DEFINITIONS.find((definition) => definition.id === id));
   });
 
-  it("is sound: every definition validates and no id or name is used twice", () => {
+  it("is the sound, balanced 64-mod catalogue", () => {
+    expect(DEFINITIONS).toHaveLength(64);
+    expect(MOD_IDS).toHaveLength(64);
+    expect(catalogueProblems(DEFINITIONS)).toEqual([]);
     expect(registryProblems(DEFINITIONS)).toEqual([]);
     expect(new Set(MOD_IDS).size).toBe(MOD_IDS.length);
     for (const id of MOD_IDS) expect(REGISTRY[id].id).toBe(id);
@@ -44,7 +47,7 @@ describe("the mod registry", () => {
 
   it("prices a mod by its rarity alone, and keeps rarity out of the star numbers", () => {
     for (const id of MOD_IDS) expect(priceOf(id)).toBe(RARITY[REGISTRY[id].rarity].price);
-    expect(Object.keys(pick()).sort()).toEqual(["affinity", "description", "effects", "id", "name", "rarity", "shape", "type", "visual"]);
+    expect(Object.keys(pick()).sort()).toEqual(["affinity", "description", "effect", "effects", "id", "name", "rarity", "shape", "type", "visual"]);
   });
 
   it("is frozen all the way down", () => {
@@ -52,6 +55,7 @@ describe("the mod registry", () => {
       expect(Object.isFrozen(definition)).toBe(true);
       expect(Object.isFrozen(definition.effects)).toBe(true);
       expect(definition.effects.every(Object.isFrozen)).toBe(true);
+      expect(Object.isFrozen(definition.effect)).toBe(true);
     }
   });
 });
