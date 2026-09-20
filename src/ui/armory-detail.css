@@ -24,11 +24,11 @@
   white-space: nowrap;
 }
 
-.detail-pane[data-rarity="common"] .detail-pane__name { color: var(--rarity-common); }
-.detail-pane[data-rarity="uncommon"] .detail-pane__name { color: var(--rarity-uncommon); }
-.detail-pane[data-rarity="rare"] .detail-pane__name { color: var(--rarity-rare); }
-.detail-pane[data-rarity="super-rare"] .detail-pane__name { color: var(--rarity-super-rare); }
-.detail-pane[data-rarity="legendary"] .detail-pane__name { color: var(--rarity-legendary); }
+.detail-pane__name[data-rarity="common"] { color: var(--rarity-common); }
+.detail-pane__name[data-rarity="uncommon"] { color: var(--rarity-uncommon); }
+.detail-pane__name[data-rarity="rare"] { color: var(--rarity-rare); }
+.detail-pane__name[data-rarity="super-rare"] { color: var(--rarity-super-rare); }
+.detail-pane__name[data-rarity="legendary"] { color: var(--rarity-legendary); }
 
 .detail-pane__art {
   --catalog-cell: 7.2rem;
