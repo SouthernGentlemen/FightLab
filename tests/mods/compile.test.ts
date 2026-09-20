@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { ActionType } from "../../src/battle/actions.ts";
-import { BASE_CHARGE_CAPACITY } from "../../src/mods/balance.ts";
 import { compileBuild } from "../../src/mods/compile.ts";
-import { capacity, generate } from "../../src/mods/effects.ts";
-import type { Effect, ModEffect } from "../../src/mods/effects.ts";
+import type { ModEffect } from "../../src/mods/effects.ts";
 import { place } from "../../src/mods/grid.ts";
 import type { Grid } from "../../src/mods/grid.ts";
 import type { ModDefinition } from "../../src/mods/registry.ts";
@@ -37,19 +35,13 @@ function definition(
   affinity: ActionType | null,
   effect: ModEffect,
 ): ModDefinition {
-  return { ...base, type, affinity, effects: [], effect };
+  return { ...base, type, affinity, effect };
 }
-
-function legacy(base: ModDefinition, effects: readonly Effect[]): ModDefinition {
-  return { ...base, effects, effect: undefined };
-}
-
 describe("compiling a grid", () => {
   it("adds nothing for an empty grid", () => {
     expect(compileBuild([])).toEqual({
       program: { mods: [] },
       preview: { strike: 0, tech: 0, block: 0 },
-      capacity: BASE_CHARGE_CAPACITY,
       income: 0,
       freeRerolls: 0,
       styleMultiplier: 1,
@@ -107,30 +99,21 @@ describe("compiling a grid", () => {
     ).preview).toEqual({ strike: 0, tech: 0, block: 0 });
   });
 
-  it("counts every old-kind catalogue effect as zero preview damage", () => {
-    const first = legacy(SOLAR_SINGLE, [generate("heat", [1, 2, 3])]);
-    const second = legacy(ARC_SINGLE, [generate("charge", [1, 2, 3])]);
-    expect(compileBuild(
-      grid([first, 0, 0], [second, 0, 2]),
-      { [first.id]: first, [second.id]: second },
-    ).preview).toEqual({ strike: 0, tech: 0, block: 0 });
-  });
 
   it("hands the engine every placed mod at its stars with adjacency facts", () => {
-    const first = legacy(SOLAR_SINGLE, []);
-    const adjacent = legacy(DOMINO, []);
-    const stored = legacy(ARC_SINGLE, [capacity([2, 3, 5])]);
+    const first = definition(SOLAR_SINGLE, "solar", null, { kind: "exchange", payoffs: [] });
+    const adjacent = definition(DOMINO, "solar", "strike", { kind: "exchange", payoffs: [] });
+    const distant = definition(ARC_SINGLE, "arc", null, { kind: "exchange", payoffs: [] });
     const build = compileBuild(
-      grid([first, 0, 0], [adjacent, 1, 0, 0, 2], [stored, 0, 2, 0, 2]),
-      { [first.id]: first, [adjacent.id]: adjacent, [stored.id]: stored },
+      grid([first, 0, 0], [adjacent, 1, 0, 0, 2], [distant, 0, 2, 0, 2]),
+      { [first.id]: first, [adjacent.id]: adjacent, [distant.id]: distant },
     );
     expect(build.program.mods.map((mod) => [mod.definition, mod.stars])).toEqual([
       [first, 1],
       [adjacent, 2],
-      [stored, 2],
+      [distant, 2],
     ]);
     expect(build.program.mods[0].adjacent).toEqual([build.program.mods[1].uid]);
-    expect(build.capacity).toBe(BASE_CHARGE_CAPACITY + 3);
   });
 
   it("pays synthetic run perks by their stars", () => {
@@ -149,7 +132,7 @@ describe("compiling a grid", () => {
 
   it("returns preview, the engine program and run values with no row-lane state", () => {
     expect(Object.keys(compileBuild([])).sort()).toEqual([
-      "capacity", "freeRerolls", "income", "preview", "program", "styleMultiplier",
+      "freeRerolls", "income", "preview", "program", "styleMultiplier",
     ]);
   });
 });
