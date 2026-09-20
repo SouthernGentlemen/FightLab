@@ -11,7 +11,8 @@ const html = readFileSync(join(ROOT, "index.html"), "utf8");
 
 describe("the 16:9 composition", () => {
   it("scales one 1600 × 900 grid to the largest 16:9 rectangle, with no resolution cap", () => {
-    expect(css).toMatch(/font-size:\s*calc\(min\(100vw,\s*100vh \* 16 \/ 9\) \/ 160\)/);
+    expect(css).toMatch(/font-size:\s*min\(\.625vw,\s*1\.111111111111vh\)/);
+    expect(css).toMatch(/font-size:\s*min\(\.625dvw,\s*1\.111111111111dvh\)/);
     expect(css).toMatch(/#app\s*\{[^}]*width:\s*160rem;\s*height:\s*90rem/);
     expect(css).not.toMatch(/max-width:\s*\d+px\s*[;}]/);
     expect(css).not.toMatch(/image-rendering/);
