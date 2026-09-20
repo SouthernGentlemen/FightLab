@@ -34,10 +34,10 @@ function randomGrid(index: number): Grid {
   return grid;
 }
 
-/** A fighter whose mods have plenty to spend, so every payoff that can fire does. */
-function loaded(build: Build, index: number): ModState {
+/** A fighter with seeded status stacks, so status-scaled payoffs are exercised. */
+function loaded(index: number): ModState {
   const random = stream(0xc9, "state", index);
-  return { heat: random.int(12), charge: build.capacity, capacity: build.capacity, voidCharge: random.int(12), burn: random.int(9), shock: random.int(9), poison: random.int(9) };
+  return { burn: random.int(9), shock: random.int(9), poison: random.int(9) };
 }
 
 const GRIDS = Array.from({ length: BUILDS }, (_, index) => randomGrid(index));
@@ -47,7 +47,7 @@ const SIDES: CombatSide[] = BUILT.map((build) => combatSide(build));
 /** One exchange through the engine and the kernel: commit both actions, step until combat settles. */
 function exchange(pair: readonly [number, number], player: ActionType, opponent: ActionType) {
   const arena = new ModdedArena(new CombatArena([SIDES[pair[0]], SIDES[pair[1]]]), [BUILT[pair[0]].program, BUILT[pair[1]].program]);
-  arena.states = [loaded(BUILT[pair[0]], pair[0]), loaded(BUILT[pair[1]], pair[1])];
+  arena.states = [loaded(pair[0]), loaded(pair[1])];
   arena.commit(player, opponent, { round: 2, mixedUp: [false, false] });
   const damage = [0, 0];
   const healing = [0, 0];
