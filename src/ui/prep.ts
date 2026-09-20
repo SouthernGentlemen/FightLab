@@ -667,7 +667,6 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       const definition = REGISTRY[mod.mod];
       return [
         h("b", {}, `${definition.name} ${starText(mod.stars)}`),
-        h("span", { class: "tip__perk" }, definition.description),
         ...effectLines(definition, mod.stars).map((line) => h("span", { class: "tip__rule" }, line)),
         h("small", {}, found.held.kind === "offer" ? `${priceOf(mod.mod)} · click to carry, drag to place`
           : `Sells for ${sellValue(mod)} · click to carry, drag to move`),
