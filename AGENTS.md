@@ -179,7 +179,7 @@ autobattler, not a fork kept in sync.
 ## Layout
 
 ```
-AGENTS.md, implementation_plan.md, README.md, LICENSE.md
+AGENTS.md, CONTRIBUTING.md, implementation_plan.md, README.md, LICENSE.md
 docs/RUN_PLAN.md    the run slice as built: rules, state machines, tests, what has been measured
 docs/RUN_DESIGN.md  the design and the record of its decisions
 docs/MODS.md        the mod system: type, affinity, shapes, adjacency, effects, statuses, stars, rarity, colour, Armory
@@ -218,6 +218,8 @@ npm run verify           pin, typecheck, tests and the production build
 
 Anything about the rig, the art or the clips themselves is a command in Boneyard —
 `render:clip`, `render:figure`, `build:motions`, `verify`.
+
+Human contribution and command guidance lives in [`CONTRIBUTING.md`](CONTRIBUTING.md); this file remains the authoritative repository and controlled-change contract.
 
 ## Language
 

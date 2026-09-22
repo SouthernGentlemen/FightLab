@@ -27,6 +27,7 @@ Action, Size and Rarity filters. [`docs/MODS.md`](docs/MODS.md) is the full mod 
 source of truth for the slice: the rules, state machines, Boneyard dependency, measurements and
 tests. [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and decision record.
 [`implementation_plan.md`](implementation_plan.md) is the current/future process-parity queue.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) is the concise human workflow and command guide.
 
 ## Run it
 
@@ -43,6 +44,10 @@ npm install
 npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
 npm run verify   # pin, typecheck, tests, production build
 ```
+
+`npm run verify` is the current complete acceptance command. It validates locally; pushing a branch,
+opening a PR, exact-head CI and merging are separate GitHub actions. FightLab has no hosted production
+deployment or repository release command. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
 
 A FightLab server still running from another terminal, a preview pane or an ended session is stopped
 first, so `npm run dev` always starts; anything else holding the port is named and left alone.
