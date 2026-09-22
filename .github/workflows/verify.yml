@@ -2,6 +2,9 @@ name: verify
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -40,6 +43,6 @@ jobs:
         working-directory: FightLab
         run: npm ci
 
-      - name: Verify
+      - name: Check
         working-directory: FightLab
-        run: npm run verify
+        run: npm run check
