@@ -75,6 +75,20 @@ const ACCEPTED_HISTORY: readonly CommitRecord[] = [
       "FL-004; WG-ARCH-001 section 27.",
     ]),
   },
+  {
+    sha: "4a45c0d6d90562661301d3d16c12cef9f3595e31",
+    parents: ["e654530727ac1a771699910a8993f332c67053a0"],
+    message: message("[FL-005] [TEST] Validate prospective FL change identities", [
+      "Add a pure prospective FL identity validator with focused real-history and invalid-case tests, define the immutable cutover/type vocabulary, and retire FL-005 from the active queue.",
+      "Future controlled changes need deterministic guards for sequential IDs, subject identity, primary type and structured body without rewriting legacy history.",
+      "Validation and process-contract coverage only; gameplay, Boneyard pin, npm scripts, CI workflows and provider settings are unchanged.",
+      "Low",
+      "Anchor validation after legacy tip 9904541df5f99d239cf02bd6a568e02a05c749f8, keep pre-cutover history excluded, and keep the validator pure and credential-free.",
+      "Exact-head verify run #169 passed npm run verify, including the focused identity tests; isolated validator behavior and TypeScript syntax checks passed; the exact branch diff passed whitespace/conflict-marker validation.",
+      "pipelines/change-identity.ts; tests/change-identity.test.ts; AGENTS.md; implementation_plan.md; PR #56; controlled head a89d07a4f3965dbdd68373d7ab16fbae186ee324.",
+      "FL-005; WG-ARCH-001 section 27.",
+    ]),
+  },
 ];
 
 function withSubject(record: CommitRecord, subject: string): CommitRecord {
@@ -100,7 +114,7 @@ function validCandidate(id: number, type: string): CommitRecord {
 }
 
 describe("prospective FL change identities", () => {
-  it("accepts the real FL-001 through FL-004 history after the exact immutable cutover", () => {
+  it("accepts the real FL-001 through FL-005 history after the exact immutable cutover", () => {
     const result = validateControlledHistory(ACCEPTED_HISTORY);
     expect(result.errors).toEqual([]);
     expect(result.controlled.map(({ sha, id }) => [sha, id])).toEqual([
@@ -108,11 +122,12 @@ describe("prospective FL change identities", () => {
       ["ce55b893dd2a4eebc83a8185b61fe716d62a71c8", 2],
       ["30517d256e4e1cb9f90a10f0e4f419206ae0fe7f", 3],
       ["e654530727ac1a771699910a8993f332c67053a0", 4],
+      ["4a45c0d6d90562661301d3d16c12cef9f3595e31", 5],
     ]);
   });
 
-  it("accepts FL-005 as the next valid controlled identity", () => {
-    expect(validateControlledHistory([...ACCEPTED_HISTORY, validCandidate(5, "TEST")]).errors).toEqual([]);
+  it("accepts FL-006 as the next valid controlled identity", () => {
+    expect(validateControlledHistory([...ACCEPTED_HISTORY, validCandidate(6, "BUILD")]).errors).toEqual([]);
   });
 
   it("requires the exact immutable legacy cutover", () => {

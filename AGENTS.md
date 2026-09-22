@@ -60,7 +60,7 @@ settings. `src/ui/` is the screens and nothing else.
 
 ## Contracts
 
-Each one is testable, and something in `verify` tests it.
+Each one is testable, and something in the canonical `check` gate tests it.
 
 **C1 — Boneyard is upstream, pinned, and there is one of it.** The rig, the fighter art, the
 clips and the functions that interpret them arrive through the `boneyard` package, a `file:` link
@@ -68,8 +68,8 @@ to the sibling checkout. Nothing here copies a part, a cosmetic, a rig or a clip
 and nothing here writes a second sampler, a second forward-kinematics pass or a second depth
 order. `boneyard.pin.json` records the Boneyard commit FightLab was last verified against and a
 digest of every Boneyard file FightLab reads. `check:boneyard` fails when the installed Boneyard
-differs from that digest, and `dev`, `build`, `test` and `verify` all see it, so an upstream
-change cannot silently alter the game. Accepting one is `npm run pin:boneyard`, which puts the new
+differs from that digest, and `dev`, `build`, canonical `check` and compatibility `verify` all see it,
+so an upstream change cannot silently alter the game. Accepting one is `npm run pin:boneyard`, which puts the new
 digest in a diff where someone has to look at it. Boneyard's remote source is
 `SouthernGentlemen/Boneyard`, but FightLab still consumes it as the sibling checkout; the commit
 plus digest pin makes both remote CI and local development verify the exact consumed files instead
@@ -211,7 +211,8 @@ npm run pin:boneyard     accept the installed Boneyard: rewrite the pin
 npm run typecheck        the strip-only TypeScript dialect
 npm run test             every test
 npm run tune             bot runs across many seeds: win rates and money by day
-npm run verify           pin, typecheck, tests and the production build
+npm run check            canonical credential-free acceptance: pin, typecheck, all tests, one production build
+npm run verify           compatibility alias for npm run check
 ```
 
 `?seed=<n>` starts a new run on a chosen seed; `?debug` shows the lab tooling.
@@ -257,9 +258,9 @@ current `main` and deliver only the first open task. Do not infer provider state
   provider mechanics require otherwise. Its body records:
   `Change:`, `Reason:`, `Impact:`, `Risk:`, `Controls:`, `Validation:`, `Evidence:`, and
   `Source:`.
-- **Validate before merge.** Run the task's focused checks, `npm run verify` while it remains the
-  repository acceptance command, and `git diff --check`. After push, require the `verify` check for
-  the PR's exact current head to pass. Re-fetch `main` and PR mergeability immediately before merge;
+- **Validate before merge.** Run the task's focused checks, canonical `npm run check`, and
+  `git diff --check`. `npm run verify` is a compatibility alias to that same gate. After push,
+  require the existing provider `verify` check for the PR's exact current head to pass. Re-fetch `main` and PR mergeability immediately before merge;
   if the head or base moved, re-establish currency and re-validate rather than merging stale evidence.
 - **Provider actions are literal facts.** Only say a branch was pushed, a PR opened, CI passed, a
   setting matched, a merge completed or a branch was deleted after the provider confirms that action.

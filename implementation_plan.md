@@ -6,20 +6,10 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-006 — [BUILD] Make `check` the canonical credential-free gate
-
-- Dependency: FL-005 merged.
-- Why: `verify` currently owns the Boneyard pin, typecheck, tests and production build; WG-ARCH requires `check` as the documented acceptance entry point.
-- Scope: Expose that same complete sequence through `npm run check`, include prospective history validation, and keep `verify` only as a documented compatibility alias until callers migrate.
-- Non-goals: No test removal, unpinned Boneyard use or product rewrite.
-- Acceptance: `check` and `verify` have equal acceptance coverage without duplicate builds in one invocation.
-- Validation: `npm run check`; `npm run verify`; `git diff --check`.
-- Authorities: `package.json`, `pipelines/pin.ts`, `CONTRIBUTING.md`.
-
 ### FL-007 — [BUILD] Run canonical acceptance on PRs and `main`
 
 - Dependency: FL-006 merged.
-- Why: `verify.yml` currently runs on PR/dispatch only and invokes `verify`; `main` can drift without the shared gate.
+- Why: `verify.yml` currently runs on PR/dispatch only and invokes the compatibility `verify` alias; `main` can drift without the shared canonical gate.
 - Scope: Run locked installation and `npm run check` on both PRs and `main`, preserving the exact pinned private Boneyard checkout and separate visual artifact workflow.
 - Non-goals: No public Boneyard token, screenshot removal or production deploy.
 - Acceptance: Exact-head PR and merged-main CI validate the same pin and command; missing private checkout permission fails visibly.
