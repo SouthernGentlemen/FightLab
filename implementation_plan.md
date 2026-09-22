@@ -6,16 +6,6 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-004 — [SEC] Add a security-reporting and secret boundary
-
-- Dependency: FL-003 merged.
-- Why: The repository has `LICENSE.md` attribution but no root `SECURITY.md` or explicit vulnerability-reporting path.
-- Scope: Add the policy with private reporting route, supported product boundary and prohibition on committing Boneyard access tokens, real saves/catalogs and machine-private paths.
-- Non-goals: No license replacement, hosted service or vulnerability claim.
-- Acceptance: Reporting and secret/data boundaries are unambiguous and consistent with existing ignored files.
-- Validation: Documentation/link review; `npm run verify`; `git diff --check`.
-- Authorities: `SECURITY.md`, `.gitignore`, `LICENSE.md`.
-
 ### FL-005 — [TEST] Validate prospective FL change identities
 
 - Dependency: FL-004 merged.
