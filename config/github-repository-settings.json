@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "policyKind": "desired",
+  "defaultBranch": "main",
+  "branchProtection": {
+    "branch": "main",
+    "protected": true,
+    "requiredChecks": [
+      {
+        "name": "verify",
+        "command": "npm run check"
+      }
+    ]
+  },
+  "merge": {
+    "allowedMethods": [
+      "squash"
+    ],
+    "singleCommit": true
+  },
+  "releaseTags": {
+    "pattern": "v*",
+    "immutable": true,
+    "appliesWhenReleasePublished": true
+  }
+}

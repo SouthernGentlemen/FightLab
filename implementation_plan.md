@@ -6,16 +6,6 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-008 — [TEST] Add pure repository-settings expectations
-
-- Dependency: FL-007 merged.
-- Why: No committed ruleset/settings authority exists even though the organization process requires one.
-- Scope: Add a platform-neutral expected settings record and pure comparison tests for protected `main`, required CI, allowed merge method and immutable `v*` tags when releases are published. Do not claim those private-repo settings are live.
-- Non-goals: No GitHub settings mutation or account-tier upgrade.
-- Acceptance: Credential-free `check` fails on changed expected settings; provider state is represented separately.
-- Validation: Focused settings tests; `npm run check`; `git diff --check`.
-- Authorities: `config/github-repository-settings.json`, new pure tests, WG-ARCH-001 §27.
-
 ### FL-009 — [OPS] Verify live settings or record the provider blocker
 
 - Dependency: FL-008 merged.
@@ -24,7 +14,7 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 - Non-goals: No public visibility change, paid-plan purchase or bypass of protection.
 - Acceptance: Live settings match the committed authority, or an explicit unresolved provider blocker remains; never claim parity from a pure test.
 - Validation: Pure tests; `npm run check`; live verifier when authorized; `git diff --check`.
-- Authorities: GitHub settings baseline, `SECURITY.md`, WG-ARCH-001 §27.
+- Authorities: `config/github-repository-settings.json`, `SECURITY.md`, WG-ARCH-001 §27.
 
 ## Recheck after this wave
 
