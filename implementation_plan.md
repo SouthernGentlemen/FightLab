@@ -6,16 +6,6 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-003 — [DOCS] Add human contribution and command guidance
-
-- Dependency: FL-002 merged.
-- Why: There is no `CONTRIBUTING.md`; README's `verify`/development guidance is not the shared command contract.
-- Scope: Add concise change-flow and command guidance that states Boneyard sibling prerequisites, visual checks, no hosted deployment and the temporary `verify` umbrella pending `check` adoption.
-- Non-goals: No npm script, CI or product behavior change.
-- Acceptance: A contributor knows branch/PR discipline and which commands are local, acceptance, provider or release actions.
-- Validation: Compare `package.json`/workflows; `npm run verify`; `git diff --check`.
-- Authorities: `CONTRIBUTING.md`, `README.md`, `AGENTS.md`.
-
 ### FL-004 — [SEC] Add a security-reporting and secret boundary
 
 - Dependency: FL-003 merged.
