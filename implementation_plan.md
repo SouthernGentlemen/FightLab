@@ -6,16 +6,6 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-002 — [DOCS] Establish the one-task controlled development loop
-
-- Dependency: FL-001 merged on `main`.
-- Why: `AGENTS.md` still describes `tasks-NNN`, multi-commit product passes and `verify` without a current/future queue or exact-head merge handoff.
-- Scope: Define `do needful`, first-open/blocked task, same-delivery purge, queue exhaustion, FL branch/title/body format, truthful provider actions and one-turn handoff. Retire this block in its PR.
-- Non-goals: No gameplay, Boneyard pin or CI change.
-- Acceptance: A fresh agent can deliver one FL task and stop with a next prompt; accepted tasks cannot remain in the active plan.
-- Validation: `npm run verify`; `git diff --check`.
-- Authorities: `AGENTS.md`, WG-ARCH-001 §27.
-
 ### FL-003 — [DOCS] Add human contribution and command guidance
 
 - Dependency: FL-002 merged.
