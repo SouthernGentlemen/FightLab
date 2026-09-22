@@ -1,10 +1,9 @@
-# FightLab — implementation plan: the run
+# FightLab — run architecture and measured state
 
-> Moved here from the repository root on 2026-09-18 so that [`implementation_plan.md`](../implementation_plan.md)
-> could hold the mod catalogue pass: macOS does not tell `IMPLEMENTATION_PLAN.md` and
-> `implementation_plan.md` apart. This file is still the record of the run slice as built.
+[`implementation_plan.md`](../implementation_plan.md) is the active current/future work queue;
+this document describes the run slice and its measured state.
 
-This is the source of truth for the slice being built: a seeded run of days, each a prep → fight →
+This is the source of truth for the built slice: a seeded run of days, each a prep → fight →
 payday → next-day loop, fought with two three-action bars in discrete rounds. [`AGENTS.md`](../AGENTS.md)
 is the contract every path is held to; [`RUN_DESIGN.md`](RUN_DESIGN.md) is the design and
 the record of every decision behind it. This file says what is built, in what shape, how it is tested,
