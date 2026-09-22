@@ -69,9 +69,10 @@ paths; it supplements the required human visual check rather than replacing it.
 ## Provider, deployment and release boundary
 
 Local commands do not push branches, open PRs, report GitHub CI, merge changes or delete remote
-branches. Report those only after GitHub confirms them. The current provider `verify` workflow runs for pull requests and manual dispatch and invokes the
-compatibility `npm run verify` alias, which delegates to canonical `npm run check`. It still does not
-run on merged `main`; do not claim merged-main CI until FL-007 changes that provider path.
+branches. Report those only after GitHub confirms them. The provider `verify` workflow runs canonical
+`npm run check` directly for pull requests, pushes to `main` and manual dispatch while preserving
+the exact pinned private Boneyard checkout. PR exact-head CI and merged-`main` CI are separate
+provider evidence; confirm the workflow run attached to the actual merged SHA when both are required.
 
 FightLab has no hosted production deployment or repository release action. `npm run build` only
 creates a local `dist/`; do not publish or deploy as part of the normal contribution flow.

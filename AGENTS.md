@@ -265,8 +265,9 @@ current `main` and deliver only the first open task. Do not infer provider state
 - **Provider actions are literal facts.** Only say a branch was pushed, a PR opened, CI passed, a
   setting matched, a merge completed or a branch was deleted after the provider confirms that action.
   Local tests and committed expectations are not provider state. An unauthorized or unavailable
-  provider action is a blocker to report, not an action to imply. Until FL-007 lands, do not claim
-  merged-`main` CI exists merely because PR `verify` exists.
+  provider action is a blocker to report, not an action to imply. PR exact-head CI and merged-`main`
+  CI are separate evidence; when a delivery changes CI, confirm the workflow run attached to the
+  actual merged `main` SHA rather than substituting the PR run.
 - **Merge and hand off, then stop.** Merge when the exact current head is green, current and mergeable
   under the repository's existing provider rules; confirm the resulting `main` SHA and branch state.
   Return a complete kickoff prompt for the new first task, including authoritative merged `main`,

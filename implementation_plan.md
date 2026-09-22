@@ -6,16 +6,6 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-007 — [BUILD] Run canonical acceptance on PRs and `main`
-
-- Dependency: FL-006 merged.
-- Why: `verify.yml` currently runs on PR/dispatch only and invokes the compatibility `verify` alias; `main` can drift without the shared canonical gate.
-- Scope: Run locked installation and `npm run check` on both PRs and `main`, preserving the exact pinned private Boneyard checkout and separate visual artifact workflow.
-- Non-goals: No public Boneyard token, screenshot removal or production deploy.
-- Acceptance: Exact-head PR and merged-main CI validate the same pin and command; missing private checkout permission fails visibly.
-- Validation: Workflow review; `npm run check`; exact-head CI; `git diff --check`.
-- Authorities: `.github/workflows/verify.yml`, `.github/workflows/visual.yml`.
-
 ### FL-008 — [TEST] Add pure repository-settings expectations
 
 - Dependency: FL-007 merged.
