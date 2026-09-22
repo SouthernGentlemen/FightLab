@@ -6,16 +6,6 @@ The planning change introduces `FL-001` as the first prospective controlled-chan
 
 ## Open tasks
 
-### FL-005 — [TEST] Validate prospective FL change identities
-
-- Dependency: FL-004 merged.
-- Why: Current task IDs are not controlled commit identities; no test prevents future duplicate, gap or malformed FL commits.
-- Scope: Add a validator for FL-001 onward, with exact immutable cutover and focused valid/invalid cases; do not rewrite old commits.
-- Non-goals: No forced merge-method change or retroactive history formatting.
-- Acceptance: Future controlled IDs are unique/sequential with one primary type and structured body; legacy commits remain reconstructable.
-- Validation: Focused history tests; `npm run verify`; `git diff --check`.
-- Authorities: `scripts/` or `pipelines/`, `AGENTS.md`, `docs/CHANGE-MANAGEMENT.md` if introduced.
-
 ### FL-006 — [BUILD] Make `check` the canonical credential-free gate
 
 - Dependency: FL-005 merged.

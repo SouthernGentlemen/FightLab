@@ -185,7 +185,7 @@ docs/RUN_DESIGN.md  the design and the record of its decisions
 docs/MODS.md        the mod system: type, affinity, shapes, adjacency, effects, statuses, stars, rarity, colour, Armory
 boneyard.pin.json   the Boneyard commit and digest FightLab is verified against
 index.html          the one page
-pipelines/          Node only: the Boneyard pin, the dev teardown, the figure server/emitter, the tuning bot
+pipelines/          Node only: Boneyard pin, dev teardown, figures, tuning, controlled-change validation
 src/run/            seeded run: random streams, shop, economy, opponents, run state, save, collection
 src/mods/           type and affinity, rarity, stars, shapes, 4 × 4 grid and bank, adjacency,
                     64-mod registry, effects, status engine, compile and Armory filters — pure rules
@@ -249,8 +249,12 @@ current `main` and deliver only the first open task. Do not infer provider state
   it does not invent or start implementation merely because the old queue is empty.
 - **One task, one branch, one controlled identity.** Use
   `fl-NNN-<kebab-summary>`. The commit subject and PR title are
-  `[FL-NNN] [TYPE] Summary`, where `TYPE` is the task's declared primary type. Keep the delivering
-  branch to one controlled commit unless provider mechanics require otherwise. Its body records:
+  `[FL-NNN] [TYPE] Summary`, where `TYPE` is the task's declared primary type. Controlled primary
+  types are `BUILD`, `DOCS`, `FIX`, `OPS`, `REFACTOR`, `SEC` and `TEST`. Prospective identity
+  validation starts after immutable legacy tip `9904541df5f99d239cf02bd6a568e02a05c749f8`; its first
+  accepted controlled commit is FL-001 at `7516db0a366128fbace6da2370920ab6f5a8bcf1`. Earlier
+  history stays outside this contract. Keep the delivering branch to one controlled commit unless
+  provider mechanics require otherwise. Its body records:
   `Change:`, `Reason:`, `Impact:`, `Risk:`, `Controls:`, `Validation:`, `Evidence:`, and
   `Source:`.
 - **Validate before merge.** Run the task's focused checks, `npm run verify` while it remains the
