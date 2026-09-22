@@ -103,6 +103,21 @@ const ACCEPTED_HISTORY: readonly CommitRecord[] = [
       "FL-006; WG-ARCH-001 section 27.",
     ]),
   },
+
+  {
+    sha: "f5fea082409dac853b41252971b49f9b02412b15",
+    parents: ["380d4812bdff1d1135dea5c76a14ba27d4f5de55"],
+    message: message("[FL-007] [BUILD] Run canonical acceptance on PRs and main", [
+      "Run the provider verify workflow on pull requests, pushes to main and manual dispatch, invoke canonical npm run check directly, preserve the exact private Boneyard checkout, add focused workflow-contract coverage, extend accepted FL history through merged FL-006, align provider guidance, and retire FL-007 from the active queue.",
+      "FightLab needs the same canonical acceptance command on exact PR heads and actual merged main commits instead of a PR-only provider path through the compatibility verify alias.",
+      "CI and process-validation behavior only; gameplay, product behavior, the Boneyard pin, visual workflow, provider settings, deployment and release behavior are unchanged.",
+      "Low",
+      "Keep the existing shallow FightLab checkout because canonical check uses pure credential-free history fixtures rather than live-history scanning, preserve npm ci and the pinned private Boneyard token boundary, run npm run check directly, and keep visual evidence separate.",
+      "Exact-head verify run #171 passed direct npm run check: pinned private Boneyard checkout and npm ci succeeded, 49 test files / 372 tests passed including controlled-history and workflow-contract coverage, and exactly one production vite build ran.",
+      ".github/workflows/verify.yml; tests/workflow-contract.test.ts; tests/change-identity.test.ts; AGENTS.md; CONTRIBUTING.md; implementation_plan.md; PR #58; controlled head 6df45429e71d5ce40fc6150d09dfc78dd52e8134.",
+      "FL-007; WG-ARCH-001 section 27.",
+    ]),
+  },
 ];
 
 function withSubject(record: CommitRecord, subject: string): CommitRecord {
@@ -128,7 +143,7 @@ function validCandidate(id: number, type: string): CommitRecord {
 }
 
 describe("prospective FL change identities", () => {
-  it("accepts the real FL-001 through FL-006 history after the exact immutable cutover", () => {
+  it("accepts the real FL-001 through FL-007 history after the exact immutable cutover", () => {
     const result = validateControlledHistory(ACCEPTED_HISTORY);
     expect(result.errors).toEqual([]);
     expect(result.controlled.map(({ sha, id }) => [sha, id])).toEqual([
@@ -138,11 +153,12 @@ describe("prospective FL change identities", () => {
       ["e654530727ac1a771699910a8993f332c67053a0", 4],
       ["4a45c0d6d90562661301d3d16c12cef9f3595e31", 5],
       ["380d4812bdff1d1135dea5c76a14ba27d4f5de55", 6],
+      ["f5fea082409dac853b41252971b49f9b02412b15", 7],
     ]);
   });
 
-  it("accepts FL-007 as the next valid controlled identity", () => {
-    expect(validateControlledHistory([...ACCEPTED_HISTORY, validCandidate(7, "BUILD")]).errors).toEqual([]);
+  it("accepts FL-008 as the next valid controlled identity", () => {
+    expect(validateControlledHistory([...ACCEPTED_HISTORY, validCandidate(8, "TEST")]).errors).toEqual([]);
   });
 
   it("requires the exact immutable legacy cutover", () => {
