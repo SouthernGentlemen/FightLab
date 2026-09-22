@@ -42,11 +42,13 @@ and pinned by [`boneyard.pin.json`](boneyard.pin.json):
 ```bash
 npm install
 npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
-npm run verify   # pin, typecheck, tests, production build
+npm run check    # canonical acceptance: pin, typecheck, complete tests, one production build
+npm run verify   # compatibility alias for npm run check
 ```
 
-`npm run verify` is the current complete acceptance command. It validates locally; pushing a branch,
-opening a PR, exact-head CI and merging are separate GitHub actions. FightLab has no hosted production
+`npm run check` is the canonical credential-free acceptance command; `npm run verify` delegates to it
+for compatibility. Focused commands remain useful during development, while pushing a branch, opening
+a PR, exact-head CI and merging are separate GitHub actions. FightLab has no hosted production
 deployment or repository release command. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
 
 A FightLab server still running from another terminal, a preview pane or an ended session is stopped
@@ -54,7 +56,7 @@ first, so `npm run dev` always starts; anything else holding the port is named a
 
 The game is one 16:9 composition that scales to fill the window; play it landscape. If the pin check
 fails, Boneyard has changed underneath the game. It says which commit it expects and how to accept the
-new one (`npm run pin:boneyard`) once `verify` passes against it.
+new one (`npm run pin:boneyard`) once `check` passes against it.
 
 ## Debug
 

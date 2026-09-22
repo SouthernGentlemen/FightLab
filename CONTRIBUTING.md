@@ -34,7 +34,8 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
    `[FL-NNN] [TYPE] Summary` identity for the controlled commit and PR.
 3. Make only that task's change. The same delivery removes the completed task from
    `implementation_plan.md`.
-4. Run focused checks, then `npm run verify` and `git diff --check`.
+4. Run focused checks, then canonical `npm run check` and `git diff --check`. `npm run verify`
+   remains a compatibility alias to the same gate.
 5. Push the controlled branch and open the PR. Those are provider actions, not local validation.
 6. Require the PR's exact current-head `verify` check to pass, re-fetch `main` and mergeability,
    then merge only when the head is current and mergeable under the repository's provider rules.
@@ -51,11 +52,9 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
 | `npm run typecheck` | Run TypeScript validation. |
 | `npm run test` / `npm run test:watch` | Run the automated tests once / in watch mode. |
 | `npm run tune` | Run local balance measurements; it is not the acceptance gate. |
-| `npm run verify` | Current complete acceptance umbrella: pin, typecheck, tests and production build. |
+| `npm run check` | Canonical credential-free acceptance: Boneyard pin, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
+| `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
 | `npm run pin:boneyard` | Intentionally accept the installed Boneyard state by rewriting the pin. |
-
-Until FL-006 lands, `npm run verify` is the canonical complete acceptance command; do not invent
-`npm run check` early.
 
 ## Visual changes
 
@@ -70,9 +69,9 @@ paths; it supplements the required human visual check rather than replacing it.
 ## Provider, deployment and release boundary
 
 Local commands do not push branches, open PRs, report GitHub CI, merge changes or delete remote
-branches. Report those only after GitHub confirms them. The current `verify` workflow runs for pull
-requests and manual dispatch, not merged `main`; do not claim merged-main CI until the workflow is
-changed by its planned task.
+branches. Report those only after GitHub confirms them. The current provider `verify` workflow runs for pull requests and manual dispatch and invokes the
+compatibility `npm run verify` alias, which delegates to canonical `npm run check`. It still does not
+run on merged `main`; do not claim merged-main CI until FL-007 changes that provider path.
 
 FightLab has no hosted production deployment or repository release action. `npm run build` only
 creates a local `dist/`; do not publish or deploy as part of the normal contribution flow.
