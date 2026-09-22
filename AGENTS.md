@@ -226,10 +226,49 @@ native strip-only TypeScript, every relative import has an explicit `.ts`, and `
 `namespace` and constructor parameter properties are outside it. No framework: the UI is DOM and
 SVG built by hand.
 
+## Controlled development loop
+
+`implementation_plan.md` is the active current/future queue. A **controlled change** delivers exactly one
+open `FL-NNN` task from that queue.
+
+**`do needful` means one complete controlled turn:** re-fetch authoritative `main`, open PRs and the
+CI attached to their current heads; read this file and the active plan; finish an already-open,
+authoritative PR for the first task when it is current, green and in scope, otherwise branch from
+current `main` and deliver only the first open task. Do not infer provider state from a handoff.
+
+- **Selection is first-open and blocked-first.** Dependencies and explicit gates on the first open task
+  must be satisfied before work starts. If that task is blocked, stop on the blocker and ask for the
+  owner/provider action; never skip ahead to a later task without owner direction.
+- **Same-delivery purge is mandatory.** The PR that delivers an `FL-NNN` task removes that task from
+  `implementation_plan.md` and updates future blocks when the delivery changes their assumptions.
+  A task accepted on `main` must not remain in the active queue.
+- **Queue exhaustion is a mode change.** The PR delivering the last queued task deletes
+  `implementation_plan.md`. The next turn re-audits current state and writes a fresh small-task plan;
+  it does not invent or start implementation merely because the old queue is empty.
+- **One task, one branch, one controlled identity.** Use
+  `fl-NNN-<kebab-summary>`. The commit subject and PR title are
+  `[FL-NNN] [TYPE] Summary`, where `TYPE` is the task's declared primary type. Keep the delivering
+  branch to one controlled commit unless provider mechanics require otherwise. Its body records:
+  `Change:`, `Reason:`, `Impact:`, `Risk:`, `Controls:`, `Validation:`, `Evidence:`, and
+  `Source:`.
+- **Validate before merge.** Run the task's focused checks, `npm run verify` while it remains the
+  repository acceptance command, and `git diff --check`. After push, require the `verify` check for
+  the PR's exact current head to pass. Re-fetch `main` and PR mergeability immediately before merge;
+  if the head or base moved, re-establish currency and re-validate rather than merging stale evidence.
+- **Provider actions are literal facts.** Only say a branch was pushed, a PR opened, CI passed, a
+  setting matched, a merge completed or a branch was deleted after the provider confirms that action.
+  Local tests and committed expectations are not provider state. An unauthorized or unavailable
+  provider action is a blocker to report, not an action to imply. Until FL-007 lands, do not claim
+  merged-`main` CI exists merely because PR `verify` exists.
+- **Merge and hand off, then stop.** Merge when the exact current head is green, current and mergeable
+  under the repository's existing provider rules; confirm the resulting `main` SHA and branch state.
+  Return a complete kickoff prompt for the new first task, including authoritative merged `main`,
+  task/branch/title, scope, non-goals, validation and provider gates. Do not start that next task in
+  the same turn.
+
 ## Working rules
 
-- Small branches off `main`. `verify` before merge. Merge promptly, then delete the branch.
-- The controlled lifecycle is branch → commit(s) → verify → merge → delete. `push` is transport only; a request not to push never blocks or replaces that lifecycle.
+- Small branches off `main`; keep each controlled branch scoped to its one task.
 - Never edit a file that has uncommitted changes in it. Use a separate worktree.
 - Comments explain *why*. No narration of what the code plainly does.
 - When a number is tuned — a frame count, a reach, a damage value, a price — measure it in the
