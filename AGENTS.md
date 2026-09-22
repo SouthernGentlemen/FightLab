@@ -179,7 +179,7 @@ autobattler, not a fork kept in sync.
 ## Layout
 
 ```
-AGENTS.md, CONTRIBUTING.md, implementation_plan.md, README.md, LICENSE.md
+AGENTS.md, CONTRIBUTING.md, SECURITY.md, implementation_plan.md, README.md, LICENSE.md
 docs/RUN_PLAN.md    the run slice as built: rules, state machines, tests, what has been measured
 docs/RUN_DESIGN.md  the design and the record of its decisions
 docs/MODS.md        the mod system: type, affinity, shapes, adjacency, effects, statuses, stars, rarity, colour, Armory

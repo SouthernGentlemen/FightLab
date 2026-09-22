@@ -63,6 +63,10 @@ If a change alters what the player sees, run the game and inspect the affected o
 the work done. The `visual` GitHub workflow captures screenshot evidence for its configured UI/mod
 paths; it supplements the required human visual check rather than replacing it.
 
+## Security reports
+
+[`SECURITY.md`](SECURITY.md) defines the private reporting route and the repository's secret/data boundary. Keep vulnerability details and secret values out of public channels.
+
 ## Provider, deployment and release boundary
 
 Local commands do not push branches, open PRs, report GitHub CI, merge changes or delete remote
