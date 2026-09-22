@@ -11,8 +11,8 @@ mix up — then watching two properly animated fighters resolve it — actually 
 This file is the contract. When code and this file disagree, one of them is a bug — say which.
 [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) is the source of truth for what the slice is, what exists
 and what has been measured; [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and the record
-of every decision behind it; [`implementation_plan.md`](implementation_plan.md) is the pass being built
-now, as numbered tasks (`tasks-NNN`).
+of every decision behind it. [`implementation_plan.md`](implementation_plan.md) is now the active
+current/future process-parity queue; the completed mod-catalogue task history is in Git.
 
 ## Ownership
 

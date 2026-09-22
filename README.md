@@ -26,7 +26,7 @@ Action, Size and Rarity filters. [`docs/MODS.md`](docs/MODS.md) is the full mod 
 **[`AGENTS.md`](AGENTS.md) is the contract.** [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) is the
 source of truth for the slice: the rules, state machines, Boneyard dependency, measurements and
 tests. [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and decision record.
-[`implementation_plan.md`](implementation_plan.md) is the current task pass.
+[`implementation_plan.md`](implementation_plan.md) is the current/future process-parity queue.
 
 ## Run it
 
