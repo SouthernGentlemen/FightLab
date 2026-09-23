@@ -19,6 +19,17 @@ jobs:
         with:
           path: FightLab
 
+      - name: Check PR diff whitespace
+        if: github.event_name == 'pull_request'
+        working-directory: FightLab
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
+          git diff --check "$BASE_SHA" "$HEAD_SHA"
+
       - name: Read pinned Boneyard commit
         id: boneyard
         shell: bash
@@ -46,3 +57,10 @@ jobs:
       - name: Check
         working-directory: FightLab
         run: npm run check
+
+      - name: Observe live GitHub settings
+        continue-on-error: true
+        working-directory: FightLab
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run verify:github-settings

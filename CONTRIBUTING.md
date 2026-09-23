@@ -54,6 +54,7 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
 | `npm run tune` | Run local balance measurements; it is not the acceptance gate. |
 | `npm run check` | Canonical credential-free acceptance: Boneyard pin, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
 | `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
+| `npm run verify:github-settings` | Read live GitHub repository/branch/ruleset/release metadata and compare it with `config/github-repository-settings.json`. This is networked, read-only and intentionally outside canonical `check`. |
 | `npm run pin:boneyard` | Intentionally accept the installed Boneyard state by rewriting the pin. |
 
 ## Visual changes
@@ -73,6 +74,12 @@ branches. Report those only after GitHub confirms them. The provider `verify` wo
 `npm run check` directly for pull requests, pushes to `main` and manual dispatch while preserving
 the exact pinned private Boneyard checkout. PR exact-head CI and merged-`main` CI are separate
 provider evidence; confirm the workflow run attached to the actual merged SHA when both are required.
+
+The live settings verifier uses public GitHub reads without credentials when possible. If a runtime
+`GITHUB_TOKEN` or `GH_TOKEN` is already present, it may use that token only for read-only requests and
+never prints or persists its value. This change does not add a repository secret. A readable mismatch,
+an inaccessible setting and a provider-tier limitation are separate outcomes; a pure test cannot prove
+live parity.
 
 FightLab has no hosted production deployment or repository release action. `npm run build` only
 creates a local `dist/`; do not publish or deploy as part of the normal contribution flow.

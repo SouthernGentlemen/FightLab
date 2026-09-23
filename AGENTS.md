@@ -213,6 +213,8 @@ npm run test             every test
 npm run tune             bot runs across many seeds: win rates and money by day
 npm run check            canonical credential-free acceptance: pin, typecheck, all tests, one production build
 npm run verify           compatibility alias for npm run check
+npm run verify:github-settings  read live GitHub settings and compare them with committed desired policy;
+                                networked/read-only and intentionally outside canonical check
 ```
 
 `?seed=<n>` starts a new run on a chosen seed; `?debug` shows the lab tooling.
@@ -264,8 +266,12 @@ current `main` and deliver only the first open task. Do not infer provider state
   if the head or base moved, re-establish currency and re-validate rather than merging stale evidence.
 - **Provider actions are literal facts.** Only say a branch was pushed, a PR opened, CI passed, a
   setting matched, a merge completed or a branch was deleted after the provider confirms that action.
-  Local tests and committed expectations are not provider state. An unauthorized or unavailable
-  provider action is a blocker to report, not an action to imply. PR exact-head CI and merged-`main`
+  Local tests and committed expectations are not provider state. `npm run verify:github-settings` is a
+  separate networked, read-only provider check and is never part of canonical `npm run check`; it may
+  use an already-present runtime `GITHUB_TOKEN` or `GH_TOKEN`, otherwise public provider reads run
+  anonymously. Never print or persist a credential, and never classify `Resource not accessible by
+  integration` as a plan/tier failure. An unauthorized or unavailable provider action is a blocker to
+  report, not an action to imply. PR exact-head CI and merged-`main`
   CI are separate evidence; when a delivery changes CI, confirm the workflow run attached to the
   actual merged `main` SHA rather than substituting the PR run.
 - **Merge and hand off, then stop.** Merge when the exact current head is green, current and mergeable
