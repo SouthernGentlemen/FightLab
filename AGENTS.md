@@ -268,6 +268,9 @@ current `main` and deliver only the first open task. Do not infer provider state
   provider mechanics require otherwise. Its body records:
   `Change:`, `Reason:`, `Impact:`, `Risk:`, `Controls:`, `Validation:`, `Evidence:`, and
   `Source:`.
+  The delivery sequence is branch → implementation → validation → one controlled branch commit →
+  PR → exact-head CI → squash of that exact head → one controlled commit retained on `main` →
+  verify `main` → branch cleanup. Do not use a merge commit or rebase merge for controlled work.
 - **Validate before merge.** Run the task's focused checks, canonical `npm run check`, and
   `git diff --check`. `npm run verify` is a compatibility alias to that same gate. After push,
   require the existing provider `verify` check for the PR's exact current head to pass. Re-fetch `main` and PR mergeability immediately before merge;
@@ -276,8 +279,8 @@ current `main` and deliver only the first open task. Do not infer provider state
   setting matched, a merge completed or a branch was deleted after the provider confirms that action.
   Local tests and committed expectations are not provider state. `npm run test:github-settings` is the pure, credential-free settings contract and may run inside
   canonical `npm run check`. `npm run verify:github-settings` is a separate networked, read-only
-  provider check; it may use an already-present runtime `GITHUB_TOKEN`, `GH_TOKEN` or
-  `GH_ADMIN_TOKEN`, otherwise public provider reads run anonymously. `npm run apply:github-settings`
+  provider check; it may use an already-present runtime `GH_ADMIN_TOKEN` or
+  `GH_TOKEN`, otherwise public provider reads run anonymously. `npm run apply:github-settings`
   is the only explicit settings mutation path: it reads the same committed desired-state authority,
   fails closed when required provider access is unavailable, mutates only that bounded policy and
   independently re-reads provider state after writes. Neither live command belongs to canonical

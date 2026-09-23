@@ -43,8 +43,10 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
    remains a compatibility alias to the same gate.
 5. Push the controlled branch and open the PR. Those are provider actions, not local validation.
 6. Require the PR's exact current-head `verify` check to pass, re-fetch `main` and mergeability,
-   then merge only when the head is current and mergeable under the repository's provider rules.
-7. Confirm the resulting `main` and actual branch state, hand off the new first task, and stop.
+   then squash the exact validated head under the repository's provider rules. Merge commits and
+   rebase merges are not controlled delivery methods.
+7. Confirm one controlled commit on `main`, post-merge CI and completed-branch deletion, then
+   hand off the new first task and stop.
 
 ## Command boundaries
 
@@ -83,7 +85,7 @@ the exact pinned private Boneyard checkout. PR exact-head CI and merged-`main` C
 provider evidence; confirm the workflow run attached to the actual merged SHA when both are required.
 
 The live settings verifier uses public GitHub reads without credentials when possible. If a runtime
-`GITHUB_TOKEN`, `GH_TOKEN` or `GH_ADMIN_TOKEN` is already present, verification may use it only for
+`GH_ADMIN_TOKEN` or `GH_TOKEN` is already present, verification may use it only for
 provider reads and never prints or persists its value. The explicit apply command requires a runtime
 administration-capable token, preflights required provider access before mutation, applies only the
 committed desired-state surface, and requires an independent read-only recheck after writes. No token

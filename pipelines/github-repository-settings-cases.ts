@@ -7,8 +7,11 @@ import {
   buildApplyPlan,
   classifyProviderFailure,
   compareRepositorySettings,
+  mainRulesetPayload,
   observed,
+  releaseTagRulesetPayload,
   repositoryApiSnapshot,
+  rulesetsApiSnapshot,
   unavailable,
   type DesiredRepositorySettings,
   type LiveRepositorySettings,
@@ -38,7 +41,10 @@ function live(): LiveRepositorySettings {
     branchProtection: observed({ protected: true, requiredChecks: ["verify"] }),
     mergeMethods: observed(["squash"] as const),
     deleteBranchOnMerge: observed(true),
-    rulesets: observed({ count: 1, immutableVTags: true, matchingRuleIds: [2] }),
+    rulesets: observed(rulesetsApiSnapshot([
+      { id: 1, ...mainRulesetPayload(DESIRED) },
+      { id: 2, ...releaseTagRulesetPayload(DESIRED) },
+    ])),
     releases: observed({ count: 0, tags: [] }),
     diagnostics: [],
   };
@@ -120,6 +126,39 @@ test("comparison separates mismatch, inaccessible and unsupported", () => {
   }).find(({ key }) => key === "mainProtected")?.status, "inaccessible");
   assert.equal(classifyProviderFailure("rulesets", 403,
     "Upgrade to GitHub Pro or make this repository public to enable this feature.").state, "unsupported");
+});
+
+test("main and release ruleset drift fails closed", () => {
+  const failuresFor = (mutate: (rulesets: Record<string, unknown>[]) => void): string => {
+    const base = live().rulesets;
+    if (base.state !== "observed") throw new Error("expected observed fixture");
+    const details = structuredClone(base.value.details) as Record<string, unknown>[];
+    mutate(details);
+    return compareRepositorySettings(DESIRED, {
+      ...live(), rulesets: observed(rulesetsApiSnapshot(details)),
+    }).filter(({ status }) => status !== "match").map(({ detail }) => detail).join("; ");
+  };
+  assert.match(failuresFor((rulesets) => { rulesets.splice(0, 1); }), /main ruleset missing/);
+  assert.match(failuresFor((rulesets) => { rulesets[0].bypass_actors = [{ actor_id: 1 }]; }), /bypass actors differ/);
+  assert.match(failuresFor((rulesets) => {
+    const pull = (rulesets[0].rules as Record<string, unknown>[]).find(({ type }) => type === "pull_request")!;
+    (pull.parameters as Record<string, unknown>).allowed_merge_methods = ["merge"];
+  }), /allowed merge methods differ/);
+  assert.match(failuresFor((rulesets) => {
+    const checks = (rulesets[0].rules as Record<string, unknown>[]).find(({ type }) => type === "required_status_checks")!;
+    (checks.parameters as Record<string, unknown>).required_status_checks = [];
+  }), /required status checks differ/);
+  assert.match(failuresFor((rulesets) => {
+    const checks = (rulesets[0].rules as Record<string, unknown>[]).find(({ type }) => type === "required_status_checks")!;
+    (checks.parameters as Record<string, unknown>).strict_required_status_checks_policy = false;
+  }), /strict current-main checks disabled/);
+  assert.match(failuresFor((rulesets) => { rulesets[1].rules = [{ type: "deletion" }]; }), /rule types differ/);
+});
+
+test("ruleset checks remain authoritative when branch summary omits them", () => {
+  const actual = { ...live(), branchProtection: observed({ protected: true, requiredChecks: [] }) };
+  assert.equal(compareRepositorySettings(DESIRED, actual)
+    .find(({ key }) => key === "requiredChecks")?.status, "match");
 });
 
 test("apply plan is bounded to committed repository policy", () => {
