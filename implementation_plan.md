@@ -8,15 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-012 — [BUILD] Standardize the GitHub settings CLI contract
-
-- Dependency: FL-011 merged.
-- Why: FL-009 added read-only verification, but the shared command contract is pure test / read-only verify / explicit apply.
-- Scope: Expose `test:github-settings`, `verify:github-settings` and `apply:github-settings`. Keep tests credential-free, verify read-only and apply explicit/deterministic/bounded to committed settings.
-- Non-goals: No GitHub mutation from `npm run check`; no release or deployment.
-- Acceptance: Pure tests run offline; verify reports normalized drift; apply is the only mutating settings path and re-verifies after apply.
-- Validation: Settings CLI cases; `npm run check`; read-only verification; `git diff --check`.
-
 ### FL-013 — [OPS] Apply and verify the live repository policy
 
 - Dependency: FL-012 merged.

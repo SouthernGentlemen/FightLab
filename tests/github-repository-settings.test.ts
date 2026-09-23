@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  MAIN_RULESET_NAME,
+  RELEASE_TAG_RULESET_NAME,
   branchApiSnapshot,
+  buildApplyPlan,
   classifyProviderFailure,
   compareRepositorySettings,
   observed,
@@ -16,10 +19,13 @@ import {
 const DESIRED: DesiredRepositorySettings = {
   schemaVersion: 1,
   policyKind: "desired",
+  repository: "SouthernGentlemen/FightLab",
   defaultBranch: "main",
+  deleteBranchOnMerge: true,
   branchProtection: {
     branch: "main",
     protected: true,
+    requireBranchUpToDate: true,
     requiredChecks: [{ name: "verify", command: "npm run check" }],
   },
   merge: {
@@ -33,7 +39,24 @@ const DESIRED: DesiredRepositorySettings = {
   },
 };
 
-describe("live GitHub repository settings comparison", () => {
+function matchingLive(): LiveRepositorySettings {
+  return {
+    visibility: observed("public"),
+    defaultBranch: observed("main"),
+    branchProtection: observed({ protected: true, requiredChecks: ["verify"] }),
+    mergeMethods: observed(["squash"] as const),
+    deleteBranchOnMerge: observed(true),
+    rulesets: observed({
+      count: 1,
+      immutableVTags: true,
+      matchingRuleIds: [27],
+    }),
+    releases: observed({ count: 0, tags: [] }),
+    diagnostics: [],
+  };
+}
+
+describe("GitHub repository settings policy", () => {
   it("normalizes repository metadata without treating visibility as desired policy", () => {
     expect(repositoryApiSnapshot({
       visibility: "public",
@@ -41,18 +64,22 @@ describe("live GitHub repository settings comparison", () => {
       allow_merge_commit: true,
       allow_rebase_merge: true,
       allow_squash_merge: true,
+      delete_branch_on_merge: false,
     })).toEqual({
       visibility: "public",
       defaultBranch: "main",
       mergeMethods: ["merge", "rebase", "squash"],
+      deleteBranchOnMerge: false,
     });
   });
 
-  it("does not invent an empty merge policy when the provider omits those fields", () => {
-    expect(repositoryApiSnapshot({
+  it("does not invent omitted repository policy fields", () => {
+    const snapshot = repositoryApiSnapshot({
       visibility: "public",
       default_branch: "main",
-    }).mergeMethods).toBeNull();
+    });
+    expect(snapshot.mergeMethods).toBeNull();
+    expect(snapshot.deleteBranchOnMerge).toBeNull();
   });
 
   it("normalizes branch protection and required checks from the branch summary", () => {
@@ -76,7 +103,7 @@ describe("live GitHub repository settings comparison", () => {
       target: "tag",
       enforcement: "active",
       conditions: { ref_name: { include: ["refs/tags/v*"], exclude: [] } },
-      rules: [{ type: "deletion" }, { type: "non_fast_forward" }],
+      rules: [{ type: "deletion" }, { type: "update" }],
     }])).toEqual({
       count: 1,
       immutableVTags: true,
@@ -84,12 +111,13 @@ describe("live GitHub repository settings comparison", () => {
     });
   });
 
-  it("treats an empty readable ruleset collection as an observed mismatch, not N/A", () => {
+  it("treats readable provider drift as mismatch rather than unavailable", () => {
     const live: LiveRepositorySettings = {
       visibility: observed("public"),
       defaultBranch: observed("main"),
       branchProtection: observed({ protected: false, requiredChecks: [] }),
       mergeMethods: observed(["merge", "rebase", "squash"] as const),
+      deleteBranchOnMerge: observed(false),
       rulesets: observed(rulesetsApiSnapshot([])),
       releases: observed({ count: 0, tags: [] }),
       diagnostics: [],
@@ -101,6 +129,7 @@ describe("live GitHub repository settings comparison", () => {
       requiredChecks: "mismatch",
       mergeMethods: "mismatch",
       singleCommit: "mismatch",
+      deleteBranchOnMerge: "mismatch",
       releaseTags: "mismatch",
     });
   });
@@ -112,13 +141,8 @@ describe("live GitHub repository settings comparison", () => {
       "Resource not accessible by integration",
     );
     const live: LiveRepositorySettings = {
-      visibility: observed("public"),
-      defaultBranch: observed("main"),
+      ...matchingLive(),
       branchProtection: unavailable<BranchProtectionSnapshot>(reason),
-      mergeMethods: observed(["squash"] as const),
-      rulesets: observed(rulesetsApiSnapshot([])),
-      releases: observed({ count: 0, tags: [] }),
-      diagnostics: [],
     };
     const protection = compareRepositorySettings(DESIRED, live).filter(
       ({ key }) => key === "mainProtected" || key === "requiredChecks",
@@ -143,5 +167,39 @@ describe("live GitHub repository settings comparison", () => {
       state: "unsupported",
       kind: "provider-tier",
     });
+  });
+
+  it("maps only committed desired policy into the bounded apply plan", () => {
+    const plan = buildApplyPlan(DESIRED);
+    expect(plan.repositoryPatch).toEqual({
+      default_branch: "main",
+      allow_merge_commit: false,
+      allow_squash_merge: true,
+      allow_rebase_merge: false,
+      delete_branch_on_merge: true,
+    });
+    expect(plan.repositoryPatch).not.toHaveProperty("visibility");
+    expect(plan.rulesets.map((item) => item.name)).toEqual([
+      MAIN_RULESET_NAME,
+      RELEASE_TAG_RULESET_NAME,
+    ]);
+
+    const main = plan.rulesets[0] as {
+      readonly rules: readonly {
+        readonly type: string;
+        readonly parameters?: Record<string, unknown>;
+      }[];
+    };
+    expect(main.rules.find(({ type }) => type === "pull_request")?.parameters?.allowed_merge_methods)
+      .toEqual(["squash"]);
+    expect(main.rules.find(({ type }) => type === "required_status_checks")?.parameters).toMatchObject({
+      required_status_checks: [{ context: "verify" }],
+      strict_required_status_checks_policy: true,
+    });
+  });
+
+  it("reports a fully matching normalized state as all matches", () => {
+    expect(compareRepositorySettings(DESIRED, matchingLive()).every(({ status }) => status === "match"))
+      .toBe(true);
   });
 });
