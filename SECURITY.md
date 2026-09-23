@@ -26,10 +26,14 @@ the sibling `file:../Boneyard` dependency locally, while GitHub Actions checks o
 Boneyard revision with the provider-managed `BONEYARD_READ_TOKEN` secret. Do not add a second
 credential path or put that token's value in this repository.
 
-The read-only live GitHub settings verifier is deliberately outside canonical `npm run check`. It
-uses unauthenticated public reads when possible and may use an already-present runtime
-`GITHUB_TOKEN` or `GH_TOKEN`; it never prints or stores the token value. A permission failure is
-not evidence of a provider-plan limitation.
+The pure `test:github-settings` contract is credential-free and may run inside canonical
+`npm run check`. The live `verify:github-settings` command remains read-only and outside canonical
+acceptance; it uses unauthenticated public reads when possible and may use an already-present runtime
+`GITHUB_TOKEN`, `GH_TOKEN` or `GH_ADMIN_TOKEN`. `apply:github-settings` is the only explicit settings
+mutation command: it requires a runtime administration-capable token, fails closed when required
+provider access is unavailable, applies only the committed desired-state surface and independently
+re-reads provider state after writes. Neither live path prints or stores token values. A permission
+failure is not evidence of a provider-plan limitation.
 
 ## Secrets and private data
 

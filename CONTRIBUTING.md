@@ -57,9 +57,11 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
 | `npm run typecheck` | Run TypeScript validation. |
 | `npm run test` / `npm run test:watch` | Run the automated tests once / in watch mode. |
 | `npm run tune` | Run local balance measurements; it is not the acceptance gate. |
-| `npm run check` | Canonical credential-free acceptance: Boneyard pin, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
+| `npm run test:github-settings` | Pure, deterministic, credential-free settings normalization, comparison and bounded apply-planning cases; no provider network is required. |
+| `npm run check` | Canonical credential-free acceptance: Boneyard pin, pure GitHub-settings cases, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
 | `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
 | `npm run verify:github-settings` | Read live GitHub repository/branch/ruleset/release metadata and compare it with `config/github-repository-settings.json`. This is networked, read-only and intentionally outside canonical `check`. |
+| `npm run apply:github-settings` | The only explicit GitHub settings mutation command. It applies only committed desired policy, fails closed on unavailable required access, and independently re-reads provider state afterward. It is never part of canonical `check`. |
 | `npm run pin:boneyard` | Intentionally accept the installed Boneyard state by rewriting the pin. |
 
 ## Visual changes
@@ -81,10 +83,12 @@ the exact pinned private Boneyard checkout. PR exact-head CI and merged-`main` C
 provider evidence; confirm the workflow run attached to the actual merged SHA when both are required.
 
 The live settings verifier uses public GitHub reads without credentials when possible. If a runtime
-`GITHUB_TOKEN` or `GH_TOKEN` is already present, it may use that token only for read-only requests and
-never prints or persists its value. This change does not add a repository secret. A readable mismatch,
-an inaccessible setting and a provider-tier limitation are separate outcomes; a pure test cannot prove
-live parity.
+`GITHUB_TOKEN`, `GH_TOKEN` or `GH_ADMIN_TOKEN` is already present, verification may use it only for
+provider reads and never prints or persists its value. The explicit apply command requires a runtime
+administration-capable token, preflights required provider access before mutation, applies only the
+committed desired-state surface, and requires an independent read-only recheck after writes. No token
+value belongs in repository configuration or canonical acceptance. A readable mismatch, an inaccessible
+setting and a genuine provider-tier limitation are separate outcomes; a pure test cannot prove live parity.
 
 FightLab has no hosted production deployment or repository release action. `npm run build` only
 creates a local `dist/`; do not publish or deploy as part of the normal contribution flow.

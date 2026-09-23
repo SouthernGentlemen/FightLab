@@ -1,10 +1,13 @@
 {
   "schemaVersion": 1,
   "policyKind": "desired",
+  "repository": "SouthernGentlemen/FightLab",
   "defaultBranch": "main",
+  "deleteBranchOnMerge": true,
   "branchProtection": {
     "branch": "main",
     "protected": true,
+    "requireBranchUpToDate": true,
     "requiredChecks": [
       {
         "name": "verify",
