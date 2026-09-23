@@ -185,7 +185,7 @@ docs/RUN_DESIGN.md  the design and the record of its decisions
 docs/MODS.md        the mod system: type, affinity, shapes, adjacency, effects, statuses, stars, rarity, colour, Armory
 boneyard.pin.json   the Boneyard commit and digest FightLab is verified against
 index.html          the one page
-pipelines/          Node only: Boneyard pin, dev teardown, figures, tuning, controlled-change validation
+pipelines/          Node only: Boneyard pin, dev teardown, release identity, figures, tuning, controlled-change validation
 src/run/            seeded run: random streams, shop, economy, opponents, run state, save, collection
 src/mods/           type and affinity, rarity, stars, shapes, 4 × 4 grid and bank, adjacency,
                     64-mod registry, effects, status engine, compile and Armory filters — pure rules
@@ -219,11 +219,18 @@ npm run tune             bot runs across many seeds: win rates and money by day
 npm run test:github-settings    pure, deterministic, credential-free settings normalization/comparison/apply-plan cases
 npm run check            canonical credential-free acceptance: pin, pure settings cases, typecheck, all tests, one production build
 npm run verify           compatibility alias for npm run check
+FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity
+                         read-only source identity: semantic annotated tag at exact HEAD, matching
+                         private package version and unchanged tracked repository content
 npm run verify:github-settings  read live GitHub settings and compare them with committed desired policy;
                                 networked/read-only and intentionally outside canonical check
 npm run apply:github-settings   the only explicit GitHub settings mutation path; apply committed policy, then independently
                                 re-read and verify provider state; never part of canonical check
 ```
+
+`FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` never creates or mutates a tag, GitHub
+Release or provider setting. It validates only an already-created source identity and must never be
+used to justify publishing `dist/` or Boneyard-derived build artifacts.
 
 `?seed=<n>` starts a new run on a chosen seed; `?debug` shows the lab tooling.
 

@@ -15,6 +15,8 @@ describe("repository acceptance command", () => {
       "npm run check:boneyard && npm run test:github-settings && npm run typecheck && npm test && vite build",
     );
     expect(commands.verify).toBe("npm run check");
+    expect(commands["check:release-identity"]).toBe("node pipelines/release-identity.ts");
+    expect(commands.check).not.toContain("release-identity");
     expect(commands.check).not.toContain("verify:github-settings");
     expect(commands.check).not.toContain("apply:github-settings");
     expect(commands.check?.match(/vite build/g)).toHaveLength(1);
