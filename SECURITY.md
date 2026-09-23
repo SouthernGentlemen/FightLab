@@ -1,35 +1,35 @@
 # Security
 
-FightLab is a private repository and is not a hosted production service. This policy covers
-security reports about the FightLab repository, its code and workflows, and the way FightLab
+FightLab is currently a public source repository and is not a hosted production service. This policy
+covers security reports about the FightLab repository, its code and workflows, and the way FightLab
 consumes its pinned Boneyard dependency.
 
 ## Report privately
 
-For contributors or reporters who already have access to `SouthernGentlemen/FightLab`, open a
-GitHub issue in this repository with `[SECURITY]` at the start of the title. Because the repository
-is private, that issue stays inside the repository's authorized audience. Do not copy vulnerability
-details into a public issue, discussion, gist, another repository, or other public channel.
+Do not put vulnerability details, exploit instructions, credentials or other sensitive material in a
+public GitHub issue, discussion, gist or pull request. Contact the repository owner through an existing
+private channel first. FightLab does not currently publish a separate external security mailbox or
+disclosure SLA.
 
-Do not paste credentials, access tokens or other secret values into the report. If a suspected
-exposure includes a secret, identify the kind of credential and where it was exposed without
-repeating the value; revoke or rotate the credential through its provider before relying on any
+If a suspected exposure includes a secret, identify the kind of credential and where it was exposed
+without repeating the value; revoke or rotate the credential through its provider before relying on
 repository cleanup.
-
-If you do not have access to this private repository, contact the repository owner through an
-existing private channel rather than publishing vulnerability details. FightLab does not currently
-publish a separate external security mailbox or disclosure SLA.
 
 ## Repository boundary
 
 Report here when the problem is in FightLab source, scripts, GitHub workflow usage, local build
-behavior, or FightLab's integration with Boneyard. A vulnerability in Boneyard itself belongs in
-the Boneyard repository; a problem caused by how FightLab consumes Boneyard belongs here.
+behavior, or FightLab's integration with Boneyard. A vulnerability in Boneyard itself belongs in the
+Boneyard repository; a problem caused by how FightLab consumes Boneyard belongs here.
 
 `boneyard.pin.json` contains only the accepted Boneyard commit, digest and file count. FightLab uses
 the sibling `file:../Boneyard` dependency locally, while GitHub Actions checks out the pinned
 Boneyard revision with the provider-managed `BONEYARD_READ_TOKEN` secret. Do not add a second
 credential path or put that token's value in this repository.
+
+The read-only live GitHub settings verifier is deliberately outside canonical `npm run check`. It
+uses unauthenticated public reads when possible and may use an already-present runtime
+`GITHUB_TOKEN` or `GH_TOKEN`; it never prints or stores the token value. A permission failure is
+not evidence of a provider-plan limitation.
 
 ## Secrets and private data
 
@@ -48,12 +48,12 @@ commit. Documented relative paths and generic examples are fine; machine-specifi
 are not.
 
 If sensitive material is committed or appears in CI output, stop sharing it, rotate/revoke affected
-credentials at the provider, report the exposure through the private route above, and remove the
-material from the repository or logs as part of the controlled remediation. Deleting a file from a
-later commit is not a substitute for treating an exposed credential as compromised.
+credentials at the provider, report the exposure privately, and remove the material from the
+repository or logs as part of the controlled remediation. Deleting a file from a later commit is not
+a substitute for treating an exposed credential as compromised.
 
 ## Distribution boundary
 
-[`LICENSE.md`](LICENSE.md) records the repository's distribution constraints. FightLab currently
-has no hosted production deployment or repository release action, and this security policy does
-not create permission to publish or redistribute a build.
+[`LICENSE.md`](LICENSE.md) records the repository's distribution constraints. FightLab currently has
+no hosted production deployment or repository release action, and this security policy does not
+create permission to publish or redistribute a build.

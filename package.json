@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "tune": "node pipelines/tune.ts",
     "check": "npm run check:boneyard && npm run typecheck && npm test && vite build",
-    "verify": "npm run check"
+    "verify": "npm run check",
+    "verify:github-settings": "node pipelines/verify-github-settings.ts"
   },
   "dependencies": {
     "boneyard": "file:../Boneyard"

@@ -16,6 +16,8 @@ describe("repository acceptance command", () => {
     const commands = scripts();
     expect(commands.check).toBe("npm run check:boneyard && npm run typecheck && npm test && vite build");
     expect(commands.verify).toBe("npm run check");
+    expect(commands["verify:github-settings"]).toBe("node pipelines/verify-github-settings.ts");
+    expect(commands.check).not.toContain("verify:github-settings");
     expect(commands.test).toBe("vitest run");
   });
 });
