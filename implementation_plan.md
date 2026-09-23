@@ -8,15 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-014 — [BUILD] Define immutable source-release identity
-
-- Dependency: FL-013 merged.
-- Why: FightLab needs deterministic release identity without publishing a restricted built game artifact.
-- Scope: Tie package version, annotated `vX.Y.Z`, exact tagged commit and repository content together. Keep the package private. GitHub Releases are source-only authority; never attach `dist/` or Boneyard-derived build artifacts.
-- Non-goals: No npm publication, automatic version bump, build artifact publication or production deployment.
-- Acceptance: Source-release identity fails clearly on tag/version/commit mismatch.
-- Validation: Release-identity cases; `npm run check`; `git diff --check`.
-
 ### FL-015 — [TEST] Guard annotated tag and package identity
 
 - Dependency: FL-014 merged.

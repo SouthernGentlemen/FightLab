@@ -62,6 +62,7 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
 | `npm run test:github-settings` | Pure, deterministic, credential-free settings normalization, comparison and bounded apply-planning cases; no provider network is required. |
 | `npm run check` | Canonical credential-free acceptance: Boneyard pin, pure GitHub-settings cases, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
 | `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
+| `FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` | Read-only local source-release identity check: require a semantic annotated tag at exact `HEAD`, matching private package version and unchanged tracked repository content. It does not create a tag or release. |
 | `npm run verify:github-settings` | Read live GitHub repository/branch/ruleset/release metadata and compare it with `config/github-repository-settings.json`. This is networked, read-only and intentionally outside canonical `check`. |
 | `npm run apply:github-settings` | The only explicit GitHub settings mutation command. It applies only committed desired policy, fails closed on unavailable required access, and independently re-reads provider state afterward. It is never part of canonical `check`. |
 | `npm run pin:boneyard` | Intentionally accept the installed Boneyard state by rewriting the pin. |
@@ -92,5 +93,8 @@ committed desired-state surface, and requires an independent read-only recheck a
 value belongs in repository configuration or canonical acceptance. A readable mismatch, an inaccessible
 setting and a genuine provider-tier limitation are separate outcomes; a pure test cannot prove live parity.
 
-FightLab has no hosted production deployment or repository release action. `npm run build` only
-creates a local `dist/`; do not publish or deploy as part of the normal contribution flow.
+FightLab has no hosted production deployment or repository release action yet. The source-release
+identity command is local and read-only; it never creates a tag, GitHub Release or attachment.
+`npm run build` only creates a local `dist/`; do not publish or deploy it as part of the normal
+contribution flow. Any future GitHub Release is source-only and must not attach `dist/` or
+Boneyard-derived build artifacts.

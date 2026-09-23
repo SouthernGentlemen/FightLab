@@ -44,12 +44,16 @@ npm install
 npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
 npm run check    # canonical acceptance: pin, typecheck, complete tests, one production build
 npm run verify   # compatibility alias for npm run check
+FIGHTLAB_RELEASE=v0.1.0 npm run check:release-identity  # validate an existing source tag only
 ```
 
 `npm run check` is the canonical credential-free acceptance command; `npm run verify` delegates to it
 for compatibility. Focused commands remain useful during development, while pushing a branch, opening
-a PR, exact-head CI and merging are separate GitHub actions. FightLab has no hosted production
-deployment or repository release command. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
+a PR, exact-head CI and merging are separate GitHub actions. `check:release-identity` is read-only:
+it requires an existing annotated semantic tag at exact `HEAD`, a matching private package version
+and unchanged tracked repository content. It creates no tag or release and publishes nothing.
+FightLab has no hosted production deployment or repository release command yet. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
 
 A FightLab server still running from another terminal, a preview pane or an ended session is stopped
 first, so `npm run dev` always starts; anything else holding the port is named and left alone.
@@ -76,6 +80,6 @@ game never shows any of it.
 | `src/render/` | Boneyard figures posed by Boneyard's sampler, FK and depth order, on the arena |
 | `src/game/` | Combat sides from builds, the modded arena, one fight, fixed-step clock, roster and settings |
 | `src/ui/` | Title, Settings, Armory, Prep, Fight, Payday and Run end — one 16:9 stage |
-| `pipelines/` | Boneyard pinning, figure serving/emission and the tuning bot |
+| `pipelines/` | Boneyard pinning, release identity, figure serving/emission and the tuning bot |
 
 Licensing of the material a build carries is in [`LICENSE.md`](LICENSE.md).
