@@ -8,15 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-013 — [OPS] Apply and verify the live repository policy
-
-- Dependency: FL-012 merged.
-- Why: FL-009 proved current provider drift; the shared process requires live enforcement rather than a permanently parked diagnostic.
-- Scope: Apply committed policy, then verify protected `main`, required exact-head `verify`, squash-only/single-commit merging, completed-branch cleanup and immutable `v*` tags.
-- Non-goals: No visibility change, paid-plan purchase, tag creation, GitHub Release publication, deployment or gameplay change.
-- Acceptance: Live provider state matches committed settings, or a genuinely unavailable capability remains an exact explicit blocker.
-- Validation: Provider reads before/after; `npm run verify:github-settings`; `npm run check`; exact-head and merged-main CI.
-
 ### FL-014 — [BUILD] Define immutable source-release identity
 
 - Dependency: FL-013 merged.

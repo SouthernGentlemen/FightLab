@@ -216,7 +216,7 @@ export async function readLiveRepositorySettings(
 
 function requireToken(token: string | undefined): string {
   if (token) return token;
-  const error = new Error("GH_ADMIN_TOKEN, GITHUB_TOKEN or GH_TOKEN is required for apply");
+  const error = new Error("GH_ADMIN_TOKEN or GH_TOKEN is required for apply");
   Object.assign(error, { code: "GITHUB_AUTH_REQUIRED" });
   throw error;
 }

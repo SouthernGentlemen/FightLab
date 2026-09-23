@@ -12,7 +12,7 @@ describe("provider acceptance workflow", () => {
     expect(WORKFLOW.match(/run: npm run check/g) ?? []).toHaveLength(1);
     expect(WORKFLOW).toContain("name: Observe live GitHub settings");
     expect(WORKFLOW).toContain("continue-on-error: true");
-    expect(WORKFLOW).toContain("GITHUB_TOKEN: ${{ github.token }}");
+    expect(WORKFLOW).toContain("GH_TOKEN: ${{ github.token }}");
     expect(WORKFLOW).toContain("run: npm run verify:github-settings");
     expect(WORKFLOW).not.toMatch(/^\s*run: npm run verify\s*$/m);
     expect(WORKFLOW).toContain("name: Check PR diff whitespace");

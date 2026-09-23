@@ -62,6 +62,7 @@ export interface RulesetSnapshot {
   readonly count: number;
   readonly immutableVTags: boolean;
   readonly matchingRuleIds: readonly (number | string)[];
+  readonly details: readonly unknown[];
 }
 
 export interface ReleaseSnapshot {
@@ -97,6 +98,7 @@ export interface SettingsComparison {
     | "mergeMethods"
     | "singleCommit"
     | "deleteBranchOnMerge"
+    | "mainRuleset"
     | "releaseTags";
   readonly status: ComparisonStatus;
   readonly desired: unknown;
@@ -202,7 +204,44 @@ export function rulesetsApiSnapshot(value: unknown): RulesetSnapshot {
       const id = record(item).id;
       return typeof id === "number" || typeof id === "string" ? [id] : [];
     }),
+    details: rulesets,
   };
+}
+
+function rulesetDrift(actualValue: unknown, desiredValue: Readonly<Record<string, unknown>>): string[] {
+  const actual = record(actualValue);
+  const desired = record(desiredValue);
+  const failures: string[] = [];
+  for (const field of ["name", "target", "enforcement"]) {
+    if (actual[field] !== desired[field]) failures.push(`${field} differs`);
+  }
+  if (!sameValues(strings(record(record(actual.conditions).ref_name).include),
+    strings(record(record(desired.conditions).ref_name).include))) failures.push("ref include differs");
+  if (!sameValues(strings(record(record(actual.conditions).ref_name).exclude),
+    strings(record(record(desired.conditions).ref_name).exclude))) failures.push("ref exclude differs");
+  if (!Array.isArray(actual.bypass_actors) || actual.bypass_actors.length !== 0) failures.push("bypass actors differ");
+  const actualRules = Array.isArray(actual.rules) ? actual.rules.map(record) : [];
+  const desiredRules = Array.isArray(desired.rules) ? desired.rules.map(record) : [];
+  if (!sameValues(actualRules.map((rule) => String(rule.type)), desiredRules.map((rule) => String(rule.type)))) {
+    failures.push("rule types differ");
+  }
+  if (desired.target === "branch") {
+    const pull = record(actualRules.find((rule) => rule.type === "pull_request")?.parameters);
+    const expectedPull = record(desiredRules.find((rule) => rule.type === "pull_request")?.parameters);
+    if (!sameValues(strings(pull.allowed_merge_methods), strings(expectedPull.allowed_merge_methods))) {
+      failures.push("allowed merge methods differ");
+    }
+    const checks = record(actualRules.find((rule) => rule.type === "required_status_checks")?.parameters);
+    const expectedChecks = record(desiredRules.find((rule) => rule.type === "required_status_checks")?.parameters);
+    const contexts = (value: unknown): string[] => Array.isArray(value)
+      ? value.map((item) => record(item).context).filter((item): item is string => typeof item === "string") : [];
+    if (!sameValues(contexts(checks.required_status_checks), contexts(expectedChecks.required_status_checks))) {
+      failures.push("required status checks differ");
+    }
+    if (checks.strict_required_status_checks_policy !== true) failures.push("strict current-main checks disabled");
+    if (checks.do_not_enforce_on_create !== true) failures.push("create enforcement differs");
+  }
+  return failures;
 }
 export function releasesApiSnapshot(value: unknown): ReleaseSnapshot {
   const releases = Array.isArray(value) ? value : [];
@@ -259,8 +298,16 @@ export function compareRepositorySettings(
   } else {
     mainProtected = simpleComparison("mainProtected", desired.branchProtection.protected, live.branchProtection,
       (actual) => actual.protected === desired.branchProtection.protected);
-    required = simpleComparison("requiredChecks", desiredChecks, live.branchProtection,
-      (actual) => sameValues(actual.requiredChecks, desiredChecks));
+    const main = live.rulesets.state === "observed"
+      ? live.rulesets.value.details.find((value) => record(value).name === MAIN_RULESET_NAME) : undefined;
+    const checkRule = Array.isArray(record(main).rules)
+      ? (record(main).rules as unknown[]).map(record).find((rule) => rule.type === "required_status_checks") : undefined;
+    const checks = record(checkRule?.parameters).required_status_checks;
+    const contexts = Array.isArray(checks)
+      ? checks.map((value) => record(value).context).filter((value): value is string => typeof value === "string")
+      : live.branchProtection.value.requiredChecks;
+    required = simpleComparison("requiredChecks", desiredChecks, observed(contexts),
+      (actual) => sameValues(actual, desiredChecks));
   }
 
   const mergeMethods = simpleComparison("mergeMethods", desiredMethods, live.mergeMethods,
@@ -289,6 +336,19 @@ export function compareRepositorySettings(
     (actual) => actual === desired.deleteBranchOnMerge,
   );
 
+  let mainRuleset: SettingsComparison;
+  if (live.rulesets.state !== "observed") {
+    mainRuleset = unavailableComparison("mainRuleset", mainRulesetPayload(desired), live.rulesets);
+  } else {
+    const actual = live.rulesets.value.details.find((value) => record(value).name === MAIN_RULESET_NAME);
+    const failures = actual === undefined ? ["main ruleset missing"] : rulesetDrift(actual, mainRulesetPayload(desired));
+    mainRuleset = {
+      key: "mainRuleset", status: failures.length === 0 ? "match" : "mismatch",
+      desired: mainRulesetPayload(desired), observed: actual ?? null,
+      detail: failures.length === 0 ? "main ruleset matches committed policy" : failures.join("; "),
+    };
+  }
+
   let releaseTags: SettingsComparison;
   if (live.rulesets.state !== "observed") {
     releaseTags = unavailableComparison("releaseTags", desired.releaseTags, live.rulesets);
@@ -299,19 +359,20 @@ export function compareRepositorySettings(
       appliesWhenReleasePublished: live.rulesets.value.immutableVTags,
       matchingRuleIds: live.rulesets.value.matchingRuleIds,
     };
+    const tag = live.rulesets.value.details.find((value) => record(value).name === RELEASE_TAG_RULESET_NAME);
+    const failures = tag === undefined ? ["release tag ruleset missing"] : rulesetDrift(tag, releaseTagRulesetPayload(desired));
     const match = actual.immutable === desired.releaseTags.immutable
-      && actual.appliesWhenReleasePublished === desired.releaseTags.appliesWhenReleasePublished;
+      && actual.appliesWhenReleasePublished === desired.releaseTags.appliesWhenReleasePublished
+      && failures.length === 0;
     releaseTags = {
       key: "releaseTags",
       status: match ? "match" : "mismatch",
       desired: desired.releaseTags,
       observed: actual,
-      detail: match
-        ? "an active tag ruleset prevents update and deletion for v-prefixed tags"
-        : "no active tag ruleset proves immutable published v-prefixed release tags",
+      detail: match ? "release tag ruleset matches committed policy" : failures.join("; ") || "release tag protection missing",
     };
   }
-  return [defaultBranch, mainProtected, required, mergeMethods, singleCommit, deleteBranchOnMerge, releaseTags];
+  return [defaultBranch, mainProtected, required, mergeMethods, singleCommit, deleteBranchOnMerge, mainRuleset, releaseTags];
 }
 
 function mergeFlags(methods: readonly MergeMethod[]): Record<string, boolean> {

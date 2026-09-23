@@ -8,7 +8,7 @@ function argument(name: string): string | undefined {
   return index === -1 ? undefined : process.argv[index + 1];
 }
 function token(): string | undefined {
-  return process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? process.env.GH_ADMIN_TOKEN;
+  return process.env.GH_ADMIN_TOKEN || process.env.GH_TOKEN || undefined;
 }
 function format<T>(value: Observation<T>): string {
   return value.state === "observed" ? (JSON.stringify(value.value) ?? "undefined")

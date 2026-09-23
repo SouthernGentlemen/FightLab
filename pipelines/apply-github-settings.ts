@@ -6,7 +6,7 @@ import { applyDesiredRepositorySettings } from "./github-settings-provider.ts";
 const desired = JSON.parse(
   readFileSync(new URL("../config/github-repository-settings.json", import.meta.url), "utf8"),
 ) as DesiredRepositorySettings;
-const token = process.env.GH_ADMIN_TOKEN ?? process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+const token = process.env.GH_ADMIN_TOKEN || process.env.GH_TOKEN;
 
 try {
   await applyDesiredRepositorySettings(desired, { token });

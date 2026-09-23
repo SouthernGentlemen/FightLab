@@ -7,7 +7,9 @@ import {
   buildApplyPlan,
   classifyProviderFailure,
   compareRepositorySettings,
+  mainRulesetPayload,
   observed,
+  releaseTagRulesetPayload,
   repositoryApiSnapshot,
   rulesetsApiSnapshot,
   unavailable,
@@ -43,13 +45,14 @@ function matchingLive(): LiveRepositorySettings {
   return {
     visibility: observed("public"),
     defaultBranch: observed("main"),
-    branchProtection: observed({ protected: true, requiredChecks: ["verify"] }),
+    branchProtection: observed({ protected: true, requiredChecks: [] }),
     mergeMethods: observed(["squash"] as const),
     deleteBranchOnMerge: observed(true),
     rulesets: observed({
-      count: 1,
+      count: 2,
       immutableVTags: true,
       matchingRuleIds: [27],
+      details: [mainRulesetPayload(DESIRED), releaseTagRulesetPayload(DESIRED)],
     }),
     releases: observed({ count: 0, tags: [] }),
     diagnostics: [],
@@ -108,6 +111,13 @@ describe("GitHub repository settings policy", () => {
       count: 1,
       immutableVTags: true,
       matchingRuleIds: [27],
+      details: [{
+        id: 27,
+        target: "tag",
+        enforcement: "active",
+        conditions: { ref_name: { include: ["refs/tags/v*"], exclude: [] } },
+        rules: [{ type: "deletion" }, { type: "update" }],
+      }],
     });
   });
 
@@ -130,6 +140,7 @@ describe("GitHub repository settings policy", () => {
       mergeMethods: "mismatch",
       singleCommit: "mismatch",
       deleteBranchOnMerge: "mismatch",
+      mainRuleset: "mismatch",
       releaseTags: "mismatch",
     });
   });

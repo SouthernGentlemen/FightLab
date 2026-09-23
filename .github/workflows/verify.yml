@@ -73,5 +73,5 @@ jobs:
         continue-on-error: true
         working-directory: FightLab
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: npm run verify:github-settings
