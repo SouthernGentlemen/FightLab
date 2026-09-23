@@ -201,6 +201,11 @@ tests/              arranged by the same layers
 
 ## Commands
 
+The repository toolchain is Node **26.9.0** from `.node-version` and npm **11.19.1** from
+`package.json#packageManager`. `package.json#engines` carries the supported Node 26/npm 11 policy,
+and `.npmrc` enables strict engine enforcement. GitHub workflows consume `.node-version` directly
+and verify both exact runtime versions before `npm ci`.
+
 ```
 npm run dev              check the pin, stop any FightLab server left on the port, then serve the game
                          at http://127.0.0.1:5190 (`npm run dev -- --port <n>` serves elsewhere)

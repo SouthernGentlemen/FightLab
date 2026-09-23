@@ -16,6 +16,11 @@ FightLab from its lockfile:
 ../FightLab
 ```
 
+Use Node **26.9.0** and npm **11.19.1**. `.node-version` is the exact Node authority,
+`package.json#packageManager` is the exact npm authority, and `.npmrc` enables strict engine
+checking. The supported policy is Node 26.x / npm 11.x; CI verifies the exact committed pair before
+installing the lockfile.
+
 ```bash
 npm ci
 ```

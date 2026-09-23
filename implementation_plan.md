@@ -8,15 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-011 — [BUILD] Align Node and npm with the shared baseline
-
-- Dependency: FL-010 planning normalization merged.
-- Why: FightLab has no committed exact Node/npm authority while CI currently uses a broad Node 24 setup.
-- Scope: Re-fetch the current organization baseline and align `.node-version`, exact `packageManager`, engines, `.npmrc`, lockfile metadata, CI setup and current docs.
-- Non-goals: No general dependency upgrade, gameplay change, release or provider-policy mutation.
-- Acceptance: Local, PR and merged-main acceptance use the same exact supported Node/npm pair and drift fails clearly.
-- Validation: `npm ci`; `npm run check`; exact-head CI; `git diff --check`.
-
 ### FL-012 — [BUILD] Standardize the GitHub settings CLI contract
 
 - Dependency: FL-011 merged.
