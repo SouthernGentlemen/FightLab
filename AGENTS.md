@@ -217,7 +217,8 @@ npm run typecheck        the strip-only TypeScript dialect
 npm run test             every test
 npm run tune             bot runs across many seeds: win rates and money by day
 npm run test:github-settings    pure, deterministic, credential-free settings normalization/comparison/apply-plan cases
-npm run check            canonical credential-free acceptance: pin, pure settings cases, typecheck, all tests, one production build
+npm run test:release-identity    pure, credential-free disposable-Git release identity and source-tree cases
+npm run check            canonical credential-free acceptance: pin, pure settings/release cases, typecheck, all tests, one production build
 npm run verify           compatibility alias for npm run check
 FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity
                          read-only source identity: semantic annotated tag at exact HEAD, matching

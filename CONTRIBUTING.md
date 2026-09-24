@@ -60,7 +60,8 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
 | `npm run test` / `npm run test:watch` | Run the automated tests once / in watch mode. |
 | `npm run tune` | Run local balance measurements; it is not the acceptance gate. |
 | `npm run test:github-settings` | Pure, deterministic, credential-free settings normalization, comparison and bounded apply-planning cases; no provider network is required. |
-| `npm run check` | Canonical credential-free acceptance: Boneyard pin, pure GitHub-settings cases, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
+| `npm run test:release-identity` | Pure disposable-Git cases for annotated tag/package identity and source-tree exclusion of `dist/` and copied Boneyard build assets. |
+| `npm run check` | Canonical credential-free acceptance: Boneyard pin, pure GitHub-settings and release-identity cases, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
 | `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
 | `FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` | Read-only local source-release identity check: require a semantic annotated tag at exact `HEAD`, matching private package version and unchanged tracked repository content. It does not create a tag or release. |
 | `npm run verify:github-settings` | Read live GitHub repository/branch/ruleset/release metadata and compare it with `config/github-repository-settings.json`. This is networked, read-only and intentionally outside canonical `check`. |
