@@ -90,9 +90,10 @@ export function validateControlledHistory(history: readonly CommitRecord[]): Val
   }
 
   const seen = new Set<number>();
+  const earlyMaintenance = new Set<number>();
+  let expected = 1;
   for (let index = 0; index < controlled.length; index += 1) {
     const record = controlled[index];
-    const expected = index + 1;
     const expectedParent = index === 0 ? LEGACY_HISTORY_TIP : controlled[index - 1].sha;
     if (record.parents[0] !== expectedParent) {
       errors.push(`${record.sha}: first parent must be ${expectedParent}`);
@@ -116,7 +117,11 @@ export function validateControlledHistory(history: readonly CommitRecord[]): Val
 
     if (seen.has(id)) errors.push(`FL-${match[1]}: duplicate controlled id`);
     seen.add(id);
-    if (id !== expected) errors.push(`FL-${match[1]}: expected FL-${String(expected).padStart(3, "0")}`);
+    while (earlyMaintenance.has(expected)) expected += 1;
+    const maintenance = /^Portfolio-Plan-Maintenance: true$/m.test(record.message);
+    if (maintenance && id > expected) earlyMaintenance.add(id);
+    else if (id !== expected) errors.push(`FL-${match[1]}: expected FL-${String(expected).padStart(3, "0")}`);
+    else expected += 1;
     if (!CONTROLLED_TYPES.includes(type as ControlledType)) errors.push(`FL-${match[1]}: invalid primary type ${type}`);
     if (summary.length === 0) errors.push(`FL-${match[1]}: summary must not be empty`);
 

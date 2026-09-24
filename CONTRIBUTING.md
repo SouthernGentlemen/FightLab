@@ -1,105 +1,19 @@
-# Contributing to FightLab
+# Contributing
 
-[`AGENTS.md`](AGENTS.md) is the repository contract and [`implementation_plan.md`](implementation_plan.md)
-is the current/future work queue. This file is the human-facing summary of the change flow and commands;
-when guidance conflicts, follow `AGENTS.md`.
+Read [AGENTS.md](AGENTS.md) before changing a repository. It owns the repository's product boundaries, controlled change identity, validation details, and merge rules. Read the active implementation plan when present; its filename may be `implementation_plan.md` or `IMPLEMENTATION_PLAN.md`.
 
-## Prerequisites
+## Work queue and plan updates
 
-FightLab consumes Boneyard through the sibling `file:../Boneyard` dependency. Keep the repositories
-side by side and check out Boneyard at the commit recorded in
-[`boneyard.pin.json`](boneyard.pin.json). Build Boneyard once as described in the README, then install
-FightLab from its lockfile:
+The first open plan task is the default next implementation task unless the owner explicitly changes priority. Keep existing open tasks in place when appending future work. A separately requested portfolio plan maintenance change may append or clarify future tasks while another task or pull request is in progress. Once the shared policy is established, that maintenance change edits only the active plan file and does not claim to deliver a queued task. The last task deletes the plan only when no later task remains.
 
-```text
-../Boneyard
-../FightLab
-```
+Before editing or merging, fetch current `main` and inspect open pull requests. Record the base commit and the plan's current contents. Immediately before merging, fetch again and compare the current `main` commit, exact pull request head, and plan against that recorded base. Rebase and reconcile any concurrent plan change rather than overwriting it. Merge only the current, mergeable head after required checks pass.
 
-Use Node **26.9.0** and npm **11.19.1**. `.node-version` is the exact Node authority,
-`package.json#packageManager` is the exact npm authority, and `.npmrc` enables strict engine
-checking. The supported policy is Node 26.x / npm 11.x; CI verifies the exact committed pair before
-installing the lockfile.
+## Toolchain and commands
 
-```bash
-npm ci
-```
+Use the exact Node version in `.node-version` and npm version in `package.json`'s `packageManager`; install from the committed lockfile with `npm ci`. `npm run check` is the canonical local repository acceptance command. Run the focused checks named by the active task and `git diff --check` as well. `build`, `test`, `typecheck`, and `dev` follow the repository's `package.json` and AGENTS.md; use only capabilities that repository actually has. Network dependency advisories, live GitHub settings verification, releases, and production deployment are separate operations with repository-specific prerequisites.
 
-The pin check protects the exact Boneyard inputs FightLab was verified against. Do not run
-`npm run pin:boneyard` as routine setup; it deliberately rewrites the accepted pin and belongs only
-to a change that is explicitly accepting new Boneyard input.
+Shared dependencies and versioned vendor tooling should use one supported version across public repositories when those repositories consume them. GitHub Actions workflows and common npm script names should have equivalent behavior for equivalent capabilities. A library or local-only application does not acquire a hosted deployment merely for parity.
 
-## One-task change flow
+## Contribution and security boundaries
 
-Follow the controlled loop in `AGENTS.md` rather than inventing a parallel process.
-
-1. Re-fetch authoritative `main`, open PRs and current-head CI, then take only the first open,
-   unblocked `FL-NNN` task.
-2. Branch from current `main` using `fl-NNN-<kebab-summary>`. Use the task's
-   `[FL-NNN] [TYPE] Summary` identity for the controlled commit and PR.
-3. Make only that task's change. The same delivery removes the completed task from
-   `implementation_plan.md`.
-4. Run focused checks, then canonical `npm run check` and `git diff --check`. `npm run verify`
-   remains a compatibility alias to the same gate.
-5. Push the controlled branch and open the PR. Those are provider actions, not local validation.
-6. Require the PR's exact current-head `verify` check to pass, re-fetch `main` and mergeability,
-   then squash the exact validated head under the repository's provider rules. Merge commits and
-   rebase merges are not controlled delivery methods.
-7. Confirm one controlled commit on `main`, post-merge CI and completed-branch deletion, then
-   hand off the new first task and stop.
-
-## Command boundaries
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Check the Boneyard pin, clean up FightLab's local dev port and serve the game. |
-| `npm run preview` | Serve the built game locally through the same safe lifecycle. |
-| `npm run build` | Check the pin and create the local production build in `dist/`. |
-| `npm run check:boneyard` | Verify the installed sibling Boneyard matches the committed pin. |
-| `npm run typecheck` | Run TypeScript validation. |
-| `npm run test` / `npm run test:watch` | Run the automated tests once / in watch mode. |
-| `npm run tune` | Run local balance measurements; it is not the acceptance gate. |
-| `npm run test:github-settings` | Pure, deterministic, credential-free settings normalization, comparison and bounded apply-planning cases; no provider network is required. |
-| `npm run test:release-identity` | Pure disposable-Git cases for annotated tag/package identity and source-tree exclusion of `dist/` and copied Boneyard build assets. |
-| `npm run test:distribution-boundary` | Pure positive/negative cases plus a tracked-repository guard that rejects deployment config/workflows, package publication, tracked `dist/`, and release attachments. |
-| `npm run check` | Canonical credential-free acceptance: Boneyard pin, pure GitHub-settings and release-identity cases, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
-| `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
-| `FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` | Read-only local source-release identity check: require a semantic annotated tag at exact `HEAD`, matching private package version and unchanged tracked repository content. It does not create a tag or release. |
-| `npm run verify:github-settings` | Read live GitHub repository/branch/ruleset/release metadata and compare it with `config/github-repository-settings.json`. This is networked, read-only and intentionally outside canonical `check`. |
-| `npm run apply:github-settings` | The only explicit GitHub settings mutation command. It applies only committed desired policy, fails closed on unavailable required access, and independently re-reads provider state afterward. It is never part of canonical `check`. |
-| `npm run pin:boneyard` | Intentionally accept the installed Boneyard state by rewriting the pin. |
-
-## Visual changes
-
-If a change alters what the player sees, run the game and inspect the affected output before calling
-the work done. The `visual` GitHub workflow captures screenshot evidence for its configured UI/mod
-paths; it supplements the required human visual check rather than replacing it.
-
-## Security reports
-
-[`SECURITY.md`](SECURITY.md) defines the private reporting route and the repository's secret/data boundary. Keep vulnerability details and secret values out of public channels.
-
-## Provider, deployment and release boundary
-
-Local commands do not push branches, open PRs, report GitHub CI, merge changes or delete remote
-branches. Report those only after GitHub confirms them. The provider `verify` workflow runs canonical
-`npm run check` directly for pull requests, pushes to `main` and manual dispatch while preserving
-the exact pinned private Boneyard checkout. PR exact-head CI and merged-`main` CI are separate
-provider evidence; confirm the workflow run attached to the actual merged SHA when both are required.
-
-The live settings verifier uses public GitHub reads without credentials when possible. If a runtime
-`GH_ADMIN_TOKEN` or `GH_TOKEN` is already present, verification may use it only for
-provider reads and never prints or persists its value. The explicit apply command requires a runtime
-administration-capable token, preflights required provider access before mutation, applies only the
-committed desired-state surface, and requires an independent read-only recheck after writes. No token
-value belongs in repository configuration or canonical acceptance. A readable mismatch, an inaccessible
-setting and a genuine provider-tier limitation are separate outcomes; a pure test cannot prove live parity.
-
-FightLab has no hosted production deployment. Its provider release path is source-only:
-`.github/workflows/release.yml` runs only for pushed semantic `vX.Y.Z` tags, reproduces the pinned
-toolchain and Boneyard input, runs `npm ci`, canonical `npm run check`, and exact release-identity
-validation, then creates the GitHub Release with `gh release create --verify-tag`. It uploads no
-attachments. `npm run build` may create local `dist/`, but the workflow never publishes `dist/`
-or Boneyard-derived generated assets and never deploys the game. Canonical `npm run check` enforces
-that boundary with `npm run test:distribution-boundary`, so adding deploy/publish automation or built
-release assets fails before merge.
+Keep changes scoped to one controlled delivery unless the owner requests portfolio plan maintenance. Record validation and provider actions truthfully. Follow the repository's AGENTS.md for branch, commit, pull request, exact-head CI, and squash-merge requirements. Use [SECURITY.md](SECURITY.md) for security reports. Ownership is defined by AGENTS.md and its linked ownership policy where present.
