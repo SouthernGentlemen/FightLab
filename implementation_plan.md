@@ -10,14 +10,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-018 — [DOCS] Complete shared process-parity acceptance
-
-- Dependency: FL-017 merged.
-- Scope: Fresh audit of Node/npm, `npm ci`, canonical `check`, controlled FL history, exact-head/main CI, squash-only merging, branch cleanup, settings CLI/live rules, annotated release identity, source-only GitHub Releases and the no-build-publication/no-deploy boundary. Delete `implementation_plan.md` when all applicable evidence is green.
-- Non-goals: No feature work, tuning, version bump, tag creation, release publication or deployment solely for the audit.
-- Acceptance: FightLab follows the shared process everywhere applicable and has no remaining active queue.
-- Validation: `npm ci`; `npm run check`; provider verification; release/tag evidence; exact-head/main CI; `git diff --check`.
-
 ### FL-020 — [OPS] Normalize shared package, workflow, and npm command contracts
 
 - Dependency: FL-018 delivered; portfolio planning policy FL-019 merged. Coordinate with the same normalization task in every public sibling repository.
@@ -37,6 +29,6 @@ Source release:
 
 FightLab has no production deploy stage and no authority to publish a built `dist/`. That is an architectural and distribution constraint, not missing deployment automation.
 
-## Recheck after this wave
+## Recheck after the current queue
 
-After FL-018, enter fresh planning mode only if current repository/provider evidence shows new drift. Keep gameplay tuning, licensing/asset work and product features separate from process adoption.
+After the remaining open task is delivered, enter fresh planning mode only if current repository/provider evidence shows new drift. Keep gameplay tuning, licensing/asset work and product features separate from process adoption.
