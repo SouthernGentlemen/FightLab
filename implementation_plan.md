@@ -8,15 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-017 — [TEST] Guard the no-production-deploy boundary
-
-- Dependency: FL-016 merged.
-- Why: Process parity must not turn Mix Up into a hosted production service or publish a legally restricted build.
-- Scope: Allow immutable source tags/releases while rejecting production deployment workflows/configuration, npm publication, `dist/` release attachments and redistribution of Boneyard-derived built assets.
-- Non-goals: No hosted environment, distribution-rights expansion, gameplay feature or asset rewrite.
-- Acceptance: Canonical acceptance proves source-release parity while built-game publication/deployment remains impossible.
-- Validation: Positive/negative distribution-boundary cases; `npm run check`; `git diff --check`.
-
 ### FL-018 — [DOCS] Complete shared process-parity acceptance
 
 - Dependency: FL-017 merged.
