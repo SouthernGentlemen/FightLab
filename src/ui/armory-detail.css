@@ -33,8 +33,10 @@
 .detail-pane__art {
   --catalog-cell: 7.2rem;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
   place-items: center;
+  padding: 1rem;
   border: .25rem solid var(--border-subtle);
   border-radius: 1.2rem;
   background: var(--surface-panel);
@@ -45,9 +47,8 @@
   border-width: .4rem;
 }
 
-.detail-pane__art .catalog-card__action {
-  border-width: .3rem;
-}
+.detail-pane__badges { justify-content: center; gap: .6rem; }
+.detail-pane__badges .mod-badge { min-height: 2.4rem; padding: .2rem .5rem; font-size: 1.5rem; }
 
 .detail-pane__pips {
   display: flex;

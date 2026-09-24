@@ -19,6 +19,8 @@ import type { Placement } from "../mods/grid.ts";
 import { RARITY_ODDS, SHOP_SIZE, shopRank } from "../run/shop.ts";
 import { button, h, icon, setText } from "./dom.ts";
 import { modLabel } from "./modlabel.ts";
+import { effectBadgeRow } from "./modbadgeview.ts";
+import { effectBadges } from "./modvisual.ts";
 import { ACTION_LABEL, BAR_NAME, actionChip, bevel, iconButton, modArt, paintChip, panel, shake, starRow, toaster } from "./kit.ts";
 
 export interface PrepOptions {
@@ -210,6 +212,7 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
     bankSlots.forEach((slot, index) => {
       const owned = run.bank[index];
       slot.replaceChildren(...(owned ? [modArt(owned.mod, owned.rotation, "mod--mini", owned.stars),
+        effectBadgeRow(effectBadges(REGISTRY[owned.mod], owned.stars), "slot__badges"),
         starRow(owned.stars, "stars slot__stars")] : []));
       slot.dataset.filled = owned ? "true" : "false";
       slot.setAttribute("aria-label", owned ? modLabel(REGISTRY[owned.mod], owned.stars) : `Empty bank slot ${index + 1}`);
@@ -267,7 +270,8 @@ export function mountPrep(root: HTMLElement, options: PrepOptions): () => void {
       node.dataset.type = definition.type;
       node.dataset.rarity = definition.rarity;
       node.classList.toggle("is-poor", priceOf(mod) > run.money);
-      node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini")),
+      node.append(h("div", { class: "offer__art" }, modArt(mod, 0, "mod--mini"),
+        effectBadgeRow(effectBadges(definition, 1), "offer__badges")),
         h("div", { class: "offer__foot" }, h("span", { class: "offer__name" }, definition.name), h("b", { class: "offer__price" }, `$${priceOf(mod)}`)));
       node.setAttribute("aria-label", modLabel(definition, 1));
     });

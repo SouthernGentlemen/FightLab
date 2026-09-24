@@ -7,6 +7,8 @@ import { STARS, copiesIn } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
 import type { ModType } from "../mods/types.ts";
 import { modLabel } from "./modlabel.ts";
+import { effectBadges } from "./modvisual.ts";
+import type { EffectBadge } from "./modvisual.ts";
 
 export const CATALOG_CARD_BOX = Object.freeze({ width: 4, height: 2, cellSize: 1 });
 
@@ -18,10 +20,12 @@ export interface CatalogPip {
 export interface CatalogShapeModel {
   readonly type: ModType;
   readonly affinity: ActionType | null;
+  readonly rarity: Rarity;
+  readonly badges: readonly EffectBadge[];
   readonly cells: readonly GridPoint[];
   readonly width: number;
   readonly height: number;
-  readonly iconCell: GridPoint;
+  readonly markCell: GridPoint;
 }
 
 export interface CatalogCardModel extends CatalogShapeModel {
@@ -49,9 +53,9 @@ function flatCells(definition: ModDefinition): readonly GridPoint[] {
   return chosen.cells;
 }
 
-/** Chosen in tasks-024: nearest occupied cell to the centroid; equal distances read top-left first. */
-export function iconAnchorCell(cells: readonly GridPoint[]): GridPoint {
-  if (cells.length === 0) throw new Error("Cannot place an icon on an empty footprint");
+/** Keep the printed effect value on an occupied cell through every rotation. */
+export function pieceAnchorCell(cells: readonly GridPoint[]): GridPoint {
+  if (cells.length === 0) throw new Error("Cannot mark an empty footprint");
   const centroid = {
     x: cells.reduce((sum, { x }) => sum + x, 0) / cells.length,
     y: cells.reduce((sum, { y }) => sum + y, 0) / cells.length,
@@ -64,15 +68,17 @@ export function iconAnchorCell(cells: readonly GridPoint[]): GridPoint {
 }
 
 /** Shared shape model so cards and the selected detail use exactly the same piece renderer. */
-export function catalogShape(definition: ModDefinition, cells: readonly GridPoint[]): CatalogShapeModel {
+export function catalogShape(definition: ModDefinition, cells: readonly GridPoint[], stars: Stars = 1): CatalogShapeModel {
   const [width, height] = shapeSize(cells);
   return Object.freeze({
     type: definition.type,
     affinity: definition.affinity,
+    rarity: definition.rarity,
+    badges: effectBadges(definition, stars),
     cells,
     width,
     height,
-    iconCell: iconAnchorCell(cells),
+    markCell: pieceAnchorCell(cells),
   });
 }
 
@@ -85,7 +91,6 @@ export function catalogCard(definition: ModDefinition, owned: number): CatalogCa
     id: definition.id,
     cellSize: CATALOG_CARD_BOX.cellSize,
     name: definition.name,
-    rarity: definition.rarity,
     label: modLabel(definition),
     pips: Object.freeze(pips),
   });

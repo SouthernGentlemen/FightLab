@@ -178,6 +178,8 @@ const evidence = await evaluate(`(() => ({
   pairs: document.querySelectorAll(".palette-sheet__pair").length,
   cardActions: document.querySelectorAll(".palette-sheet__sample--card .mod__action").length,
   boardActions: document.querySelectorAll(".palette-sheet__sample--board .mod__action").length,
+  cardMarks: document.querySelectorAll(".palette-sheet__sample--card .mod__mark").length,
+  boardMarks: document.querySelectorAll(".palette-sheet__sample--board .mod__mark").length,
   rarities: document.querySelectorAll(".palette-sheet__rarity").length,
   states: [...document.querySelectorAll(".palette-sheet__state > small")].map((node) => node.textContent?.trim() ?? ""),
   selectedCorners: Boolean(document.querySelector('.palette-sheet__state .catalog-card[aria-pressed="true"]')),
@@ -193,7 +195,7 @@ if (evidence.viewport[0] !== 1920 || evidence.viewport[1] !== 1080) {
   throw new Error(`Expected 1920x1080 viewport, got ${evidence.viewport.join("x")}`);
 }
 const expectedStates = ["Hover", "Selected", "Focus", "Unaffordable", "Sold", "Valid carry", "Invalid carry", "Source"];
-if (evidence.pairs !== 16 || evidence.cardActions !== 12 || evidence.boardActions !== 12 || evidence.rarities !== 5) {
+if (evidence.pairs !== 16 || evidence.cardActions !== 0 || evidence.boardActions !== 0 || evidence.cardMarks !== 16 || evidence.boardMarks !== 16 || evidence.rarities !== 5) {
   throw new Error(`Palette sheet incomplete: ${JSON.stringify(evidence)}`);
 }
 if (JSON.stringify(evidence.states) !== JSON.stringify(expectedStates)) {

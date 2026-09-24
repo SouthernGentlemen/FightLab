@@ -9,7 +9,9 @@ import type { Stars } from "../mods/stars.ts";
 import { catalogShape } from "./catalogcard.ts";
 import { catalogShapeView } from "./catalogcardview.ts";
 import { button, h, setText } from "./dom.ts";
+import { effectBadgeRow } from "./modbadgeview.ts";
 import { modLabel } from "./modlabel.ts";
+import { effectBadges } from "./modvisual.ts";
 
 export interface ArmoryCard {
   readonly node: HTMLElement;
@@ -36,6 +38,7 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
   });
   const starButtons = STARS.map((level) => button(starText(level), "detail-pane__pip", () => {
     stars = level;
+    renderArt();
     renderRules();
   }, { "aria-label": `Preview at ${level} star${level === 1 ? "" : "s"}` }));
   const rules = h("div", { class: "detail-pane__rules" });
@@ -72,7 +75,10 @@ export function armoryCard(owned: (mod: ModId) => number): ArmoryCard {
     const shown = available[orientation] ?? available[0];
     art.dataset.rotation = String(shown.rotation);
     art.setAttribute("aria-label", `${definition.name} shape preview; press R or right click to rotate`);
-    art.replaceChildren(catalogShapeView(catalogShape(definition, shown.cells)));
+    art.replaceChildren(
+      catalogShapeView(catalogShape(definition, shown.cells, stars)),
+      effectBadgeRow(effectBadges(definition, stars), "detail-pane__badges"),
+    );
   }
 
   function renderRules(): void {

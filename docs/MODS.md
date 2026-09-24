@@ -175,8 +175,9 @@ rarity-vocabulary compliance and star growth.
 
 ## Colour
 
-The live palette is one dark-surface system. **Type is dominant**, **action is secondary**, and
-**rarity is tertiary**. Statuses reuse their type hue. Rarity colours names and rarity chips only.
+The live palette is one dark-surface system. **Type and affinity split each occupied cell diagonally**;
+an affinity-less mod uses type colour throughout. Statuses reuse their type hue. Rarity colours names
+and rarity chips; its neutral edge pattern distinguishes pieces without changing the palette.
 
 | Group | Token | Swatch |
 | --- | --- | --- |
@@ -198,29 +199,38 @@ The live palette is one dark-surface system. **Type is dominant**, **action is s
 | Border | selected / focus | `#ffcf4a` / `#5ac8ff` |
 | Text | primary / secondary / disabled | `#f8fbff` / `#c0ccda` / `#8998a8` |
 | Placement | valid / invalid | `#2de38c` / `#ff4f6d` |
-| Piece | edge / icon backing / icon outline | `#080c12` / `#09111b` / `#f8fbff` |
+| Piece | edge / value backing / light line | `#080c12` / `#09111b` / `#f8fbff` |
 | Piece | bevel light / bevel dark | `#ffffff40` / `#00000040` |
 | Piece | star on / star off | `#f8fbff` / `#6b7b8e` |
 
-The palette test holds WCAG contrast, all 12 type × affinity icon combinations, and OKLab separation
+The palette test holds WCAG contrast, all 12 type × affinity colour combinations, and OKLab separation
 for the known confusion pairs at **ΔE ≥ 0.13**. The closest required pair is Solar / Strike at 0.140.
-Mod UI colour literals live only in the root token block; action and status glyphs use
-`currentColor`.
+Mod UI colour literals live only in the root token block; effect accents reuse action and status
+tokens.
 
-### Action icon rule
+### Piece outline and readout
 
-A piece carries at most one action icon. When it has an affinity, the icon sits on the **occupied cell
-nearest the piece's centroid**. Equal-distance ties resolve top-to-bottom, then left-to-right.
+Mod artwork has no Strike, Tech or Block glyph. Each occupied cell carries the same 135° type/affinity
+split, and a small effect value and payoff-coloured edge ticks sit on the **occupied cell nearest the
+piece's centroid**. Equal-distance ties resolve top-to-bottom, then left-to-right. The value keeps
+packed board pieces distinguishable; text badges below artwork give the full compact effect preview.
 
-The tasks-024 comparison checked all eleven shapes at card and board size. The centroid-cell rule won
-because the backing disc stays on one solid type-coloured cell instead of straddling seams or shape
-junctions. Cards, detail previews, board pieces, bank pieces and offers all use the same anchor rule.
+Common edges are solid, Uncommon adds dashed inset rails, Rare uses a double edge, Super Rare adds
+an inset dotted line, and Legendary has an inner keyline. These are neutral line treatments; rarity
+colour still belongs to the name and rarity chip.
+Within every type × affinity bucket the four mods have different rarity and therefore different
+outlines. A registry-derived effect value and edge ticks add a second distinction when the footprint
+is shared. Conditional amounts keep their scale in the badge, such as `+1/ADJ`; fixed per-cell
+amounts are multiplied by the footprint. Block damage is labelled `BLOCK RIP`, meaning riposte
+damage after a held guard, never damage reduction.
 
 ## Catalogue UI
 
 The Armory renders the same registry combat uses: a four-column grid and a selected detail pane.
-Cards show the shape in its type colour, at most one affinity icon, the name in its rarity colour and
-three small collection pips.
+Cards show the two-colour shape, its neutral rarity outline, effect badges below the art, the name in
+its rarity colour and three small collection pips. The detail pane updates badges with the selected
+star preview; Prep offers and bank slots show compact badges, while board pieces carry the small
+printed effect value and retain full rules on hover/focus.
 
 The filter modal has four groups: **Type, Action (including None), Size (1–4), Rarity**. Choices are
 OR within a group and AND across groups; Clear empties every group. The selected detail can preview

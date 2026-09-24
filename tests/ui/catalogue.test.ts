@@ -50,7 +50,7 @@ afterEach(() => {
 });
 
 describe("Armory catalogue DOM", () => {
-  it("renders all 64 real mods with their complete shape, type, action and name rarity", () => {
+  it("renders all 64 real mods with complete split shapes, effect values and name rarity", () => {
     const rendered = cards();
     expect(rendered).toHaveLength(64);
     expect(rendered.map((card) => card.dataset.mod)).toEqual(DEFINITIONS.map(({ id }) => id));
@@ -63,11 +63,14 @@ describe("Armory catalogue DOM", () => {
         .toBe(cells.length);
       expect(cells.every((cell) => cell.dataset.type === definition.type), definition.id).toBe(true);
 
-      const actions = [...card.querySelectorAll<HTMLElement>(".catalog-card__action")];
-      expect(actions, definition.id).toHaveLength(definition.affinity === null ? 0 : 1);
-      if (definition.affinity !== null) expect(actions[0].dataset.action).toBe(definition.affinity);
+      const shape = card.querySelector<HTMLElement>(".catalog-card__shape");
+      expect(shape?.dataset.affinity, definition.id).toBe(definition.affinity ?? undefined);
+      expect(shape?.dataset.rarity, definition.id).toBe(definition.rarity);
+      expect(card.querySelectorAll(".catalog-card__action, .catalog-card__shape .icon"), definition.id).toHaveLength(0);
+      expect(card.querySelectorAll(".catalog-card__mark"), definition.id).toHaveLength(1);
+      expect(card.querySelectorAll(".catalog-card__badges .mod-badge").length, definition.id).toBeGreaterThan(0);
 
-      const rarityNodes = [...card.querySelectorAll<HTMLElement>("[data-rarity]")];
+      const rarityNodes = [...card.querySelectorAll<HTMLElement>(".catalog-card__name[data-rarity]")];
       expect(rarityNodes, definition.id).toHaveLength(1);
       expect(rarityNodes[0].classList.contains("catalog-card__name"), definition.id).toBe(true);
       expect(rarityNodes[0].dataset.rarity, definition.id).toBe(definition.rarity);
@@ -94,7 +97,7 @@ describe("Armory catalogue DOM", () => {
       art.dispatchEvent(new KeyboardEvent("keydown", { key: "R", bubbles: true, cancelable: true }));
       expect(art.dataset.rotation, definition.id).toBe(expected[0]);
 
-      const rarityNodes = [...root.querySelectorAll<HTMLElement>(".detail-pane [data-rarity]")];
+      const rarityNodes = [...root.querySelectorAll<HTMLElement>(".detail-pane__name[data-rarity]")];
       expect(rarityNodes, definition.id).toHaveLength(1);
       expect(rarityNodes[0].classList.contains("detail-pane__name"), definition.id).toBe(true);
       expect(rarityNodes[0].dataset.rarity, definition.id).toBe(definition.rarity);
@@ -172,6 +175,20 @@ describe("Armory catalogue DOM", () => {
 
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
     expect(backs).toBe(1);
+  });
+
+  it("updates the selected art's printed value and badges with the star preview", () => {
+    const card = cards().find((node) => node.dataset.mod === "ember-edge");
+    if (card === undefined) throw new Error("Cinder Edge is missing");
+    card.click();
+    const art = root.querySelector<HTMLElement>(".detail-pane__art");
+    if (art === null) throw new Error("detail art is missing");
+    expect(art.querySelector(".detail-pane__badges")?.textContent).toBe("DMG +2");
+    const threeStars = root.querySelector<HTMLButtonElement>('.detail-pane__pip[aria-label="Preview at 3 stars"]');
+    if (threeStars === null) throw new Error("three-star detail control is missing");
+    threeStars.click();
+    expect(art.querySelector(".detail-pane__badges")?.textContent).toBe("DMG +6");
+    expect(art.querySelector(".catalog-card__mark")?.textContent).toBe("+6");
   });
 
   it("combines filter groups and CLEAR restores the full catalogue", () => {
