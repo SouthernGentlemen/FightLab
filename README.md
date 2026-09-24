@@ -55,8 +55,11 @@ useful during development, while pushing a branch, opening a PR, exact-head CI a
 separate GitHub actions. `check:release-identity` is read-only:
 it requires an existing annotated semantic tag at exact `HEAD`, a matching private package version
 and unchanged tracked repository content. It creates no tag or release and publishes nothing.
-FightLab has no hosted production deployment or repository release command yet. See
-[`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
+A pushed semantic annotated `vX.Y.Z` tag is the only provider release trigger. The source-only
+release workflow reproduces the pinned toolchain and Boneyard input, runs canonical acceptance plus
+the exact release-identity check, then creates the GitHub Release with `--verify-tag` and no
+attachments. It never publishes `dist/`, generated Boneyard-derived assets, or deploys the game.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
 
 A FightLab server still running from another terminal, a preview pane or an ended session is stopped
 first, so `npm run dev` always starts; anything else holding the port is named and left alone.

@@ -94,8 +94,9 @@ committed desired-state surface, and requires an independent read-only recheck a
 value belongs in repository configuration or canonical acceptance. A readable mismatch, an inaccessible
 setting and a genuine provider-tier limitation are separate outcomes; a pure test cannot prove live parity.
 
-FightLab has no hosted production deployment or repository release action yet. The source-release
-identity command is local and read-only; it never creates a tag, GitHub Release or attachment.
-`npm run build` only creates a local `dist/`; do not publish or deploy it as part of the normal
-contribution flow. Any future GitHub Release is source-only and must not attach `dist/` or
-Boneyard-derived build artifacts.
+FightLab has no hosted production deployment. Its provider release path is source-only:
+`.github/workflows/release.yml` runs only for pushed semantic `vX.Y.Z` tags, reproduces the pinned
+toolchain and Boneyard input, runs `npm ci`, canonical `npm run check`, and exact release-identity
+validation, then creates the GitHub Release with `gh release create --verify-tag`. It uploads no
+attachments. `npm run build` may create local `dist/`, but the workflow never publishes `dist/`
+or Boneyard-derived generated assets and never deploys the game.

@@ -233,6 +233,13 @@ npm run apply:github-settings   the only explicit GitHub settings mutation path;
 Release or provider setting. It validates only an already-created source identity and must never be
 used to justify publishing `dist/` or Boneyard-derived build artifacts.
 
+The provider source-release path is `.github/workflows/release.yml`. It runs only for pushed semantic
+`vX.Y.Z` tags, checks out that exact tag with full history, restores the pinned Boneyard sibling and
+exact Node/npm toolchain, runs `npm ci`, canonical `npm run check`, and the read-only release-identity
+validator, then creates a GitHub Release with `gh release create --verify-tag`. The workflow publishes
+source metadata only: it uploads no `dist/`, generated fighter/art output or Boneyard-derived build
+artifact, and it is not a deployment path.
+
 `?seed=<n>` starts a new run on a chosen seed; `?debug` shows the lab tooling.
 
 Anything about the rig, the art or the clips themselves is a command in Boneyard —
