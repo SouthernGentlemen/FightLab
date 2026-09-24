@@ -1,0 +1,79 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact FightLab tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          path: FightLab
+
+      - name: Fetch exact annotated release tag
+        working-directory: FightLab
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_ref="refs/tags/$GITHUB_REF_NAME"
+          git fetch --force --no-tags origin "$tag_ref:$tag_ref"
+
+      - name: Read pinned Boneyard commit
+        id: boneyard
+        shell: bash
+        run: echo "commit=$(node -p "require('./FightLab/boneyard.pin.json').commit")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Boneyard
+        uses: actions/checkout@v4
+        with:
+          repository: SouthernGentlemen/Boneyard
+          ref: ${{ steps.boneyard.outputs.commit }}
+          path: Boneyard
+          token: ${{ secrets.BONEYARD_READ_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: FightLab/.node-version
+          cache: npm
+          cache-dependency-path: FightLab/package-lock.json
+
+      - name: Verify pinned toolchain
+        working-directory: FightLab
+        shell: bash
+        run: |
+          expected_node="$(cat .node-version)"
+          expected_npm="$(node -p "require('./package.json').packageManager.replace(/^npm@/, '')")"
+          test "$(node --version)" = "v${expected_node}"
+          test "$(npm --version)" = "${expected_npm}"
+          node --version
+          npm --version
+
+      - name: Install exact dependencies
+        working-directory: FightLab
+        run: npm ci
+
+      - name: Check tagged source
+        working-directory: FightLab
+        run: npm run check
+
+      - name: Verify exact release identity
+        working-directory: FightLab
+        env:
+          FIGHTLAB_RELEASE: ${{ github.ref_name }}
+        run: npm run check:release-identity
+
+      - name: Publish source-only GitHub Release
+        working-directory: FightLab
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"

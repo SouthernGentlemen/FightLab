@@ -8,14 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-016 — [OPS] Publish source-only GitHub Releases from verified tags
-
-- Dependency: FL-015 merged.
-- Scope: Tag-triggered provider path: annotated `vX.Y.Z` -> pinned toolchain -> `npm ci` -> `npm run check` -> identity verification -> `gh release create --verify-tag`. Publish source metadata only; no `dist/` or generated fighter/art attachments.
-- Non-goals: No npm publication, auto-versioning, build artifact publication or production deployment.
-- Acceptance: Only the correctly annotated/versioned/validated tag can create a GitHub Release.
-- Validation: Workflow/CLI tests; tag identity evidence; GitHub Release evidence when exercised; `git diff --check`.
-
 ### FL-017 — [TEST] Guard the no-production-deploy boundary
 
 - Dependency: FL-016 merged.
