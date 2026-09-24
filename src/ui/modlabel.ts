@@ -1,4 +1,5 @@
 import { RARITY } from "../mods/rarity.ts";
+import { effectLines } from "../mods/describe.ts";
 import type { ModDefinition } from "../mods/registry.ts";
 import { SHAPE_LABEL } from "../mods/shapes.ts";
 import type { Stars } from "../mods/stars.ts";
@@ -15,5 +16,6 @@ export function modLabel(definition: ModDefinition, stars?: Stars): string {
     RARITY[definition.rarity].label,
   ];
   if (stars !== undefined) parts.push(`${stars} star${stars === 1 ? "" : "s"}`);
+  parts.push(`effects: ${effectLines(definition, stars ?? 1).join("; ")}`);
   return parts.join(", ");
 }

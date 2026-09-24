@@ -1,23 +1,22 @@
 import { ACTION_TYPES } from "../battle/actions.ts";
 import { RARITIES, RARITY } from "../mods/rarity.ts";
-import { REGISTRY } from "../mods/registry.ts";
-import type { ShapeId } from "../mods/shapes.ts";
+import { DEFINITIONS, REGISTRY } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { MOD_TYPES, TYPE_LABEL } from "../mods/types.ts";
 import { AFFINITY_LABEL } from "../mods/types.ts";
 import { catalogCard } from "./catalogcard.ts";
 import { catalogCardView } from "./catalogcardview.ts";
 import { h } from "./dom.ts";
 import { modArt } from "./kit.ts";
-import type { ModArtDefinition } from "./kit.ts";
 
 const AFFINITIES = [null, ...ACTION_TYPES] as const;
-const DEBUG_SHAPES: readonly ShapeId[] = ["single", "domino", "triomino-l", "tetromino-o"];
-
-function definition(type: (typeof MOD_TYPES)[number], affinity: (typeof AFFINITIES)[number], shape: ShapeId): ModArtDefinition {
-  return { type, affinity, shape };
+function definition(type: (typeof MOD_TYPES)[number], affinity: (typeof AFFINITIES)[number]): ModId {
+  const found = DEFINITIONS.find((mod) => mod.type === type && mod.affinity === affinity);
+  if (found === undefined) throw new Error(`Missing ${type}/${affinity ?? "none"} sample`);
+  return found.id;
 }
 
-function sample(view: ModArtDefinition, size: "card" | "board"): HTMLElement {
+function sample(view: ModId, size: "card" | "board"): HTMLElement {
   return h("div", { class: `palette-sheet__sample palette-sheet__sample--${size}` },
     h("small", {}, size),
     modArt(view, 0, size === "card" ? "mod--mini" : ""));
@@ -61,10 +60,9 @@ function stateSheet(): HTMLElement {
 
 /** Debug-only visual proof for the semantic palette and the real piece renderer. */
 export function paletteDebugSheet(): HTMLElement {
-  const pairs = MOD_TYPES.flatMap((type, typeIndex) =>
-    AFFINITIES.map((affinity, affinityIndex) => {
-      const shape = DEBUG_SHAPES[(typeIndex + affinityIndex) % DEBUG_SHAPES.length];
-      const view = definition(type, affinity, shape);
+  const pairs = MOD_TYPES.flatMap((type) =>
+    AFFINITIES.map((affinity) => {
+      const view = definition(type, affinity);
       const action = affinity === null ? "None" : AFFINITY_LABEL[affinity];
       return h("article", {
         class: "palette-sheet__pair",

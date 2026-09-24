@@ -179,10 +179,13 @@ p, h1, h2 { margin: 0; }
 [data-action="tech"] { --c: var(--action-tech); }
 [data-action="block"] { --c: var(--action-block); }
 [data-action="hidden"] { --c: #dfe7ea; }
-.mod[data-type="solar"] .mod__cell, .catalog-card__shape[data-type="solar"] .catalog-card__cell { background-color: var(--mod-solar); }
-.mod[data-type="arc"] .mod__cell, .catalog-card__shape[data-type="arc"] .catalog-card__cell { background-color: var(--mod-arc); }
-.mod[data-type="void"] .mod__cell, .catalog-card__shape[data-type="void"] .catalog-card__cell { background-color: var(--mod-void); }
-.mod[data-type="neutral"] .mod__cell, .catalog-card__shape[data-type="neutral"] .catalog-card__cell { background-color: var(--mod-neutral); }
+.mod[data-type="solar"], .catalog-card__shape[data-type="solar"] { --piece-type: var(--mod-solar); }
+.mod[data-type="arc"], .catalog-card__shape[data-type="arc"] { --piece-type: var(--mod-arc); }
+.mod[data-type="void"], .catalog-card__shape[data-type="void"] { --piece-type: var(--mod-void); }
+.mod[data-type="neutral"], .catalog-card__shape[data-type="neutral"] { --piece-type: var(--mod-neutral); }
+.mod[data-affinity="strike"], .catalog-card__shape[data-affinity="strike"] { --piece-affinity: var(--action-strike); }
+.mod[data-affinity="tech"], .catalog-card__shape[data-affinity="tech"] { --piece-affinity: var(--action-tech); }
+.mod[data-affinity="block"], .catalog-card__shape[data-affinity="block"] { --piece-affinity: var(--action-block); }
 
 .chip {
   display: inline-flex; align-items: center; justify-content: center; gap: .6rem; min-width: 5.2rem; height: 5.2rem; padding: 0 1.2rem;
@@ -199,19 +202,59 @@ p, h1, h2 { margin: 0; }
 .chip.is-now { transform: translateY(-1.2rem); box-shadow: 0 .7rem 0 var(--ink); }
 .chip.is-done { opacity: .5; }
 
-/* A mod: bevelled blocks in its shape. `--cell` on an ancestor decides the size. */
+/* Every occupied cell carries the diagonal type/action split; outline geometry signals rarity. */
 .mod { position: relative; }
 .mod__cell {
   position: absolute; width: var(--cell); height: var(--cell);
-  border: .3rem solid var(--cell-edge); border-radius: calc(var(--cell) * .16); background: var(--surface-card);
+  border: .3rem solid var(--cell-edge); border-radius: calc(var(--cell) * .16);
+  background: linear-gradient(135deg, var(--piece-type) 50%, var(--piece-affinity, var(--piece-type)) 50%);
   box-shadow: inset 0 calc(var(--cell) * -.09) 0 var(--cell-bevel-dark), inset 0 calc(var(--cell) * .06) 0 var(--cell-bevel-light);
 }
-.mod__action {
-  position: absolute; inset: 17%; z-index: 2; display: grid; place-items: center;
-  border: .2rem solid var(--icon-outline); border-radius: 50%; background: var(--icon-backing); color: var(--c);
-}
-.mod__action .icon { width: 72%; height: 72%; }
 .mod--mini .mod__cell { border-width: .22rem; border-radius: calc(var(--cell) * .2); }
+
+.mod[data-rarity="uncommon"] .mod__cell::before, .catalog-card__shape[data-rarity="uncommon"] .catalog-card__cell::before,
+.mod[data-rarity="super-rare"] .mod__cell::before, .catalog-card__shape[data-rarity="super-rare"] .catalog-card__cell::before {
+  content: ""; position: absolute; inset: 8%; border-radius: inherit; pointer-events: none;
+}
+.mod[data-rarity="uncommon"] .mod__cell::before, .catalog-card__shape[data-rarity="uncommon"] .catalog-card__cell::before {
+  border-top: .15rem dashed var(--cell-edge); border-bottom: .15rem dashed var(--cell-edge);
+}
+.mod[data-rarity="rare"] .mod__cell, .catalog-card__shape[data-rarity="rare"] .catalog-card__cell { border-style: double; border-width: .5rem; }
+.mod[data-rarity="super-rare"] .mod__cell::before, .catalog-card__shape[data-rarity="super-rare"] .catalog-card__cell::before {
+  border: .13rem dotted var(--text-primary);
+}
+.mod[data-rarity="legendary"] .mod__cell, .catalog-card__shape[data-rarity="legendary"] .catalog-card__cell {
+  border-width: .4rem;
+  box-shadow: inset 0 0 0 .18rem var(--star-on), inset 0 calc(var(--cell) * -.09) 0 var(--cell-bevel-dark);
+}
+.mod__mark, .catalog-card__mark {
+  position: absolute; z-index: 2; left: 18%; top: 35%; min-width: 58%; padding: .03em .1em;
+  border: .12rem solid var(--cell-edge); border-radius: .35rem;
+  background: var(--icon-backing); color: var(--text-primary); font-size: calc(var(--cell) * .23);
+  font-weight: 900; line-height: 1.1; text-align: center; pointer-events: none;
+}
+.catalog-card__mark { font-size: calc(var(--catalog-cell) * .23); }
+.mod__etches, .catalog-card__etches {
+  position: absolute; z-index: 3; left: 18%; top: 12%; display: flex; gap: .08rem; width: 64%; height: 10%; pointer-events: none;
+}
+.mod__etches i, .catalog-card__etches i { flex: 1; border: .08rem solid var(--cell-edge); border-radius: .2rem; background: var(--effect-color); }
+.mod__etches i[data-effect="damage"], .catalog-card__etches i[data-effect="damage"], .mod-badge[data-effect="damage"] { --effect-color: var(--action-strike); }
+.mod__etches i[data-effect="block"], .catalog-card__etches i[data-effect="block"], .mod-badge[data-effect="block"] { --effect-color: var(--action-block); }
+.mod__etches i[data-effect="burn"], .catalog-card__etches i[data-effect="burn"], .mod-badge[data-effect="burn"] { --effect-color: var(--status-burn); }
+.mod__etches i[data-effect="shock"], .catalog-card__etches i[data-effect="shock"], .mod-badge[data-effect="shock"] { --effect-color: var(--status-shock); }
+.mod__etches i[data-effect="poison"], .catalog-card__etches i[data-effect="poison"], .mod-badge[data-effect="poison"] { --effect-color: var(--status-poison); }
+.mod__etches i[data-effect="heal"], .catalog-card__etches i[data-effect="heal"], .mod-badge[data-effect="heal"] { --effect-color: var(--text-primary); }
+.mod__etches i[data-effect="cleanse"], .catalog-card__etches i[data-effect="cleanse"], .mod-badge[data-effect="cleanse"] { --effect-color: var(--mod-neutral); }
+.mod__etches i[data-effect="boost"], .catalog-card__etches i[data-effect="boost"], .mod-badge[data-effect="boost"] { --effect-color: var(--action-tech); }
+.mod__etches i[data-effect="income"], .catalog-card__etches i[data-effect="income"], .mod-badge[data-effect="income"],
+.mod__etches i[data-effect="reroll"], .catalog-card__etches i[data-effect="reroll"], .mod-badge[data-effect="reroll"],
+.mod__etches i[data-effect="style"], .catalog-card__etches i[data-effect="style"], .mod-badge[data-effect="style"] { --effect-color: var(--mod-neutral); }
+.mod-badges { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; min-width: 0; }
+.mod-badge {
+  display: inline-flex; align-items: center; min-width: 0; min-height: 1.7rem; padding: .1rem .35rem;
+  border: .15rem solid var(--effect-color); border-radius: .4rem; background: var(--surface-panel);
+  color: var(--text-primary); font-size: 1.1rem; font-weight: 900; line-height: 1.1; white-space: nowrap;
+}
 
 .toast {
   position: absolute; left: 50%; top: 10.4rem; z-index: 70; transform: translateX(-50%);
@@ -347,7 +390,9 @@ p, h1, h2 { margin: 0; }
   position: relative; display: grid; grid-template-rows: 1fr auto; overflow: hidden; --cell: 3.2rem;
   border: .3rem solid var(--border-strong); border-radius: 1.2rem; background: var(--surface-card); color: var(--text-primary); cursor: grab;
 }
-.offer__art { display: grid; place-items: center; }
+.offer__art { display: grid; grid-template-rows: minmax(0, 1fr) auto; place-items: center; min-height: 0; padding: .3rem; }
+.offer__badges { justify-content: center; align-self: end; max-width: 100%; }
+.offer__badges .mod-badge { font-size: .82rem; min-height: 1.2rem; padding: .05rem .2rem; }
 .offer__foot {
   display: flex; align-items: center; justify-content: space-between; gap: .4rem; padding: .3rem .8rem;
   border-top: .3rem solid var(--border-subtle); background: var(--surface-panel); color: var(--text-primary); font-size: 1.6rem;
@@ -564,7 +609,7 @@ p, h1, h2 { margin: 0; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
 }
 
-/* Mod presentation: every piece is solid in its type colour. Action affinity is a separate disc. */
+/* Stars remain neutral while colour and outline geometry carry type, affinity and rarity. */
 /* Stars use neutral on/off tokens and never encode rarity. */
 .stars {
   display: inline-flex; color: var(--star-on); font-weight: 900; line-height: 1; letter-spacing: -.04em; white-space: nowrap;
@@ -575,8 +620,10 @@ p, h1, h2 { margin: 0; }
   pointer-events: none;
 }
 .mod--mini .mod__stars { display: none; }
-.slot__stars { position: absolute; right: .8rem; bottom: .4rem; font-size: 2rem; }
+.slot__stars { position: absolute; right: .5rem; top: .3rem; font-size: 1.5rem; }
 .slot { position: relative; }
+.slot__badges { position: absolute; left: .3rem; right: .3rem; bottom: .3rem; justify-content: center; }
+.slot__badges .mod-badge { font-size: .88rem; min-height: 1.3rem; padding: .08rem .25rem; }
 
 /* Burn, Shock and Poison under each fighter's hearts; nothing shows while a count is zero. */
 .debuffs { display: flex; gap: .8rem; min-height: 3.6rem; }
@@ -706,7 +753,7 @@ p, h1, h2 { margin: 0; }
 
 .catalog-card {
   --catalog-cell: 4rem;
-  position: relative; display: grid; grid-template-rows: minmax(10rem, 1fr) auto; min-width: 0; min-height: 16rem;
+  position: relative; display: grid; grid-template-rows: minmax(9rem, 1fr) auto auto; gap: .25rem; min-width: 0; min-height: 18rem;
   padding: 1rem 2.8rem .9rem 1rem; border: .3rem solid var(--border-subtle); border-radius: 1.2rem;
   background: var(--surface-card); color: var(--text-primary); text-align: left; cursor: pointer; box-shadow: 0 .4rem 0 var(--cell-edge);
 }
@@ -730,18 +777,15 @@ p, h1, h2 { margin: 0; }
   outline: .35rem solid var(--focus-ring); outline-offset: .45rem;
 }
 .catalog-card.is-unowned { background: var(--surface-panel); }
-.catalog-card__art { display: grid; place-items: center; min-width: 0; min-height: 10rem; }
-.catalog-card__shape { position: relative; display: block; }
+.catalog-card__art { display: grid; place-items: center; min-width: 0; min-height: 9rem; }
+.catalog-card__badges { min-height: 1.7rem; max-height: 3.7rem; overflow: hidden; }
+.catalog-card__shape { --cell: var(--catalog-cell); position: relative; display: block; }
 .catalog-card__cell {
   position: absolute; width: var(--catalog-cell); height: var(--catalog-cell);
-  border: .3rem solid var(--cell-edge); border-radius: calc(var(--catalog-cell) * .16); background: var(--surface-card);
+  border: .3rem solid var(--cell-edge); border-radius: calc(var(--catalog-cell) * .16);
+  background: linear-gradient(135deg, var(--piece-type) 50%, var(--piece-affinity, var(--piece-type)) 50%);
   box-shadow: inset 0 calc(var(--catalog-cell) * -.09) 0 var(--cell-bevel-dark), inset 0 calc(var(--catalog-cell) * .06) 0 var(--cell-bevel-light);
 }
-.catalog-card__action {
-  position: absolute; inset: 17%; z-index: 2; display: grid; place-items: center;
-  border: .2rem solid var(--icon-outline); border-radius: 50%; background: var(--icon-backing); color: var(--c);
-}
-.catalog-card__action .icon { width: 72%; height: 72%; }
 .catalog-card__pips {
   position: absolute; right: .55rem; top: 50%; display: grid; gap: .35rem; transform: translateY(-50%);
 }

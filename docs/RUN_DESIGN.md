@@ -36,7 +36,7 @@ The numbered rows are the run decisions; D2–D11 are the confirmed decisions fr
 | 4 | Merging duplicates | **Superseded by row 11:** copies combine into ★★ and ★★★. |
 | 5 | Player figure | **The authored fighter.** No picker until fighters have gameplay identity or the core run is proven fun. |
 | 6 | Combat | **Two three-action bars and discrete rounds** with a Mixup decision between rounds (§3). |
-| 7 | Mod colours | **Type owns the piece colour; affinity owns the action icon; rarity owns the name colour.** |
+| 7 | Mod colours | **Type and affinity split each occupied cell diagonally; rarity owns the name colour and a neutral outline pattern.** The FL-020 refresh restores two-colour art without action glyphs on mods. |
 | 8 | Display | **One fullscreen 16:9 composition,** scaled to the device (§1). |
 | 9 | Shop layout | **Batomon's proportions.** The action bars sit in the right-hand negative space; there is no fighter card or intel panel (§10). |
 | 10 | What a mod is | **One data definition:** id, name, rarity, type, optional affinity, one of 11 shapes and one effect. Placement and orthogonal adjacency are the build relationships. |
@@ -413,7 +413,7 @@ strip along the bottom.
 - **Action bars:** Bar A over Bar B, three slots each. Each slot shows its action and the build's
   compiled unconditional damage preview for that action.
 - **Shop strip:** Reroll on the left, five offers, Fight on the right, with money and Lock above.
-  Offers show the shape, optional affinity icon, rarity-coloured name and price.
+  Offers show the two-colour shape, compact effect badges, rarity-coloured name and price.
 - **Controls:** left click/tap picks up and places; right click turns clockwise about the cell under
   the pointer; R is the keyboard turn; Escape cancels the carry. Illegal placement is refused.
 - Nothing on this screen describes the next opponent.
@@ -473,9 +473,10 @@ while a run is saved. Settings: battle speed 1× / 2× / 4×, reset, return.
 The whole 64-mod catalogue on one screen: a selected detail pane on the left and a four-column,
 scrolling card grid on the right. `FILTER: NONE` opens Type, Action (including None), Size and
 Rarity groups; choices are OR inside a group and AND across groups. Cards are shape-first: type
-colour fills the cells, at most one affinity icon sits on the centroid-nearest occupied cell, and the
-name alone takes the rarity colour. The detail pane previews ★ / ★★ / ★★★ and can turn through the
-shape's distinct orientations. [`MODS.md`](MODS.md#catalogue-ui) is the contract.
+and affinity colours split each cell diagonally, a small effect value sits on the centroid-nearest
+occupied cell, and effect badges sit below the artwork. The name alone takes the rarity colour; a
+neutral outline pattern also varies by rarity. The detail pane previews ★ / ★★ / ★★★ and can turn
+through the shape's distinct orientations. [`MODS.md`](MODS.md#catalogue-ui) is the contract.
 
 ### Interaction and access
 

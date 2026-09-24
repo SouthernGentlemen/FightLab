@@ -1,5 +1,7 @@
 import type { CatalogCardModel, CatalogShapeModel } from "./catalogcard.ts";
-import { h, icon } from "./dom.ts";
+import { h } from "./dom.ts";
+import { effectBadgeRow } from "./modbadgeview.ts";
+import { pieceMark, pieceMarkText } from "./modvisual.ts";
 
 function sameCell(first: { x: number; y: number }, second: { x: number; y: number }): boolean {
   return first.x === second.x && first.y === second.y;
@@ -11,6 +13,7 @@ export function catalogShapeView(model: CatalogShapeModel): HTMLSpanElement {
     class: "catalog-card__shape",
     "data-type": model.type,
     "data-affinity": model.affinity ?? undefined,
+    "data-rarity": model.rarity,
     style: `width: calc(var(--catalog-cell) * ${model.width}); height: calc(var(--catalog-cell) * ${model.height})`,
     "aria-hidden": "true",
   });
@@ -21,8 +24,10 @@ export function catalogShapeView(model: CatalogShapeModel): HTMLSpanElement {
       "data-type": model.type,
       style: `left: calc(var(--catalog-cell) * ${cell.x}); top: calc(var(--catalog-cell) * ${cell.y})`,
     });
-    if (model.affinity !== null && sameCell(cell, model.iconCell)) {
-      node.append(h("span", { class: "catalog-card__action", "data-action": model.affinity }, icon(model.affinity)));
+    if (sameCell(cell, model.markCell)) {
+      node.append(h("span", { class: "catalog-card__mark", "data-effect": pieceMark(model.badges).kind }, pieceMarkText(model.badges)));
+      node.append(h("span", { class: "catalog-card__etches" },
+        ...model.badges.map(({ kind }) => h("i", { "data-effect": kind }))));
     }
     shape.append(node);
   }
@@ -43,6 +48,7 @@ export function catalogCardView(model: CatalogCardModel): HTMLButtonElement {
     "aria-label": model.label,
   },
   h("span", { class: "catalog-card__art" }, catalogShapeView(model)),
+  effectBadgeRow(model.badges, "catalog-card__badges"),
   pips,
   h("b", { class: "catalog-card__name", "data-rarity": model.rarity, title: model.name }, model.name));
 }

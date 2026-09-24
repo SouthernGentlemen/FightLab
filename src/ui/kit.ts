@@ -4,14 +4,15 @@ import type { BarId } from "../battle/bars.ts";
 import { STYLE_RANKS } from "../battle/style.ts";
 import type { StyleMeter } from "../battle/style.ts";
 import { REGISTRY } from "../mods/registry.ts";
-import type { ModDefinition, ModId } from "../mods/registry.ts";
+import type { ModId } from "../mods/registry.ts";
 import { shapeCells, shapeSize } from "../mods/shapes.ts";
 import type { Rotation } from "../mods/shapes.ts";
 import { starText } from "../mods/stars.ts";
 import type { Stars } from "../mods/stars.ts";
-import { iconAnchorCell } from "./catalogcard.ts";
+import { pieceAnchorCell } from "./catalogcard.ts";
 import { button, h, icon, replay, setData, setText } from "./dom.ts";
 import type { IconName } from "./icons.ts";
+import { effectBadges, pieceMark, pieceMarkText } from "./modvisual.ts";
 
 export const ACTION_LABEL: Readonly<Record<ActionType, string>> = {
   strike: DEFAULT_ACTIONS.strike.label,
@@ -27,28 +28,29 @@ export function starRow(stars: Stars, className = "stars"): HTMLElement {
 }
 
 /**
- * A mod drawn as solid type-coloured blocks with at most one action-affinity icon on the occupied
- * cell nearest its centroid. Stars sit at the piece corner. The same markup draws full size on the
- * grid and in miniature in the bank and shop.
+ * The registry supplies both halves of the diagonal and the printed effect mark. The same markup
+ * draws full size on the grid and in miniature in the bank and shop.
  */
-export type ModArtDefinition = Pick<ModDefinition, "type" | "affinity" | "shape">;
-
-export function modArt(mod: ModId | ModArtDefinition, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
-  const definition = typeof mod === "string" ? REGISTRY[mod] : mod;
+export function modArt(mod: ModId, rotation: Rotation, className = "", stars: Stars = 1): HTMLElement {
+  const definition = REGISTRY[mod];
   const cells = shapeCells(definition.shape, rotation);
   const [width, height] = shapeSize(cells);
-  const iconCell = iconAnchorCell(cells);
+  const markCell = pieceAnchorCell(cells);
+  const badges = effectBadges(definition, stars);
   const node = h("div", {
     class: `mod ${className}`.trim(),
     "data-type": definition.type,
     "data-affinity": definition.affinity ?? undefined,
+    "data-rarity": definition.rarity,
     "data-stars": String(stars),
     style: `width: calc(var(--cell) * ${width}); height: calc(var(--cell) * ${height})`,
   });
   cells.forEach(({ x, y }, index) => {
     const cell = h("span", { class: "mod__cell", "data-index": String(index), style: `left: calc(var(--cell) * ${x}); top: calc(var(--cell) * ${y})` });
-    if (x === iconCell.x && y === iconCell.y && definition.affinity !== null) {
-      cell.append(h("span", { class: "mod__action", "data-action": definition.affinity }, icon(definition.affinity)));
+    if (x === markCell.x && y === markCell.y) {
+      cell.append(h("span", { class: "mod__mark", "data-effect": pieceMark(badges).kind }, pieceMarkText(badges)));
+      cell.append(h("span", { class: "mod__etches" },
+        ...badges.map(({ kind }) => h("i", { "data-effect": kind }))));
     }
     node.append(cell);
   });

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DEFINITIONS } from "../../src/mods/registry.ts";
 import { SHAPE_IDS, SHAPES, shapeCells, sizeOf } from "../../src/mods/shapes.ts";
 import { STARS, copiesIn } from "../../src/mods/stars.ts";
-import { CATALOG_CARD_BOX, catalogCard, iconAnchorCell } from "../../src/ui/catalogcard.ts";
+import { CATALOG_CARD_BOX, catalogCard, pieceAnchorCell } from "../../src/ui/catalogcard.ts";
 import { modLabel } from "../../src/ui/modlabel.ts";
 
 describe("catalogue card view model", () => {
@@ -32,7 +32,7 @@ describe("catalogue card view model", () => {
     expect([model.width, model.height, model.cellSize]).toEqual([1, 1, 1]);
   });
 
-  it("anchors every library shape on the occupied cell nearest its centroid", () => {
+  it("anchors the printed effect mark on the occupied cell nearest its centroid", () => {
     const expected = {
       "tetromino-i": { x: 1, y: 0 },
       "tetromino-o": { x: 0, y: 0 },
@@ -48,16 +48,16 @@ describe("catalogue card view model", () => {
     } as const;
 
     for (const shape of SHAPE_IDS) {
-      expect(iconAnchorCell(shapeCells(shape, 0)), shape).toEqual(expected[shape]);
+      expect(pieceAnchorCell(shapeCells(shape, 0)), shape).toEqual(expected[shape]);
     }
-    expect(iconAnchorCell([{ x: 1, y: 0 }, { x: 0, y: 0 }]), "tie ignores source order")
+    expect(pieceAnchorCell([{ x: 1, y: 0 }, { x: 0, y: 0 }]), "tie ignores source order")
       .toEqual({ x: 0, y: 0 });
   });
 
-  it("projects the chosen icon anchor and card text from the definition", () => {
+  it("projects the chosen mark anchor and card text from the definition", () => {
     for (const definition of DEFINITIONS) {
       const model = catalogCard(definition, 0);
-      expect(model.iconCell, `${definition.id}: icon cell`).toEqual(iconAnchorCell(model.cells));
+      expect(model.markCell, `${definition.id}: mark cell`).toEqual(pieceAnchorCell(model.cells));
       expect(model.name).toBe(definition.name);
       expect(model.rarity).toBe(definition.rarity);
       expect(model.label).toBe(modLabel(definition));

@@ -89,6 +89,9 @@ const armoryState = await evaluate(`(() => {
     cells: cells.length,
     cellSizes,
     actions: catalog.querySelectorAll(".catalog-card__action").length,
+    marks: catalog.querySelectorAll(".catalog-card__mark").length,
+    badges: [...catalog.querySelectorAll(".catalog-card__badges .mod-badge")].map((badge) => badge.textContent),
+    rarity: catalog.querySelector(".catalog-card__shape")?.getAttribute("data-rarity") ?? "",
     pips: catalog.querySelectorAll(".catalog-card__pip").length,
     legacy: document.querySelectorAll(".tile, .square, [class*='tile__'], [class*='square__']").length,
     repeatedCardLabels: detail.querySelectorAll(".card__rarity, .tagchips").length,
@@ -105,13 +108,13 @@ if (armoryState.totalCards !== 64 || armoryState.columns !== 4 || armoryState.to
   throw new Error(`Expected 64 catalogue cards in 16 rows of four: ${JSON.stringify(armoryState)}`);
 }
 if (armoryState.visibleText !== "Cinder Edge") throw new Error(`Catalogue card name is wrong: ${armoryState.visibleText}`);
-if (!/^Cinder Edge, Solar, Strike affinity, domino, Common$/.test(armoryState.label)) {
+if (armoryState.label !== "Cinder Edge, Solar, Strike affinity, domino, Common, effects: +1 damage per cell on Strike") {
   throw new Error(`Catalogue card accessible label is incomplete: ${armoryState.label}`);
 }
 if (armoryState.cells !== 2 || armoryState.cellSizes.some(([width, height]) => width !== height)) {
   throw new Error(`Catalogue shape cells are not the expected uniform domino: ${JSON.stringify(armoryState)}`);
 }
-if (armoryState.actions > 1 || armoryState.pips !== 3 || armoryState.legacy !== 0) {
+if (armoryState.actions !== 0 || armoryState.marks !== 1 || armoryState.badges.join() !== "DMG +2" || armoryState.rarity !== "common" || armoryState.pips !== 3 || armoryState.legacy !== 0) {
   throw new Error(`Catalogue card contract failed: ${JSON.stringify(armoryState)}`);
 }
 if (armoryState.nameOverflow !== "ellipsis" || armoryState.nameWhiteSpace !== "nowrap") {
@@ -193,7 +196,7 @@ if (prepState.energyCounters !== 0) throw new Error("Prep still renders element 
 if (!/^♥ \d+ health$/.test(prepState.statsText) || /Charge|Heat|Void/.test(prepState.statsText)) {
   throw new Error(`Prep stats still expose energy state: ${prepState.statsText}`);
 }
-if (!/^[^,]+, (Solar|Arc|Void|Neutral), (Strike|Tech|Block) affinity, .+, (Common|Uncommon|Rare|Super Rare|Legendary), 1 star$/.test(prepState.offerLabel)) {
+if (!/^[^,]+, (Solar|Arc|Void|Neutral), (Strike|Tech|Block) affinity, .+, (Common|Uncommon|Rare|Super Rare|Legendary), 1 star, effects: .+$/.test(prepState.offerLabel)) {
   throw new Error(`Prep offer accessible label is incomplete: ${prepState.offerLabel}`);
 }
 await shot("prep");

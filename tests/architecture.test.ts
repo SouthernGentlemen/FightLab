@@ -124,18 +124,21 @@ describe("vocabulary", () => {
 });
 
 describe("mod presentation", () => {
-  it("uses one type fill and one optional action icon, with no split-colour bridge", () => {
+  it("uses type/affinity diagonal art and printed effects without mod action glyphs", () => {
     const css = readFileSync(join(ROOT, "src/ui/styles.css"), "utf8");
     const kit = readFileSync(join(ROOT, "src/ui/kit.ts"), "utf8");
     const catalog = readFileSync(join(ROOT, "src/ui/catalogcardview.ts"), "utf8");
 
-    expect(css).not.toMatch(/--c[12]\b|135deg|data-c[12]/);
+    expect(css).not.toMatch(/--c[12]\b|data-c[12]/);
+    expect(css).toContain("linear-gradient(135deg, var(--piece-type) 50%, var(--piece-affinity, var(--piece-type)) 50%)");
     expect(kit).not.toMatch(/\bpaintTags\b|\bmodIcon\b/);
+    expect(kit).not.toContain("mod__action");
+    expect(catalog).not.toContain("catalog-card__action");
     expect(kit).toContain('"data-type": definition.type');
     expect(kit).toContain('"data-affinity": definition.affinity ?? undefined');
     expect(catalog).toContain('"data-type": model.type');
     expect(catalog).toContain('"data-affinity": model.affinity ?? undefined');
-    expect(catalog).toContain("model.affinity !== null");
+    expect(catalog).toContain("pieceMarkText(model.badges)");
   });
 });
 

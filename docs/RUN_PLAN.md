@@ -372,8 +372,9 @@ All inside the 16:9 stage (C10). Layouts and proportions are in `RUN_DESIGN.md` 
 - **Title** — `FIGHTLAB`, `Play` (continue or new run), `Armory`, `Settings`, and a small
   `New run` while a run is saved; fullscreen where the browser allows it.
 - **Armory** — the 64-definition registry in a four-column scrolling grid with a selected detail pane.
-  Cards are shape-first: type colour, at most one affinity icon on the centroid-nearest occupied cell,
-  rarity-coloured name and collection pips. `FILTER: NONE` opens Type, Action (including None), Size
+  Cards are shape-first: diagonal type/affinity colour, a neutral rarity outline, an effect value on
+  the centroid-nearest occupied cell, effect badges below the art, rarity-coloured name and collection
+  pips. `FILTER: NONE` opens Type, Action (including None), Size
   and Rarity; Clear resets every group. The detail previews ★ / ★★ / ★★★ and distinct rotations.
 - **Settings** — Battle speed `1x / 2x / 4x`, `Reset settings`, `Return`. Stored in
   `localStorage`; the page works without it.
@@ -424,8 +425,8 @@ Run with `npm test`; all headless.
 | Health persists between rounds; same inputs → same fight; 1×/2×/4× identical; every loadout terminates against the reference opponent and agrees with the matrix | `tests/game/determinism.test.ts`, `tests/game/match.test.ts` |
 | Resuming a fight from recorded decisions reaches the same pause | `tests/game/fight.test.ts` |
 | Figures assemble from Boneyard's loader; the renderer's clip choice is total | `tests/render/figures.test.ts` |
-| Catalogue DOM: 64 cards, shape cells, rotation preview, type colour, affinity icon, rarity name, hover/selection and filters | `tests/ui/catalogue.test.ts` |
-| Palette tokens, contrast, OKLab separation, all 12 type × affinity icon pairs and no mod-UI colour literals | `tests/ui/palette.test.ts` |
+| Catalogue DOM: 64 cards, shape cells, rotation preview, diagonal colours, effect readouts, varied neutral outlines, rarity name, hover/selection and filters | `tests/ui/catalogue.test.ts`, `tests/ui/modvisual.test.ts` |
+| Palette tokens, contrast, OKLab separation, all 12 type × affinity colour pairs and no mod-UI colour literals | `tests/ui/palette.test.ts` |
 | Heart fill; the 16:9 scale, no resolution cap, and one unsupported-display query shared by the stylesheet and fight clock | `tests/ui/hearts.test.ts`, `tests/ui/display.test.ts` |
 | Layer import rules, kernel seal, no randomness in rules, vocabulary boundary, Boneyard never imports FightLab | `tests/architecture.test.ts` |
 | Installed Boneyard matches the pin | `tests/boneyard-pin.test.ts` |

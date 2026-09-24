@@ -86,9 +86,11 @@ const detail = await evaluate(`(() => {
   return {
     name: name.textContent?.trim(),
     rarity: name.dataset.rarity,
-    rarityNodes: pane.querySelectorAll("[data-rarity]").length,
+    artRarity: art.querySelector(".catalog-card__shape")?.getAttribute("data-rarity"),
     cells: art.querySelectorAll(".catalog-card__cell").length,
     actions: art.querySelectorAll(".catalog-card__action").length,
+    marks: art.querySelectorAll(".catalog-card__mark").length,
+    badges: art.querySelectorAll(".detail-pane__badges .mod-badge").length,
     pips: pane.querySelectorAll(".detail-pane__pip").length,
     selectedStars: pane.querySelector('.detail-pane__pip[aria-pressed="true"]')?.textContent?.trim(),
     expectedStars: filled.at(-1) || "★",
@@ -106,9 +108,11 @@ const detail = await evaluate(`(() => {
 if (!detail
     || detail.name !== "Cinder Wall"
     || detail.rarity !== "uncommon"
-    || detail.rarityNodes !== 1
+    || detail.artRarity !== "uncommon"
     || detail.cells !== 4
-    || detail.actions !== 1
+    || detail.actions !== 0
+    || detail.marks !== 1
+    || detail.badges !== 2
     || detail.pips !== 3
     || detail.selectedStars !== detail.expectedStars
     || detail.rules < 1 || detail.rules > 3
