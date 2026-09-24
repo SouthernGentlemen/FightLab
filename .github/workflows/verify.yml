@@ -15,9 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out FightLab
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
           path: FightLab
+          persist-credentials: false
 
       - name: Check PR diff whitespace
         if: github.event_name == 'pull_request'
@@ -26,9 +29,7 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
-          git diff --check "$BASE_SHA" "$HEAD_SHA"
+        run: git diff --check "$BASE_SHA...$HEAD_SHA"
 
       - name: Read pinned Boneyard commit
         id: boneyard
@@ -36,15 +37,16 @@ jobs:
         run: echo "commit=$(node -p "require('./FightLab/boneyard.pin.json').commit")" >> "$GITHUB_OUTPUT"
 
       - name: Check out pinned Boneyard
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: SouthernGentlemen/Boneyard
           ref: ${{ steps.boneyard.outputs.commit }}
           path: Boneyard
           token: ${{ secrets.BONEYARD_READ_TOKEN }}
+          persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: FightLab/.node-version
           cache: npm
@@ -68,6 +70,10 @@ jobs:
       - name: Check
         working-directory: FightLab
         run: npm run check
+
+      - name: Network dependency advisories
+        working-directory: FightLab
+        run: npm run audit:dependencies
 
       - name: Observe live GitHub settings
         continue-on-error: true

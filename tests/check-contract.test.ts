@@ -17,6 +17,8 @@ describe("repository acceptance command", () => {
       "npm run check:boneyard && npm run test:github-settings && npm run test:release-identity && npm run test:distribution-boundary && npm run typecheck && npm test && vite build",
     );
     expect(commands.verify).toBe("npm run check");
+    expect(commands["audit:dependencies"]).toBe("npm audit --audit-level=high");
+    expect(commands.check).not.toContain("audit:dependencies");
     expect(commands["check:release-identity"]).toBe("node pipelines/release-identity.ts");
     expect(commands.check).toContain("npm run test:release-identity");
     expect(commands.check).toContain("npm run test:distribution-boundary");

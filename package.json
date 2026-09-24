@@ -23,17 +23,18 @@
     "test:github-settings": "node --test pipelines/github-repository-settings-cases.ts",
     "apply:github-settings": "node pipelines/apply-github-settings.ts",
     "test:release-identity": "node --test pipelines/release-identity-cases.ts",
-    "test:distribution-boundary": "node --test pipelines/distribution-boundary-cases.ts"
+    "test:distribution-boundary": "node --test pipelines/distribution-boundary-cases.ts",
+    "audit:dependencies": "npm audit --audit-level=high"
   },
   "dependencies": {
     "boneyard": "file:../Boneyard"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.9.0",
-    "vite": "^7.3.6",
-    "vitest": "^5.0.0",
-    "happy-dom": "^20.14.5"
+    "@types/node": "24.13.5",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "5.0.1",
+    "happy-dom": "20.14.5"
   },
   "packageManager": "npm@11.19.1",
   "engines": {
