@@ -8,14 +8,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-015 — [TEST] Guard annotated tag and package identity
-
-- Dependency: FL-014 merged.
-- Scope: Disposable Git cases for lightweight-tag failure, malformed semver, package/tag mismatch, wrong-commit failure and correct annotated exact-head success; also prove release packaging excludes `dist/` and copied Boneyard assets.
-- Non-goals: No GitHub Release creation, provider mutation or deployment.
-- Acceptance: Canonical acceptance covers release identity offline and credential-free.
-- Validation: Focused release tests; `npm run check`; `git diff --check`.
-
 ### FL-016 — [OPS] Publish source-only GitHub Releases from verified tags
 
 - Dependency: FL-015 merged.

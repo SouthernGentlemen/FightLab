@@ -42,14 +42,17 @@ and pinned by [`boneyard.pin.json`](boneyard.pin.json):
 ```bash
 npm install
 npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
-npm run check    # canonical acceptance: pin, typecheck, complete tests, one production build
+npm run test:release-identity  # offline disposable-Git release identity/source-tree cases
+npm run check    # canonical acceptance: pin, pure release/settings cases, typecheck, complete tests, one production build
 npm run verify   # compatibility alias for npm run check
 FIGHTLAB_RELEASE=v0.1.0 npm run check:release-identity  # validate an existing source tag only
 ```
 
 `npm run check` is the canonical credential-free acceptance command; `npm run verify` delegates to it
-for compatibility. Focused commands remain useful during development, while pushing a branch, opening
-a PR, exact-head CI and merging are separate GitHub actions. `check:release-identity` is read-only:
+for compatibility. Its offline release cases exercise disposable repositories and prove generated
+`dist/` / copied Boneyard build assets are outside the source-release tree. Focused commands remain
+useful during development, while pushing a branch, opening a PR, exact-head CI and merging are
+separate GitHub actions. `check:release-identity` is read-only:
 it requires an existing annotated semantic tag at exact `HEAD`, a matching private package version
 and unchanged tracked repository content. It creates no tag or release and publishes nothing.
 FightLab has no hosted production deployment or repository release command yet. See

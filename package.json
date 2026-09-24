@@ -16,12 +16,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "tune": "node pipelines/tune.ts",
-    "check": "npm run check:boneyard && npm run test:github-settings && npm run typecheck && npm test && vite build",
+    "check": "npm run check:boneyard && npm run test:github-settings && npm run test:release-identity && npm run typecheck && npm test && vite build",
     "verify": "npm run check",
     "check:release-identity": "node pipelines/release-identity.ts",
     "verify:github-settings": "node pipelines/verify-github-settings.ts",
     "test:github-settings": "node --test pipelines/github-repository-settings-cases.ts",
-    "apply:github-settings": "node pipelines/apply-github-settings.ts"
+    "apply:github-settings": "node pipelines/apply-github-settings.ts",
+    "test:release-identity": "node --test pipelines/release-identity-cases.ts"
   },
   "dependencies": {
     "boneyard": "file:../Boneyard"
