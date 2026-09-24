@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 interface PackageJson {
   readonly packageManager?: string;
+  readonly devDependencies?: Record<string, string>;
   readonly engines?: {
     readonly node?: string;
     readonly npm?: string;
@@ -16,6 +17,7 @@ interface LockJson {
       readonly node?: string;
       readonly npm?: string;
     };
+    readonly devDependencies?: Record<string, string>;
   }>;
 }
 
@@ -39,6 +41,18 @@ describe("repository toolchain contract", () => {
 
     expect(pkg.engines).toEqual({ node: `${nodeMajor}.x`, npm: `${npmMajor}.x` });
     expect(lock.packages?.[""]?.engines).toEqual(pkg.engines);
+  });
+
+  it("pins the FightLab development-tool compatibility lane exactly", () => {
+    const expected = {
+      "@types/node": "24.13.5",
+      typescript: "5.9.3",
+      vite: "7.3.6",
+      vitest: "5.0.1",
+      "happy-dom": "20.14.5",
+    };
+    expect(pkg.devDependencies).toEqual(expected);
+    expect(lock.packages?.[""]?.devDependencies).toEqual(expected);
   });
 
   it("enforces engines and keeps provider workflows on repository authority", () => {

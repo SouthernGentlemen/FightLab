@@ -210,7 +210,12 @@ tests/              arranged by the same layers
 The repository toolchain is Node **26.9.0** from `.node-version` and npm **11.19.1** from
 `package.json#packageManager`. `package.json#engines` carries the supported Node 26/npm 11 policy,
 and `.npmrc` enables strict engine enforcement. GitHub workflows consume `.node-version` directly
-and verify both exact runtime versions before `npm ci`.
+and verify both exact runtime versions before `npm ci`. FightLab pins its direct development tools to
+**@types/node 24.13.5, TypeScript 5.9.3, Vite 7.3.6, Vitest 5.0.1, and happy-dom 20.14.5**.
+The TypeScript 5 / Node-types 24 / Vite 7 major line is the current Boneyard-consumer compatibility
+exception shared with the Boneyard/SVGLab source lane; do not move FightLab alone to the hosted
+repositories' TypeScript 7 / Vite 8 line. Re-evaluate that major boundary only when Boneyard and its
+direct source consumers can validate the move together.
 
 ```
 npm run dev              check the pin, stop any FightLab server left on the port, then serve the game
@@ -222,6 +227,7 @@ npm run pin:boneyard     accept the installed Boneyard: rewrite the pin
 npm run typecheck        the strip-only TypeScript dialect
 npm run test             every test
 npm run tune             bot runs across many seeds: win rates and money by day
+npm run audit:dependencies  networked high-severity npm advisory gate; intentionally outside canonical check
 npm run test:github-settings    pure, deterministic, credential-free settings normalization/comparison/apply-plan cases
 npm run test:release-identity    pure, credential-free disposable-Git release identity and source-tree cases
 npm run test:distribution-boundary  pure guard for private/source-only release identity and the no-deploy/no-built-publication boundary

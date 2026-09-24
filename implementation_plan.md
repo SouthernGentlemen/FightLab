@@ -10,15 +10,6 @@ Preserve the exact Boneyard commit+digest pin, cross-repo checkout boundary, det
 
 ## Open tasks
 
-### FL-022 — [OPS] Normalize shared package, workflow, and npm command contracts
-
-- Dependency: FL-018 and FL-020 delivered; portfolio planning policy FL-019 merged. Coordinate with the same normalization task in every public sibling repository.
-- Why: Shared versioned tooling, workflow behavior, and npm command meanings have drifted across the public repositories.
-- Scope: Inventory every public repository's direct and transitive shared npm packages, package manager, Node pin, lockfile, versioned vendor code, GitHub Action pins, workflow triggers/permissions/toolchain/install/check/advisory/identity/release/deploy steps, and npm scripts. Select one supported version for each shared vendor dependency or document a concrete compatibility exception. Align common scripts and YAML workflows to the same behavior for equivalent capabilities. Keep product-specific commands and explicit local-only/library/no-deploy boundaries. Reconcile AGENTS.md and the byte-identical CONTRIBUTING.md contract across the public set.
-- Non-goals: Do not add unused packages, a hosted runtime to a local-only product, or production deployment merely for parity. Do not rewrite published history or unrelated product behavior.
-- Acceptance: A fresh cross-repository matrix shows the same version for every shared versioned package/vendor tool where compatible, identical CONTRIBUTING.md bytes, equivalent workflow and npm-script semantics for applicable capabilities, and recorded exceptions with technical reasons. No workflow invokes a missing script; every package lock matches its manifest.
-- Validation: Install each public repository with its pinned toolchain and `npm ci`; run `npm run check`, focused workflow/script contract tests, `git diff --check`, exact-head CI, and the separate network/provider gates where applicable. Re-fetch every target's base and this documentation commit before merging to preserve concurrent work.
-
 ### FL-024 — [OPS] Deploy FightLab at `fightlab.wizardgang.ai/play/` from tagged releases
 
 - Dependency: FL-022 delivered. Before any public build or provider deployment, establish distribution rights for every bundled Boneyard clip and emitted fighter/cosmetic asset identified by `LICENSE.md`; replace or remove material without redistribution permission in Boneyard, update FightLab's exact pin and provenance, and verify the resulting build is publishable. This task is blocked until that evidence exists.
