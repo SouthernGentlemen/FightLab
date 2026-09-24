@@ -42,7 +42,8 @@ and pinned by [`boneyard.pin.json`](boneyard.pin.json):
 ```bash
 npm install
 npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
-npm run test:release-identity  # offline disposable-Git release identity/source-tree cases
+npm run test:release-identity      # offline disposable-Git release identity/source-tree cases
+npm run test:distribution-boundary # reject deploy/publish config and built release artifacts
 npm run check    # canonical acceptance: pin, pure release/settings cases, typecheck, complete tests, one production build
 npm run verify   # compatibility alias for npm run check
 FIGHTLAB_RELEASE=v0.1.0 npm run check:release-identity  # validate an existing source tag only
@@ -59,6 +60,8 @@ A pushed semantic annotated `vX.Y.Z` tag is the only provider release trigger. T
 release workflow reproduces the pinned toolchain and Boneyard input, runs canonical acceptance plus
 the exact release-identity check, then creates the GitHub Release with `--verify-tag` and no
 attachments. It never publishes `dist/`, generated Boneyard-derived assets, or deploys the game.
+Canonical acceptance guards that constraint with positive/negative distribution-boundary cases and a
+scan of the tracked workflow/configuration surface.
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
 
 A FightLab server still running from another terminal, a preview pane or an ended session is stopped

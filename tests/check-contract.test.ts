@@ -12,12 +12,14 @@ describe("repository acceptance command", () => {
     const commands = scripts();
     expect(commands["test:github-settings"]).toBe("node --test pipelines/github-repository-settings-cases.ts");
     expect(commands["test:release-identity"]).toBe("node --test pipelines/release-identity-cases.ts");
+    expect(commands["test:distribution-boundary"]).toBe("node --test pipelines/distribution-boundary-cases.ts");
     expect(commands.check).toBe(
-      "npm run check:boneyard && npm run test:github-settings && npm run test:release-identity && npm run typecheck && npm test && vite build",
+      "npm run check:boneyard && npm run test:github-settings && npm run test:release-identity && npm run test:distribution-boundary && npm run typecheck && npm test && vite build",
     );
     expect(commands.verify).toBe("npm run check");
     expect(commands["check:release-identity"]).toBe("node pipelines/release-identity.ts");
     expect(commands.check).toContain("npm run test:release-identity");
+    expect(commands.check).toContain("npm run test:distribution-boundary");
     expect(commands.check).not.toContain("npm run check:release-identity");
     expect(commands.check).not.toContain("verify:github-settings");
     expect(commands.check).not.toContain("apply:github-settings");

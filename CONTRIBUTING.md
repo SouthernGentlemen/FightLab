@@ -61,6 +61,7 @@ Follow the controlled loop in `AGENTS.md` rather than inventing a parallel proce
 | `npm run tune` | Run local balance measurements; it is not the acceptance gate. |
 | `npm run test:github-settings` | Pure, deterministic, credential-free settings normalization, comparison and bounded apply-planning cases; no provider network is required. |
 | `npm run test:release-identity` | Pure disposable-Git cases for annotated tag/package identity and source-tree exclusion of `dist/` and copied Boneyard build assets. |
+| `npm run test:distribution-boundary` | Pure positive/negative cases plus a tracked-repository guard that rejects deployment config/workflows, package publication, tracked `dist/`, and release attachments. |
 | `npm run check` | Canonical credential-free acceptance: Boneyard pin, pure GitHub-settings and release-identity cases, typecheck, complete automated tests (including the FL controlled-change identity/history tests), and exactly one production build. |
 | `npm run verify` | Compatibility alias that delegates to `npm run check`; it is not a second acceptance pipeline. |
 | `FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` | Read-only local source-release identity check: require a semantic annotated tag at exact `HEAD`, matching private package version and unchanged tracked repository content. It does not create a tag or release. |
@@ -99,4 +100,6 @@ FightLab has no hosted production deployment. Its provider release path is sourc
 toolchain and Boneyard input, runs `npm ci`, canonical `npm run check`, and exact release-identity
 validation, then creates the GitHub Release with `gh release create --verify-tag`. It uploads no
 attachments. `npm run build` may create local `dist/`, but the workflow never publishes `dist/`
-or Boneyard-derived generated assets and never deploys the game.
+or Boneyard-derived generated assets and never deploys the game. Canonical `npm run check` enforces
+that boundary with `npm run test:distribution-boundary`, so adding deploy/publish automation or built
+release assets fails before merge.

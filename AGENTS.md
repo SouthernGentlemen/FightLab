@@ -218,6 +218,7 @@ npm run test             every test
 npm run tune             bot runs across many seeds: win rates and money by day
 npm run test:github-settings    pure, deterministic, credential-free settings normalization/comparison/apply-plan cases
 npm run test:release-identity    pure, credential-free disposable-Git release identity and source-tree cases
+npm run test:distribution-boundary  pure guard for private/source-only release identity and the no-deploy/no-built-publication boundary
 npm run check            canonical credential-free acceptance: pin, pure settings/release cases, typecheck, all tests, one production build
 npm run verify           compatibility alias for npm run check
 FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity
@@ -232,6 +233,8 @@ npm run apply:github-settings   the only explicit GitHub settings mutation path;
 `FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` never creates or mutates a tag, GitHub
 Release or provider setting. It validates only an already-created source identity and must never be
 used to justify publishing `dist/` or Boneyard-derived build artifacts.
+
+Canonical acceptance also runs `npm run test:distribution-boundary`. That guard inspects the tracked repository and fails on deployment workflows/configuration, deploy/publish package scripts, npm publication, tracked `dist/`, or release attachments while allowing the one source-only release command.
 
 The provider source-release path is `.github/workflows/release.yml`. It runs only for pushed semantic
 `vX.Y.Z` tags, checks out that exact tag with full history, restores the pinned Boneyard sibling and
