@@ -1,0 +1,115 @@
+name: deploy
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fightlab-production
+  cancel-in-progress: false
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out exact FightLab release ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          path: FightLab
+          persist-credentials: false
+
+      - name: Fetch exact annotated release tag
+        working-directory: FightLab
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_ref="refs/tags/$GITHUB_REF_NAME"
+          git fetch --force --no-tags origin "$tag_ref:$tag_ref"
+
+      - name: Read pinned Boneyard commit
+        id: boneyard
+        shell: bash
+        run: echo "commit=$(node -p "require('./FightLab/boneyard.pin.json').commit")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Boneyard
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: SouthernGentlemen/Boneyard
+          ref: ${{ steps.boneyard.outputs.commit }}
+          path: Boneyard
+          token: ${{ secrets.BONEYARD_READ_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: FightLab/.node-version
+          cache: npm
+          cache-dependency-path: FightLab/package-lock.json
+
+      - name: Verify pinned toolchain
+        working-directory: FightLab
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v$(cat .node-version)"
+          test "$(npm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^npm@/, '')")"
+
+      - name: Verify release handoff and credentials
+        working-directory: FightLab
+        env:
+          EXPECTED_TAG: ${{ inputs.tag }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node pipelines/production-deployment.mjs context
+          test "$(gh release view "$EXPECTED_TAG" --json tagName,isDraft --jq 'select(.isDraft == false) | .tagName')" = "$EXPECTED_TAG"
+
+      - name: Reproduce exact tagged source and public build
+        working-directory: FightLab
+        env:
+          FIGHTLAB_RELEASE: ${{ inputs.tag }}
+        run: |
+          npm ci
+          npm run check
+          npm run check:release-identity
+
+      - name: Deploy verified release to Cloudflare
+        working-directory: FightLab
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/fightlab-wrangler-output.jsonl
+        run: ./node_modules/.bin/wrangler deploy --env production
+
+      - name: Verify uploaded version serves all production traffic
+        working-directory: FightLab
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_OUTPUT_FILE: ${{ runner.temp }}/fightlab-wrangler-output.jsonl
+          DEPLOYMENTS_FILE: ${{ runner.temp }}/fightlab-deployments.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_id="$(node pipelines/production-deployment.mjs deployed-version "$WRANGLER_OUTPUT_FILE")"
+          ./node_modules/.bin/wrangler deployments list --env production --json > "$DEPLOYMENTS_FILE"
+          node pipelines/production-deployment.mjs provider "$DEPLOYMENTS_FILE" "$version_id"
+
+      - name: Verify public release identity
+        working-directory: FightLab
+        env:
+          FIGHTLAB_RELEASE: ${{ inputs.tag }}
+        run: node pipelines/production-deployment.mjs public https://fightlab.wizardgang.ai/version.json "$FIGHTLAB_RELEASE" "$(git rev-parse HEAD)"

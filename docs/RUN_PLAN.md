@@ -48,12 +48,11 @@ The first slice's survey (Boneyard `604f903`, SVGLab `fb233da`) still holds and 
 | Depth profile per clip | Boneyard `src/rig/depth.ts` (`depthProfileName`) | Imports it |
 | Depth order for world-space bone groups | Boneyard `pipelines/render/depth.ts`, exported as `boneyard/render/depth` (`visualPaintOrder`, pure) | Imports it |
 | Figure loading, part and cosmetic assembly | Boneyard `pipelines/render/sheet.ts`, exported as `boneyard/render/sheet` (`loadFigure`, `assembleFigureBones`; Node only) | Runs it at serve/build time |
-| Clip catalog, rigs, figures, parts, cosmetics | Boneyard asset directories | Reads them through the loader and the catalog export |
-| Contact frames of retargeted clips | Boneyard `motions/bandai-namco-motiondataset-1.json` | Tests bind move windows to them |
+| Original `lab*` clips, runner figure and fighter parts | Boneyard asset directories | Imports seven original clips and assembles only runner art |
 | **Combat kernel** | **SVGLab `src/kernel/`** — not Boneyard, whose contract puts combat and move timing out of scope | Derived into `src/combat/kernel/` (AGENTS.md *Lineage*) |
 
-No upstream Boneyard change is required by the run: the three opponent figures (Barst, Kiran,
-Yuliya) are already figures Boneyard's loader assembles.
+The public presentation lane uses Boneyard's original runner figure and clips. Opponents are
+FightLab colorways over that one figure.
 
 ## Architectural boundaries
 
@@ -78,7 +77,7 @@ Import rules, each enforced by `tests/architecture.test.ts`:
 | `src/run/` | `src/run/`, `src/mods/`, `src/battle/` |
 | `src/combat/kernel/` | only `src/combat/kernel/`; no DOM, wall clock or `Math.random` |
 | `src/combat/` | the kernel; `src/battle/` (the adapter only); the type of Boneyard's clip catalog (the frame data only, because a move names its clip) |
-| `src/render/` | the kernel, `boneyard`, `boneyard/render/depth`, Boneyard's clip catalog |
+| `src/render/` | the kernel, `boneyard`, `boneyard/render/depth`, Boneyard's original `lab*` clips |
 | `src/game/` | battle, combat, mods, run |
 | `src/ui/`, `src/main.ts` | anything above |
 | `src/**` | never `pipelines/` |
@@ -309,7 +308,7 @@ Consumed at runtime, in the browser:
 | `forwardKinematics`, `inBone`, `Placed` | `boneyard` (`src/rig/fk.ts`) | bone placement; the debug skeleton |
 | `depthProfileName` | `boneyard` (`src/rig/depth.ts`) | which depth profile a clip is drawn with |
 | `visualPaintOrder` | `boneyard/render/depth` | the order bone groups paint in |
-| `catalog/clips.json` | `boneyard/catalog/clips.json` | every clip, bundled |
+| `motions/authored/lab*.json` | `boneyard/motions/authored/` | only seven original clips, bundled |
 
 Consumed at serve and build time, in Node:
 
@@ -318,11 +317,9 @@ Consumed at serve and build time, in Node:
 | `BONEYARD_ROOT` | `boneyard/paths` | locating the checkout |
 | `loadFigure`, `assembleFigureBones` | `boneyard/render/sheet` | figure manifest → validated rig, parts and cosmetics → per-bone depth layers, served as `/fighters/<id>.json` |
 
-Consumed by tests only: `motions/bandai-namco-motiondataset-1.json` (`contactTargetFrame`), to
-bind each retargeted clip's contact pose inside its move's active window.
-
-Figures used: `figures/fighter.json` for the player; `figures/barst.json`, `figures/kiran.json` and
-`figures/yuliya.json` for opponents; all on `rigs/fighter.rig.json`.
+The frame data uses Boneyard's catalog type only; its full JSON is not a runtime import.
+`figures/runner.json` is the only emitted figure, shared by the player and three original
+opponent colorways; it uses `rigs/fighter.rig.json`.
 
 What would require an upstream change, and would be made in Boneyard: new authored clips (below), a
 new figure, or a rig change. `visualPaintOrder` lives under Boneyard's `pipelines/` although it is
@@ -336,14 +333,14 @@ see a clip name.
 
 | Presents | Clip | Status |
 | --- | --- | --- |
-| `jab` (Strike) | `bnrStrikeNormal` | Authored for this timing: contact pose at tick 6 inside frames 5–7 |
-| `overhead` (Tech) | `bnrSwordSlashNormal` | **Placeholder.** A sword cut played unarmed; its contact pose (tick 15) sits inside frames 14–17. Missing: an authored unarmed guard-break or throw |
-| `parry` (Block) | `bnrSwordGuardNormal` | **Placeholder.** A two-handed ready stance stands in for the guard. Missing: an authored parry/deflect |
-| `riposte` (Block's answer) | `bnrStrikeNormal` | **Placeholder.** Reuses the jab. Missing: an authored counter |
-| walking to the mark | `bnrWalkNormal` | Correct |
-| idle, and the frozen pause | `bnrIdleNormal` | Correct |
-| hitstun | `bnrCrouchNormal` | **Placeholder.** The bow descent reads as a flinch. Missing: a hit reaction |
-| defeated | `bnrCrouchNormal`, held | **Placeholder.** Missing: a knockdown |
+| `jab` (Strike) | `labStrike` | Original short jab, timed to the move's 20 ticks |
+| `overhead` (Tech) | `labOverhead` | Original unarmed overhead, timed to 30 ticks |
+| `parry` (Block) | `labGuard` | Original guard pose |
+| `riposte` (Block's answer) | `labStrike` | Reuses the original jab |
+| walking to the mark | `labWalk` | Original walk |
+| idle, and the frozen pause | `labIdle` | Original idle |
+| hitstun | `labStagger` | Original stagger |
+| defeated | `labStagger`, held | Reuses the original stagger |
 | victory | `labWave` | Original authored wave |
 
 ## Rendering flow

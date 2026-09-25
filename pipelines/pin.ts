@@ -37,7 +37,7 @@ export const CONSUMED = [
   "characters",
   "cosmetics",
   "catalog",
-  "motions/bandai-namco-motiondataset-1.json",
+  "motions/authored",
 ] as const;
 
 /**

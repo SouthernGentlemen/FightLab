@@ -24,9 +24,12 @@ export interface FigureModel {
 }
 
 export async function loadFigureModel(figure: string, base = document.baseURI): Promise<FigureModel> {
-  const response = await fetch(new URL(`fighters/${figure}.json`, base));
+  const response = await fetch(new URL("fighters/runner.json", base));
   if (!response.ok) throw new Error(`fighter art '${figure}' is unavailable (${response.status})`);
-  return figureModel(await response.json() as FighterArt);
+  const model = figureModel(await response.json() as FighterArt);
+  const names: Readonly<Record<string, string>> = { runner: "Runner", spar: "Spar", flux: "Flux", bastion: "Bastion" };
+  if (!(figure in names)) throw new Error(`unknown FightLab colorway '${figure}'`);
+  return { ...model, figure, name: names[figure] };
 }
 
 export function figureModel(art: FighterArt): FigureModel {

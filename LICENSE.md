@@ -1,31 +1,24 @@
-# Licences and attribution for what FightLab distributes
+# Licences and provenance for FightLab's public build
 
-The provenance index for every dataset and every piece of art — pinned revisions, rights holders,
-licences, covered paths — is [Boneyard's `LICENSE.md`](../Boneyard/LICENSE.md), because that is
-where the material lives. FightLab's tree contains none of it.
+FightLab's game source has no separate licence grant here. The asset provenance index is
+[Boneyard's `LICENSE.md`](../Boneyard/LICENSE.md). This file describes the exact assets emitted
+by the public FightLab build pinned in `boneyard.pin.json`.
 
-This file covers the narrower question: what a *build* of FightLab carries, and under what terms.
-It is not a licence for FightLab's source code, and it does not create a licence where an upstream
-source supplied none.
+## Shipped motion
 
-## Motion in the JavaScript bundle
+`src/render/clips.ts` imports only Boneyard's seven repository-authored `lab*` motions:
+`labIdle`, `labWalk`, `labStagger`, `labStrike`, `labOverhead`, `labGuard`, and `labWave`.
+Each authored source has `derivedFrom: null`. The Bandai Namco derived `bnr*` clips remain in
+Boneyard for its own library use but are not imported into FightLab's JavaScript bundle.
 
-`src/render/clips.ts` bundles Boneyard's `catalog/clips.json`. Its `bnr*` clips are adaptations of
-Bandai-Namco-Research-Motiondataset-1 (revision `74ead3ba1ae4696404e6086233779f60de8bf9ef`),
-Copyright 2022 Bandai Namco Research Inc., licensed under
-[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/legalcode). **A build of FightLab
-therefore may not be used for commercial purposes.** `labWave` is original to Boneyard and claims
-no third-party origin.
+## Shipped art
 
-## Figure art in `dist/fighters/`
+The build emits only `dist/fighters/runner.json`. Boneyard's `figures/runner.json` uses the
+repository-authored `characters/fighter/parts/*.svg` and an empty cosmetics list. The player
+and three opponents share this physical figure and use FightLab's original CSS colorways.
+No Fire Emblem Heroes traced figure, royal-guard cosmetic, or unresolved field-kit cosmetic
+is loaded or emitted.
 
-A build writes each roster figure's assembled art into `dist/fighters/<figure>.json`.
-
-- `barst`, `kiran` and `yuliya` (the opponents) are traced from Fire Emblem Heroes art,
-  Copyright 2017 Nintendo / INTELLIGENT SYSTEMS, and wear royal-guard cosmetics repacked from
-  the same source. No redistribution licence for any of them was established.
-- `fighter` (the player) is Boneyard's authored figure, but it wears the field-kit cosmetics,
-  whose source and licence are unresolved. All three opponents wear field-kit pieces too.
-
-Do not publish or deploy a build, and do not infer permission to redistribute any of this from
-its presence in `dist/`.
+`npm run check:public-build` checks the generated asset set and the emitted JavaScript.
+The Boneyard commit and digest in `boneyard.pin.json` bind this statement to the exact
+source bytes consumed by the build. A future asset change must repeat this provenance review.

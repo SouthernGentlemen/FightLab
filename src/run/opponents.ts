@@ -15,8 +15,8 @@ import { stream } from "./random.ts";
 import type { Random } from "./random.ts";
 import { SHOP_SIZE, drawOffer } from "./shop.ts";
 
-/** Boneyard figures an opponent can wear; the player always wears the authored fighter. */
-export const OPPONENT_FIGURES = ["barst", "kiran", "yuliya"] as const;
+/** Original colorways of Boneyard's runner figure. */
+export const OPPONENT_FIGURES = ["spar", "flux", "bastion"] as const;
 export type OpponentFigure = (typeof OPPONENT_FIGURES)[number];
 
 /** How an opponent was made. Never shown: an opponent is read by fighting it. */

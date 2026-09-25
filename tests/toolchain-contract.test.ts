@@ -50,6 +50,7 @@ describe("repository toolchain contract", () => {
       vite: "7.3.6",
       vitest: "5.0.1",
       "happy-dom": "20.14.5",
+      wrangler: "4.136.1",
     };
     expect(pkg.devDependencies).toEqual(expected);
     expect(lock.packages?.[""]?.devDependencies).toEqual(expected);

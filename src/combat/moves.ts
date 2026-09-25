@@ -19,7 +19,7 @@ const FIST: Box = { x: px(24), y: px(44), w: px(52), h: px(26) };
 export const JAB: MoveDefinition = {
   id: "jab",
   name: "Jab",
-  animation: clip("bnrStrikeNormal"),
+  animation: clip("labStrike"),
   startup: 5,
   active: 3,
   recovery: 12,
@@ -48,7 +48,7 @@ export const JAB: MoveDefinition = {
 export const OVERHEAD: MoveDefinition = {
   id: "overhead",
   name: "Overhead",
-  animation: clip("bnrSwordSlashNormal"),
+  animation: clip("labOverhead"),
   startup: 14,
   active: 4,
   recovery: 12,
@@ -77,7 +77,7 @@ export const OVERHEAD: MoveDefinition = {
 export const PARRY: MoveDefinition = {
   id: "parry",
   name: "Parry",
-  animation: clip("bnrSwordGuardNormal"),
+  animation: clip("labGuard"),
   startup: 2,
   active: 16,
   recovery: 10,
@@ -99,7 +99,7 @@ export const PARRY: MoveDefinition = {
 export const RIPOSTE: MoveDefinition = {
   id: "riposte",
   name: "Riposte",
-  animation: clip("bnrStrikeNormal"),
+  animation: clip("labStrike"),
   startup: 5,
   active: 3,
   recovery: 12,
