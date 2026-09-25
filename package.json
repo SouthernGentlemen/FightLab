@@ -16,7 +16,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "tune": "node pipelines/tune.ts",
-    "check": "npm run check:boneyard && npm run test:github-settings && npm run test:release-identity && npm run test:distribution-boundary && npm run typecheck && npm test && vite build",
+    "check": "npm run check:boneyard && npm run test:github-settings && npm run test:release-identity && npm run test:distribution-boundary && npm run test:production-deployment && npm run typecheck && npm test && vite build && npm run check:public-build",
+    "check:public-build": "node pipelines/check-public-build.ts",
+    "deploy:production:dry-run": "npm run build && wrangler deploy --env production --dry-run",
     "verify": "npm run check",
     "check:release-identity": "node pipelines/release-identity.ts",
     "verify:github-settings": "node pipelines/verify-github-settings.ts",
@@ -24,6 +26,7 @@
     "apply:github-settings": "node pipelines/apply-github-settings.ts",
     "test:release-identity": "node --test pipelines/release-identity-cases.ts",
     "test:distribution-boundary": "node --test pipelines/distribution-boundary-cases.ts",
+    "test:production-deployment": "node --test pipelines/production-deployment-cases.mjs",
     "audit:dependencies": "npm audit --audit-level=high"
   },
   "dependencies": {
@@ -31,10 +34,11 @@
   },
   "devDependencies": {
     "@types/node": "24.13.5",
+    "happy-dom": "20.14.5",
     "typescript": "5.9.3",
     "vite": "7.3.6",
     "vitest": "5.0.1",
-    "happy-dom": "20.14.5"
+    "wrangler": "4.136.1"
   },
   "packageManager": "npm@11.19.1",
   "engines": {

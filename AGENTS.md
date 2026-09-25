@@ -17,8 +17,8 @@ mix up — then watching two properly animated fighters resolve it — actually 
 This file is the contract. When code and this file disagree, one of them is a bug — say which.
 [`docs/RUN_PLAN.md`](docs/RUN_PLAN.md) is the source of truth for what the slice is, what exists
 and what has been measured; [`docs/RUN_DESIGN.md`](docs/RUN_DESIGN.md) is the design and the record
-of every decision behind it. [`implementation_plan.md`](implementation_plan.md) is now the active
-current/future process-parity queue; the completed mod-catalogue task history is in Git.
+of every decision behind it. When present, `implementation_plan.md` is the active
+current/future process queue; completed task history is in Git.
 
 ## Ownership
 
@@ -137,9 +137,11 @@ on. Settings lists only settings that work. The prep screen never describes the 
 opponent. Hitboxes, skeletons and timing readouts exist only behind `?debug`, or the backtick key on a
 development server, and never in the normal game.
 
-**C8 — Provenance follows what is distributed.** A build bundles Boneyard's clip catalog and
-serves figure art from `dist/fighters/`. [`LICENSE.md`](LICENSE.md) says what that carries and
-points at Boneyard's index for everything upstream of it. Nothing built here is published.
+**C8 — Provenance follows what is distributed.** A build bundles only Boneyard's seven
+repository-authored `lab*` motions and serves the original `runner` art from
+`dist/fighters/`. [`LICENSE.md`](LICENSE.md) records the exact asset lane, and
+`check:public-build` verifies the emitted build. The Worker publishes that verified build
+only through the protected release workflow.
 
 **C9 — Mods never decide an exchange.** A mod may add damage to a move and its riposte, healing to a
 parry, and Burn, Shock and Poison to the opponent. It never changes startup, active or recovery
@@ -230,8 +232,11 @@ npm run tune             bot runs across many seeds: win rates and money by day
 npm run audit:dependencies  networked high-severity npm advisory gate; intentionally outside canonical check
 npm run test:github-settings    pure, deterministic, credential-free settings normalization/comparison/apply-plan cases
 npm run test:release-identity    pure, credential-free disposable-Git release identity and source-tree cases
-npm run test:distribution-boundary  pure guard for private/source-only release identity and the no-deploy/no-built-publication boundary
-npm run check            canonical credential-free acceptance: pin, pure settings/release cases, typecheck, all tests, one production build
+npm run test:distribution-boundary  pure guard for source-only Releases and the protected deploy path
+npm run test:production-deployment  pure fail-closed context and provider-evidence cases
+npm run check:public-build  verify only the original art and motion are emitted
+npm run deploy:production:dry-run  build and run a non-mutating Wrangler validation
+npm run check            canonical credential-free acceptance: pin, settings/release/deploy cases, typecheck, tests, production build and public-asset check
 npm run verify           compatibility alias for npm run check
 FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity
                          read-only source identity: semantic annotated tag at exact HEAD, matching
@@ -243,17 +248,22 @@ npm run apply:github-settings   the only explicit GitHub settings mutation path;
 ```
 
 `FIGHTLAB_RELEASE=vX.Y.Z npm run check:release-identity` never creates or mutates a tag, GitHub
-Release or provider setting. It validates only an already-created source identity and must never be
-used to justify publishing `dist/` or Boneyard-derived build artifacts.
+Release or provider setting. A public build additionally requires the pinned original asset lane
+and `check:public-build`.
 
-Canonical acceptance also runs `npm run test:distribution-boundary`. That guard inspects the tracked repository and fails on deployment workflows/configuration, deploy/publish package scripts, npm publication, tracked `dist/`, or release attachments while allowing the one source-only release command.
+Canonical acceptance runs the distribution and production-deployment guards. They allow only the
+reusable, protected production workflow, keep the package private, forbid release attachments
+and tracked `dist/`, and fail closed on wrong tag context or absent Cloudflare credentials.
 
 The provider source-release path is `.github/workflows/release.yml`. It runs only for pushed semantic
 `vX.Y.Z` tags, checks out that exact tag with full history, restores the pinned Boneyard sibling and
 exact Node/npm toolchain, runs `npm ci`, canonical `npm run check`, and the read-only release-identity
 validator, then creates a GitHub Release with `gh release create --verify-tag`. The workflow publishes
 source metadata only: it uploads no `dist/`, generated fighter/art output or Boneyard-derived build
-artifact, and it is not a deployment path.
+artifact. After successful Release publication it calls `.github/workflows/deploy.yml` for
+the same tag. That job rechecks the tagged source and public build under the protected
+`production` environment, deploys with Wrangler, verifies the new Worker Version ID at 100%
+traffic through authenticated Cloudflare state, then checks public `/version.json`.
 
 `?seed=<n>` starts a new run on a chosen seed; `?debug` shows the lab tooling.
 

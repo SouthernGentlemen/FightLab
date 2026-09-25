@@ -23,8 +23,8 @@ const FIGHTING: AnimationContext = { idleFrame: null, finish: null };
 
 describe("figures from Boneyard", () => {
   it("draws the authored fighter for the player and every opponent figure the run can meet", () => {
-    expect(FIGURES).toEqual(["fighter", "barst", "kiran", "yuliya"]);
-    expect(FIGURES).toEqual([PLAYER_FIGURE, ...OPPONENT_FIGURES]);
+    expect(FIGURES).toEqual(["runner"]);
+    expect(OPPONENT_FIGURES).toEqual(["spar", "flux", "bastion"]);
   });
 
   it.each([...FIGURES])("serves %s exactly as Boneyard's own loader assembled it", (id) => {
@@ -40,12 +40,12 @@ describe("figures from Boneyard", () => {
 
   it("serves figures by id and never by path", () => {
     expect(() => fighterArt("../package")).toThrow(/not a figure id/);
-    expect(() => fighterArt("figures/barst")).toThrow(/not a figure id/);
+    expect(() => fighterArt("figures/runner")).toThrow(/not a figure id/);
     expect(() => fighterArt("nobody")).toThrow();
   });
 
   it("refuses art missing a bone's layers", () => {
-    const art = fighterArt(OPPONENT_FIGURES[0]);
+    const art = fighterArt(PLAYER_FIGURE);
     const { head: _head, ...headless } = art.bones;
     expect(() => figureModel({ ...art, bones: headless })).toThrow(/'head'/);
   });
@@ -79,7 +79,7 @@ describe("choosing what presents a fighter", () => {
 
   it("samples a move at its own frame, idles on the presentation clock while planning, and waves the winner", () => {
     expect(animationFor({ ...IDLE, mode: "move", move: "jab", moveFrame: 6 }, FIGHTLAB_FIGHTER, FIGHTING))
-      .toEqual({ clip: "bnrStrikeNormal", frame: 6 });
+      .toEqual({ clip: "labStrike", frame: 6 });
     expect(animationFor(IDLE, FIGHTLAB_FIGHTER, { idleFrame: 40, finish: null })).toEqual({ clip: STATE_CLIPS.idle, frame: 40 });
     expect(animationFor(IDLE, FIGHTLAB_FIGHTER, { idleFrame: null, finish: { ticks: 9, won: true } }))
       .toEqual({ clip: STATE_CLIPS.victory, frame: 9 });

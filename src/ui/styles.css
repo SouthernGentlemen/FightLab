@@ -452,6 +452,9 @@ p, h1, h2 { margin: 0; }
 
 /* The authored figure's parts are styled by the lab that draws them; traced figures carry fills. */
 .fighter { --body: #d3d9e2; --accent: #8ea2b6; --skin: #b9a390; }
+.fighter[data-figure="spar"] { --body: #e5a469; --accent: #b84d36; --skin: #8d624e; }
+.fighter[data-figure="flux"] { --body: #91bed0; --accent: #4a77ba; --skin: #aa7865; }
+.fighter[data-figure="bastion"] { --body: #b0a7d7; --accent: #655792; --skin: #775d57; }
 .fighter .part { fill: var(--body); stroke: #07090c; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .fighter .part--accent { fill: var(--accent); }
 .fighter .part--skin { fill: var(--skin); }

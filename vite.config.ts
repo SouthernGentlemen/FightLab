@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
 
@@ -6,6 +7,7 @@ import { BONEYARD_ROOT } from "boneyard/paths";
 
 import { fighterArtJson } from "./pipelines/figures.ts";
 import { FIGURES } from "./src/game/roster.ts";
+import { validateSourceReleaseIdentity } from "./pipelines/release-identity.ts";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const FIGHTER = /^\/fighters\/([a-z][a-z0-9-]*)\.json$/;
@@ -41,9 +43,24 @@ function boneyardFighters(): Plugin {
   };
 }
 
+function releaseIdentity(): Plugin {
+  return {
+    name: "fightlab-release-identity",
+    generateBundle() {
+      const release = process.env.FIGHTLAB_RELEASE;
+      if (release) {
+        const failures = validateSourceReleaseIdentity({ cwd: ROOT, release });
+        if (failures.length) throw new Error(failures.join("; "));
+      }
+      const commit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
+      this.emitFile({ type: "asset", fileName: "version.json", source: `${JSON.stringify({ product: "fightlab", release: release ?? "development", commit })}\n` });
+    },
+  };
+}
+
 export default defineConfig({
   base: "./",
-  plugins: [boneyardFighters()],
+  plugins: [boneyardFighters(), releaseIdentity()],
   build: { outDir: "dist", emptyOutDir: true },
   server: {
     host: "127.0.0.1",

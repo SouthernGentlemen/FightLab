@@ -66,10 +66,13 @@ describe("source-only release workflow", () => {
     expect(publish).toBeGreaterThan(identity);
   });
 
-  it("publishes source metadata only and has no deployment or package-publication path", () => {
+  it("publishes source metadata only, then hands the same tag to the protected deploy workflow", () => {
     expect(RELEASE_WORKFLOW.match(/gh release create/g) ?? []).toHaveLength(1);
     expect(RELEASE_WORKFLOW).not.toMatch(/upload-artifact|download-artifact|npm publish|dist\//i);
-    expect(RELEASE_WORKFLOW).not.toMatch(/^\s*(?:uses|run): .*deploy/im);
+    expect(RELEASE_WORKFLOW).toContain("needs: release");
+    expect(RELEASE_WORKFLOW).toContain("uses: ./.github/workflows/deploy.yml");
+    expect(RELEASE_WORKFLOW).toContain("tag: ${{ github.ref_name }}");
+    expect(RELEASE_WORKFLOW).not.toMatch(/\bwrangler deploy\b/);
   });
 });
 

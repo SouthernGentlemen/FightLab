@@ -39,14 +39,14 @@ describe("the Boneyard pin", () => {
       expect(checkPin(copy).ok).toBe(false);
     });
     withCopy((copy) => {
-      rmSync(join(copy, "characters", "barst", "parts", "head.svg"));
+      rmSync(join(copy, "characters", "fighter", "parts", "head.svg"));
       expect(checkPin(copy).ok).toBe(false);
     });
   });
 
   it("ignores what FightLab never reads", () => {
     withCopy((copy) => {
-      writeFileSync(join(copy, "characters", "barst", "atlas.png"), "retraced");
+      writeFileSync(join(copy, "characters", "fighter", "atlas.png"), "temporary");
       writeFileSync(join(copy, "figures", ".DS_Store"), "finder");
       expect(checkPin(copy).ok).toBe(true);
     });

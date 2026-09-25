@@ -43,8 +43,10 @@ and pinned by [`boneyard.pin.json`](boneyard.pin.json):
 npm install
 npm run dev      # checks the pin, stops any FightLab server left on the port, then http://127.0.0.1:5190
 npm run test:release-identity      # offline disposable-Git release identity/source-tree cases
-npm run test:distribution-boundary # reject deploy/publish config and built release artifacts
-npm run check    # canonical acceptance: pin, pure release/settings cases, typecheck, complete tests, one production build
+npm run test:distribution-boundary # enforce the protected release-to-deploy path
+npm run test:production-deployment # fail-closed production context and provider evidence cases
+npm run check    # canonical acceptance: pin, pure release/settings/deploy cases, tests, build and original-asset check
+npm run deploy:production:dry-run # validate the Worker bundle without publishing
 npm run verify   # compatibility alias for npm run check
 FIGHTLAB_RELEASE=v0.1.0 npm run check:release-identity  # validate an existing source tag only
 ```
@@ -56,12 +58,13 @@ useful during development, while pushing a branch, opening a PR, exact-head CI a
 separate GitHub actions. `check:release-identity` is read-only:
 it requires an existing annotated semantic tag at exact `HEAD`, a matching private package version
 and unchanged tracked repository content. It creates no tag or release and publishes nothing.
-A pushed semantic annotated `vX.Y.Z` tag is the only provider release trigger. The source-only
-release workflow reproduces the pinned toolchain and Boneyard input, runs canonical acceptance plus
-the exact release-identity check, then creates the GitHub Release with `--verify-tag` and no
-attachments. It never publishes `dist/`, generated Boneyard-derived assets, or deploys the game.
-Canonical acceptance guards that constraint with positive/negative distribution-boundary cases and a
-scan of the tracked workflow/configuration surface.
+A pushed semantic annotated `vX.Y.Z` tag is the only production trigger. The release workflow
+reproduces the pinned toolchain and Boneyard input, runs canonical acceptance and the exact
+release-identity check, then creates a source-only GitHub Release. Its reusable deploy workflow
+rebuilds the same tag under the protected `production` environment and deploys the verified original
+asset set at [fightlab.wizardgang.ai/play/](https://fightlab.wizardgang.ai/play/). The Worker serves
+`/version.json` with that tag and commit. Canonical acceptance prevents package publication,
+release attachments, tracked `dist/` and unprotected deploy paths.
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the change flow.
 
 A FightLab server still running from another terminal, a preview pane or an ended session is stopped

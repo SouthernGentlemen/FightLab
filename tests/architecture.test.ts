@@ -97,9 +97,9 @@ describe("layer boundaries", () => {
   });
 
   it("keeps rendering on the reading side of the simulation", () => {
-    const boneyard = ["boneyard", "boneyard/render/depth", "boneyard/catalog/clips.json"];
+    const boneyard = ["boneyard", "boneyard/render/depth"];
     for (const { file, to } of importsFrom("src/render")) {
-      expect(to.startsWith("src/render/") || to.startsWith("src/combat/kernel/") || boneyard.includes(to), `${file} imports ${to}`).toBe(true);
+      expect(to.startsWith("src/render/") || to.startsWith("src/combat/kernel/") || to.startsWith("boneyard/motions/authored/lab") || boneyard.includes(to), `${file} imports ${to}`).toBe(true);
     }
   });
 
